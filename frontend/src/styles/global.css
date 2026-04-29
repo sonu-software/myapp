@@ -1,0 +1,87 @@
+/* GLOBAL RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Inter", Arial, sans-serif;
+    background: #f7f7f9;
+    color: #333;
+}
+
+/* CENTERED LAYOUT */
+.center-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 80px;
+}
+
+/* CARD */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 14px;
+    width: 380px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.card h2, .card h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* INPUTS */
+input, select, textarea {
+    width: 100%;
+    padding: 14px;
+    margin-top: 6px;
+    margin-bottom: 22px;
+    border-radius: 8px;
+    background: #fafafa;
+    border: 1.4px solid #dcdcdc;
+    font-size: 15px;
+    transition: all 0.2s ease-in-out;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #6a00ff;
+    background: white;
+    outline: none;
+}
+
+/* LABELS */
+label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* BUTTONS */
+button {
+    width: 100%;
+    padding: 14px;
+    background: #6a00ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 10px 0;
+    font-size: 15px;
+    font-weight: 600;
+    transition: 0.2s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+    background: #5800d8;
+}
+
+button:disabled {
+    background: #b8a6e5;
+    cursor: not-allowed;
+}

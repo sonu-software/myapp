@@ -1,0 +1,16 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+mysql-connector-python==8.3.0
+python-dotenv==1.0.1
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+ecdsa==0.18.0
+python-jose[cryptography]==3.5.0
+pydantic==2.6.4
+pyasn1==0.5.1
+google-generativeai
+boto3
+python-multipart
+
+
+openai

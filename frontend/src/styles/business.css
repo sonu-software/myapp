@@ -1,0 +1,607 @@
+/* =========================
+   BUSINESS PAGE – ROOT
+========================= */
+.business-page {
+  position: relative;
+  height: calc(100vh - 120px); /* 🔥 gives weight back */
+  min-height: 700px;          /* 🔥 prevents collapse */
+  padding: 32px;
+  font-family: "Inter", sans-serif;
+  background: transparent;
+  overflow: clip;             /* better than hidden */
+  border-radius: 18px;
+}
+
+
+
+
+
+
+/* AI GRID LAYER */
+.business-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+
+  background-size: 64px 64px;
+
+  mask-image: radial-gradient(
+    circle at center,
+    black 45%,
+    transparent 75%
+  );
+
+  z-index: 0;
+  pointer-events: none;
+}
+
+
+
+/* Dark overlay */
+.business-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.65),
+    rgba(0, 0, 0, 0.8)
+  );
+  z-index: 1;
+}
+
+.business-page > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* =========================
+   HEADER
+========================= */
+.business-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.business-header h1 {
+  font-size: 42px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.business-header p {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #d1d1d1;
+}
+
+/* =========================
+   MAIN LAYOUT (CRITICAL)
+========================= */
+.layout {
+  height: calc(100% - 100px);
+  display: flex;
+  gap: 22px;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+
+/* =========================
+   FORM WRAPPER (ANCHOR)
+========================= */
+.form-wrapper {
+  width: 50%;
+  position: relative;
+}
+
+/* =========================
+   TOP MODE SELECTOR (FLOATING)
+========================= */
+.mode-selector-top {
+  position: absolute;
+  top: -80px;
+  left: 24px;
+  z-index: 20;
+}
+
+/* =========================
+   SHARED COLUMN BASE
+========================= */
+.form-column,
+.chat-column,
+.output-column {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  border-radius: 40px;
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+/* Pin decoration */
+.form-column::before,
+.chat-column::before,
+.output-column::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 17px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    #ffffff 0%,
+    #dcdcdc 22%,
+    #9a9a9a 45%,
+    #5f5f5f 70%,
+    #2f2f2f 100%
+  );
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.45),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.6),
+    inset 0 2px 3px rgba(255, 255, 255, 0.7);
+  z-index: 10;
+}
+
+/* Hover lift */
+.form-column:hover,
+.chat-column:hover,
+.output-column:hover {
+  transform: translateY(-4px);
+  box-shadow: 8px 16px 16px rgba(255, 255, 255, 0.25);
+}
+
+/* =========================
+   FORM COLUMN
+========================= */
+.form-column {
+  width: 100%;
+  padding: 25px;
+  overflow-y: auto;
+  background: #0d1628;
+  color: #ffffff;
+}
+
+/* Titles */
+.section-title {
+  margin-top: 20px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sub-title {
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e39a5f;
+}
+
+/* Labels */
+.form-column label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e39a5f;
+}
+
+/* Inputs & Selects */
+.form-column input,
+.form-column select {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 22px;
+  border-radius: 10px;
+  border: 1px solid #3c415a;
+  background: #ffffff;
+  color: #000000;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.form-column input::placeholder {
+  color: #999999;
+}
+
+/* =========================
+   STICKY GENERATE BUTTON
+========================= */
+.generate-sticky {
+  position: sticky;
+  bottom: 0;
+  margin-top: 10px;
+  padding: 1px 0 1px;
+  display: flex;
+  justify-content: center;
+  background: transparent;
+  z-index: 5;
+}
+
+.generate-sticky button {
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(
+    135deg,
+    #f6c177,
+    #e39a5f,
+    #9c5a3c,
+    #2b1a12
+  );
+  color: #ffffff;
+}
+
+/* =========================
+   CHAT COLUMN
+========================= */
+.chat-column {
+  width: 20%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  background: #0d1628;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.chat-robot {
+  width: 36px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.chat-messages {
+  flex: 1;
+  margin: 12px 0;
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 24px;
+  overflow-y: auto;
+}
+
+.chat-message {
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  font-size: 0.9em;
+  color: #000000;
+}
+
+.chat-message.bot {
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+.chat-message.user {
+  background: linear-gradient(
+    135deg,
+    #f6c177,
+    #9c5a3c
+  );
+  color: #ffffff;
+}
+
+.chat-input textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 14px;
+  color: #000000;
+  font-size: 14px;
+  border-radius: 22px;
+  border: 1px solid #3c415a;
+  resize: none;
+}
+.chat-input {
+  position: relative;
+  z-index: 5;
+}
+
+/* =========================
+   OUTPUT COLUMN
+========================= */
+.output-column {
+  width: 30%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: #0d1628;
+}
+
+.output-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.output-column textarea {
+  flex: 1;
+  margin-top: 10px;
+  border-radius: 10px;
+  resize: none;
+  background: #ffffff;
+  color: #000000;
+  font-family: "JetBrains Mono", "Fira Code", Consolas,
+               "Courier New", monospace;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.7;
+  letter-spacing: 0.2px;
+}
+
+/* Action buttons */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.action-row button {
+  background: linear-gradient(
+    135deg,
+    #f6c177,
+    #9c5a3c
+  );
+  color: #ffffff;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 1200px) {
+  .layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .form-wrapper,
+  .form-column,
+  .chat-column,
+  .output-column {
+    width: 100%;
+    height: auto;
+  }
+
+  .mode-selector-top {
+    position: static;
+    margin-bottom: 12px;
+  }
+}
+
+.generate-sticky button:disabled {
+  opacity: 1;
+  background: linear-gradient(
+    135deg,
+    #f6c177,
+    #e39a5f,
+    #9c5a3c,
+    #2b1a12
+  );
+  filter: grayscale(40%);
+}
+
+
+/* =========================
+   MODE SELECTOR – AI RADIO (PREMIUM)
+========================= */
+
+/* =========================================================
+   MODE SELECTOR — AI RADIO (PREMIUM + STABLE)
+========================================================= */
+
+/* --- HEARTBEAT FOR SELECTED SLIDER --- */
+@keyframes ai-selected-heartbeat {
+  0% {
+    transform: translateX(var(--x)) scale(1);
+  }
+  30% {
+    transform: translateX(var(--x)) scale(1.06);
+  }
+  60% {
+    transform: translateX(var(--x)) scale(1);
+  }
+  100% {
+    transform: translateX(var(--x)) scale(1);
+  }
+}
+
+/* --- SOFT GLOW BREATH --- */
+@keyframes ai-glow-breath {
+  0% {
+    box-shadow:
+      inset 0 0 12px rgba(255,255,255,0.45),
+      0 0 14px rgba(255,255,255,0.35);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 20px rgba(255,255,255,0.75),
+      0 0 26px rgba(255,255,255,0.55);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 12px rgba(255,255,255,0.45),
+      0 0 14px rgba(255,255,255,0.35);
+  }
+}
+
+/* =========================
+   MODE RADIO ROOT
+========================= */
+.mode-radio {
+  position: relative;
+  display: flex;
+  width: 300px;
+  padding: 2px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #0d1628, #0a1020);
+  border: 1px solid rgba(246,193,119,0.35);
+  box-shadow:
+    0 10px 28px #3d0ded,
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Glass layer */
+.mode-radio::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 15px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.03) 35%,
+    rgba(0,0,0,0.35)
+  );
+}
+
+/* =========================
+   SLIDER (BASE – NO ANIMATION)
+========================= */
+.mode-radio::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  border-radius: 12px;
+  --x: 0%;
+  transform: translateX(var(--x));
+  transform-origin: center;
+  will-change: transform, box-shadow;
+}
+
+/* =========================
+   VISUALS MODE — GOLD (HEARTBEAT)
+========================= */
+.mode-radio:has(input[value="visuals"]:checked)::before {
+  --x: 0%;
+  background: linear-gradient(
+    135deg,
+    #efbc6f,
+    #ffd6a0,
+    #d89458,
+    #8b4f34
+  );
+  animation:
+    ai-glow-breath 2.6s ease-in-out infinite,
+    ai-selected-heartbeat 1.8s ease-in-out infinite;
+}
+
+/* =========================
+   MESSAGE MODE — BLUE (HEARTBEAT)
+========================= */
+.mode-radio:has(input[value="message"]:checked)::before {
+  --x: 100%;
+  background: linear-gradient(
+    135deg,
+    #efbc6f,
+    #ffd6a0,
+    #d89458,
+    #8b4f34
+  );
+  animation:
+    ai-glow-breath 2.6s ease-in-out infinite,
+    ai-selected-heartbeat 1.8s ease-in-out infinite;
+}
+
+/* =========================
+   INPUTS
+========================= */
+.mode-radio input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =========================
+   LABELS
+========================= */
+.mode-radio label {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 11px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #9aa6ff;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.mode-radio input:checked + label {
+  color: #ffffff;
+  transform: scale(1.06);
+}
+
+/* =========================
+   ACCESSIBILITY
+========================= */
+@media (prefers-reduced-motion: reduce) {
+  .mode-radio::before {
+    animation: none;
+    box-shadow: none;
+  }
+}
+
+
+
+
+
+
+/* =========================================================
+   AI GLASS SKIN — MATCHES .mode-radio EXACTLY
+   (VISUAL ONLY — NO LAYOUT IMPACT)
+========================================================= */
+.form-column,
+.chat-column,
+.output-column {
+  /* match mode-radio frame */
+  background: linear-gradient(180deg, #0d1628, #0a1020);
+  border: 1px solid rgba(246,193,119,0.35);
+
+  /* override only the radius to match */
+  border-radius: 16px;
+
+  /* same depth language */
+  box-shadow:
+    0 10px 28px #3d0ded,
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+
+  isolation: isolate;
+}
+
+/* Glass surface (same as mode-radio::after) */
+.form-column::after,
+.chat-column::after,
+.output-column::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 15px;
+  pointer-events: none;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.03) 35%,
+    rgba(0,0,0,0.35)
+  );
+}

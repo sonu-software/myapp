@@ -1,0 +1,232 @@
+/* ============================= */
+/* GLOBAL RESET */
+/* ============================= */
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================= */
+/* APP SHELL */
+/* ============================= */
+.app-shell {
+  height: 100dvh;      /* exact screen height */
+  width: 100%;
+  overflow: hidden;    /* prevent full app scrolling */
+}
+
+/* ============================= */
+/* MAIN APP BODY */
+/* ============================= */
+.app-body {
+  height: 100%;
+  width: 100%;
+  padding: 0.5%;        /* 🔥 was 1.2% */
+  background: #162f49;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+/* ============================= */
+/* HEADER */
+/* ============================= */
+.app-header {
+  height: 2.1rem;      /* 🔥 ~45px */
+  padding: 0 0.8%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: #162f49;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+
+  flex-shrink: 0;
+}
+/* ============================= */
+/* LOGO */
+/* ============================= */
+.logo {
+  height: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.logo-image {
+  height: 10px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ============================= */
+/* ACCOUNT CHIP */
+/* ============================= */
+.business-chip {
+  padding: 0.25rem 0.6rem;
+  font-size: clamp(0.6rem, 0.8vw, 0.7rem);
+  border-radius: 0.4rem;
+
+  background: rgba(99,179,237,0.08);
+  border: 1px solid rgba(99,179,237,0.35);
+  color: #ffffff;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.business-chip:hover {
+  background: rgba(99, 179, 237, 0.18);
+  box-shadow: 0 0 18px rgba(99, 179, 237, 0.3);
+}
+
+.caret {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-left: 6px;
+}
+
+/* ============================= */
+/* DROPDOWN MENU */
+/* ============================= */
+.dropdown-menu {
+  top: 2.4rem;
+  right: 0.8%;
+  width: clamp(160px, 14vw, 220px);
+  border-radius: 0.6rem;
+  font-size: 0.5rem;
+
+
+  position: fixed;
+
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ACCOUNT INFO SECTION */
+.dropdown-account {
+  padding: 8px 10px;
+  background: rgba(99, 179, 237, 0.05);
+}
+
+.dropdown-business {
+  font-size: 0.7rem;
+  font-weight: 600;
+
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+.dropdown-email {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* DROPDOWN BUTTONS */
+.dropdown-menu button {
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'Orbitron', monospace;
+  color: #cbd5e1;
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-menu .danger {
+  color: #f87171;
+}
+
+/* ============================= */
+/* CONTENT AREA */
+/* ============================= */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;   /* allow wide pages like DocketMedia */
+  min-width: 0;
+
+  padding: 0.8%;
+  background: #ffffff;
+  border-radius: 0.6rem;
+}
+/* ============================= */
+/* SCROLLBAR */
+/* ============================= */
+.app-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+
+.app-header .ai-logo-img {
+  height: clamp(6px, 1vw, 10px);
+  width: auto;
+}
+
+
+
+.dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+
+/* Only image is clickable */
+.ai-logo {
+  pointer-events: none;   /* disable wrapper clicks */
+}
+
+.logo-clickable {
+  pointer-events: auto;   /* enable image clicks */
+  cursor: pointer;
+  display: inline-block;
+}
+
+
+.docket-header-view {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1000;
+}

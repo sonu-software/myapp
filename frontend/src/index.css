@@ -1,0 +1,514 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  --primary-color: #20486D;
+  --primary-light: #2c5f8f;   /* lighter shade for gradient */
+  --primary-glow: rgba(32, 72, 109, 0.7);
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reset & layout */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Links */
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+/* Buttons (GLOBAL BASE) */
+button {
+  border-radius: 10px;
+  border: none;
+  padding: 0.65em 1.3em;
+  font-size: 1.2em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+
+/* ===============================
+   GLOBAL AI LOGO SYSTEM
+================================ */
+
+.ai-logo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-logo-img {
+  display: block;
+  filter: brightness(1.5) drop-shadow(0 0 20px #63b3ed);
+  animation: aiLogoPulse 3s infinite ease-in-out;
+  position: relative;
+  z-index: 2;
+}
+
+/* Size Variants */
+.ai-logo.sm .ai-logo-img {
+  height: 60px;
+}
+
+.ai-logo.md .ai-logo-img {
+  height: 100px;
+}
+
+.ai-logo.lg .ai-logo-img {
+  height: 280px;
+}
+
+/* Pulse Ring */
+.ai-logo::after {
+  content: "";
+  position: absolute;
+  border: 2px solid #63b3ed;
+  border-radius: 50%;
+  animation: aiLogoRing 2.5s infinite ease-out;
+  box-shadow: 0 0 40px #63b3ed;
+  pointer-events: none;
+}
+
+/* Pulse Sizes */
+.ai-logo.sm::after {
+  width: 80px;
+  height: 80px;
+}
+
+.ai-logo.md::after {
+  width: 150px;
+  height: 150px;
+}
+
+.ai-logo.lg::after {
+  width: 250px;
+  height: 250px;
+}
+
+/* Glow Pulse */
+@keyframes aiLogoPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1.4) drop-shadow(0 0 20px #63b3ed);
+  }
+  50% {
+    transform: scale(1.08);
+    filter: brightness(1.9) drop-shadow(0 0 50px #63b3ed);
+  }
+}
+
+/* Ring Animation */
+@keyframes aiLogoRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+
+.ai-logo.thinking .ai-logo-img {
+  animation-duration: 1s;
+}
+
+.ai-logo.thinking::after {
+  animation-duration: 1s;
+}
+
+
+
+
+
+/* ===============================
+   GLOBAL BORDER RUNNER SYSTEM
+================================ */
+
+.ai-border-runner {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Animated border */
+.ai-border-runner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px; /* border thickness */
+  border-radius: inherit;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #63b3ed,
+    transparent
+  );
+  background-size: 300% 300%;
+  animation: borderRun 3s linear infinite;
+
+  /* Standard mask */
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+
+  /* Webkit fallback */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+
+  pointer-events: none;
+
+  /* Controlled visibility */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Show animation only on focus */
+.ai-border-runner:focus-within::before {
+  opacity: 1;
+}
+
+
+/* Always active runner (no focus needed) */
+.ai-border-runner.always-active::before {
+  opacity: 1 !important;
+}
+
+
+
+
+
+@keyframes borderRun {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+
+
+
+/* ===============================
+   GLOBAL AI PRIMARY BUTTON – ALIVE
+================================ */
+
+.ai-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 60px;
+  padding: 0 40px;
+
+  background: linear-gradient(
+  135deg,
+  var(--primary-color),
+  var(--primary-light)
+);
+
+
+
+
+
+
+  border: none;
+  border-radius: 15px;
+
+  color: white;
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+
+  cursor: pointer;
+  overflow: hidden;
+
+  transition: all 0.3s ease;
+
+  /* AI breathing effect */
+  animation: aiButtonBreath 3s infinite ease-in-out;
+}
+
+/* Hover lift */
+.ai-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow:
+  0 12px 35px var(--primary-glow),
+  0 0 60px var(--primary-glow);
+}
+
+/* Light sweep effect */
+.ai-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.4),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: aiButtonSweep 4s infinite linear;
+}
+
+/* Inner glow layer */
+.ai-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 20px rgba(255,255,255,0.15),
+    0 0 30px var(--primary-glow);
+  pointer-events: none;
+}
+
+/* Disabled */
+.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  animation: none;
+}
+
+@keyframes aiButtonBreath {
+  0%, 100% {
+    box-shadow:
+      0 0 20px rgba(32,72,109,0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 35px rgba(32,72,109,0.8);
+  }
+}
+
+
+@keyframes aiButtonSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+/* ===============================
+   GLOBAL AI DROPDOWN
+================================ */
+
+.ai-dropdown {
+  height: 45px;
+  background: rgba(13,17,23,0.8);
+  border: 1px solid rgba(99,179,237,0.4);
+  border-radius: 12px;
+  padding: 0 15px;
+
+  color: #63b3ed;
+  font-family: 'Orbitron', monospace;
+  letter-spacing: 1px;
+
+  transition: all 0.25s ease;
+}
+
+.ai-dropdown:focus {
+  outline: none;
+  box-shadow: 0 0 15px rgba(99,179,237,0.5);
+}
+
+
+
+
+
+
+/* ===============================
+   GLOBAL AI POPUP SYSTEM
+================================ */
+
+.ai-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: popupFadeIn 0.25s ease-out;
+}
+
+/* Base popup */
+.ai-popup {
+  position: relative;
+  width: 420px;
+  max-width: 92%;
+  padding: 35px 30px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(13, 17, 23, 0.96),
+    rgba(26, 35, 50, 0.96)
+  );
+
+  border-radius: 22px;
+
+  text-align: center;
+
+  animation: popupScale 0.25s ease-out;
+
+  overflow: hidden;
+}
+
+/* ===============================
+   SUCCESS (BLUE AI THEME)
+================================ */
+
+.ai-popup.success {
+  border: 1px solid rgba(99, 179, 237, 0.6);
+  box-shadow:
+    0 0 45px rgba(99,179,237,0.45),
+    inset 0 0 20px rgba(99,179,237,0.12);
+}
+
+.ai-popup.success h3 {
+  color: #63b3ed;
+}
+
+/* ===============================
+   WARNING (RED ALERT THEME)
+================================ */
+
+.ai-popup.warning {
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  box-shadow:
+    0 0 45px rgba(239,68,68,0.45),
+    inset 0 0 20px rgba(239,68,68,0.12);
+}
+
+.ai-popup.warning h3 {
+  color: #ef4444;
+}
+
+/* ===============================
+   TEXT STYLES
+================================ */
+
+.ai-popup h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 17px;
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.ai-popup p {
+  font-family: 'Rajdhani', monospace;
+  font-size: 15px;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* Button */
+.ai-popup-close {
+  width: 100%;
+}
+
+/* Top glow line (animated) */
+.ai-popup::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    currentColor,
+    transparent
+  );
+  animation: popupLine 2s linear infinite;
+}
+
+/* ===============================
+   ANIMATIONS
+================================ */
+
+@keyframes popupFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popupScale {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes popupLine {
+  from { left: -100%; }
+  to { left: 100%; }
+}

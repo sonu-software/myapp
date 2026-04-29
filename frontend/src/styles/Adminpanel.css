@@ -1,0 +1,659 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+/* ── Variables ────────────────────────────────────────────────────────────── */
+:root {
+  --navy:        #1e3a5f;
+  --navy-light:  #254a78;
+  --navy-dark:   #152d4a;
+  --coral:       #f07b6b;
+  --coral-hover: #e5604e;
+  --white:       #ffffff;
+  --bg:          #eef1f6;
+  --card-bg:     #ffffff;
+  --border:      #dde3ed;
+  --text:        #1e293b;
+  --text-muted:  #64748b;
+  --text-light:  #94a3b8;
+  --row-hover:   #f7f9fc;
+  --font:        'Sora', sans-serif;
+  --font-mono:   'DM Mono', monospace;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   18px;
+  --shadow-card: 0 4px 28px rgba(30,58,95,0.10);
+  --shadow-popup:0 12px 48px rgba(30,58,95,0.18);
+  --transition:  0.18s ease;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+.ap-page {
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: var(--font);
+  padding: 40px 32px;
+}
+
+/* ── Page Header ──────────────────────────────────────────────────────────── */
+.ap-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ap-page-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ap-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.ap-page-sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Refresh Button — small, right-aligned ────────────────────────────────── */
+.ap-refresh-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 13px !important;
+  width: auto !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  background: var(--white) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  font-family: var(--font) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--navy) !important;
+  cursor: pointer !important;
+  transition: all var(--transition) !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  flex-shrink: 0 !important;
+  align-self: center !important;
+}
+.ap-refresh-btn svg {
+  stroke: var(--navy) !important;
+  flex-shrink: 0;
+}
+.ap-refresh-btn:hover {
+  background: var(--navy) !important;
+  color: var(--white) !important;
+  border-color: var(--navy) !important;
+}
+.ap-refresh-btn:hover svg {
+  stroke: var(--white) !important;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.ap-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────────── */
+.ap-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfd;
+  min-height: 52px;
+}
+
+.ap-row-count {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ap-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef3fb;
+  border: 1px solid #c5d4ea;
+  border-radius: 20px;
+  padding: 5px 12px 5px 10px;
+  font-size: 13px;
+  color: var(--navy);
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+.ap-filter-chip svg { stroke: var(--navy-light) !important; }
+.ap-filter-chip strong { font-weight: 600; }
+
+.ap-chip-clear {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  color: var(--coral) !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  margin-left: 2px !important;
+}
+.ap-chip-clear:hover { color: var(--coral-hover) !important; }
+
+/* ── Table Wrapper ────────────────────────────────────────────────────────── */
+.ap-table-wrap {
+  overflow-x: auto;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.ap-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ── Table Header ─────────────────────────────────────────────────────────── */
+.ap-th {
+  background: var(--navy) !important;
+  color: var(--white) !important;
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 15px 16px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.01em !important;
+}
+
+.ap-th--idx {
+  width: 56px !important;
+  text-align: center !important;
+}
+
+.ap-th--sortable {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+.ap-th--sortable:hover {
+  background: var(--navy-light) !important;
+}
+/* Sort icon inherits white from th */
+.ap-th--sortable svg {
+  stroke: var(--white) !important;
+}
+
+/* ── Table Rows ───────────────────────────────────────────────────────────── */
+.ap-tr {
+  transition: background var(--transition);
+}
+.ap-tr:hover { background: var(--row-hover); }
+.ap-tr:not(:last-child) td { border-bottom: 1px solid #f1f5f9; }
+
+.ap-td {
+  font-size: 13.5px;
+  color: var(--text);
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.ap-td--idx {
+  text-align: center;
+  color: var(--text-light);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 56px;
+}
+
+.ap-td--muted {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.ap-td--date {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.ap-td--center {
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.ap-td--error {
+  color: #dc2626;
+  font-size: 13.5px;
+}
+
+.ap-td--empty {
+  color: var(--text-light);
+  font-size: 13.5px;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────────────── */
+.ap-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--navy);
+  border-radius: 50%;
+  animation: ap-spin 0.75s linear infinite;
+  margin: 0 auto;
+}
+@keyframes ap-spin { to { transform: rotate(360deg); } }
+
+/* ── Status Badges ────────────────────────────────────────────────────────── */
+.ap-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.ap-badge--sent     { background: #dcfce7; color: #15803d; }
+.ap-badge--notsent  { background: #fee2e2; color: #dc2626; }
+.ap-badge--pending  { background: #fef3c7; color: #b45309; }
+.ap-badge--default  { background: #f1f5f9; color: var(--text-muted); }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.ap-footer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 18px 20px !important;
+  border-top: 1px solid var(--border) !important;
+  background: #fafbfd !important;
+  gap: 14px !important;
+}
+
+.ap-pagination {
+  grid-column: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+/* ── Pagination ───────────────────────────────────────────────────────────── */
+
+.ap-page-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--white) !important;
+  color: var(--navy) !important;
+  cursor: pointer !important;
+  transition: all var(--transition) !important;
+  padding: 0 !important;
+}
+.ap-page-btn svg {
+  stroke: var(--navy) !important;
+}
+.ap-page-btn:hover:not(:disabled) {
+  background: var(--navy) !important;
+  color: var(--white) !important;
+  border-color: var(--navy) !important;
+}
+.ap-page-btn:hover:not(:disabled) svg {
+  stroke: var(--white) !important;
+}
+.ap-page-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
+
+.ap-page-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── See All Button ───────────────────────────────────────────────────────── */
+.ap-see-all-btn {
+  grid-column: unset !important;
+  justify-self: unset !important;
+  background: var(--coral) !important;
+  color: var(--white) !important;
+  border: none !important;
+  border-radius: 30px !important;
+  padding: 10px 36px !important;
+  font-family: var(--font) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all var(--transition) !important;
+  letter-spacing: 0.02em !important;
+  white-space: nowrap !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  text-align: center !important;
+}
+.ap-see-all-btn:hover {
+  background: var(--coral-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(240,123,107,0.35) !important;
+}
+.ap-see-all-btn:active { transform: translateY(0) !important; }
+.ap-see-all-btn:hover {
+  background: var(--coral-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(240,123,107,0.35) !important;
+}
+.ap-see-all-btn:active { transform: translateY(0) !important; }
+
+/* ── Overlay ──────────────────────────────────────────────────────────────── */
+.ap-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 28, 48, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: ap-fade-in 0.15s ease;
+  backdrop-filter: blur(2px);
+}
+@keyframes ap-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Popup Base ───────────────────────────────────────────────────────────── */
+.ap-popup {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-popup);
+  animation: ap-pop-in 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+}
+@keyframes ap-pop-in {
+  from { opacity: 0; transform: scale(0.9) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.ap-popup-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  padding: 14px 16px 6px;
+}
+
+/* ── Selector Popup ───────────────────────────────────────────────────────── */
+.ap-selector-popup {
+  width: 230px;
+  padding-bottom: 12px;
+}
+
+.ap-selector-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: calc(100% - 24px) !important;
+  margin: 4px 12px !important;
+  padding: 12px 14px !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--white) !important;
+  font-family: var(--font) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  cursor: pointer !important;
+  transition: all var(--transition) !important;
+}
+.ap-selector-btn svg {
+  stroke: var(--text-muted) !important;
+}
+.ap-selector-btn:hover {
+  background: var(--navy) !important;
+  color: var(--white) !important;
+  border-color: var(--navy) !important;
+}
+.ap-selector-btn:hover svg {
+  stroke: var(--white) !important;
+}
+
+/* ── Calendar Popup ───────────────────────────────────────────────────────── */
+.ap-cal-popup {
+  width: 420px;
+  padding: 20px;
+}
+
+.ap-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.ap-cal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+/* ── Nav Button — FORCE visible icons ────────────────────────────────────── */
+.ap-nav-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  background: var(--white) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--navy) !important;
+  cursor: pointer !important;
+  transition: all var(--transition) !important;
+  padding: 0 !important;
+}
+/* Explicitly force SVG stroke to be visible (navy on white) */
+.ap-nav-btn svg {
+  stroke: var(--navy) !important;
+  display: block !important;
+}
+.ap-nav-btn:hover {
+  background: var(--navy) !important;
+  color: var(--white) !important;
+  border-color: var(--navy) !important;
+}
+.ap-nav-btn:hover svg {
+  stroke: var(--white) !important;
+}
+
+/* ── ap-nav-btn--dark: variant for popups where bg might be white ─────────── */
+.ap-nav-btn--dark {
+  background: #f0f4fa !important;
+  border-color: #c8d5e8 !important;
+}
+.ap-nav-btn--dark svg {
+  stroke: var(--navy) !important;
+}
+.ap-nav-btn--dark:hover {
+  background: var(--navy) !important;
+  border-color: var(--navy) !important;
+}
+.ap-nav-btn--dark:hover svg {
+  stroke: var(--white) !important;
+}
+
+.ap-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.ap-day-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 8px 2px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ap-cal-cell {
+  text-align: center;
+  padding: 9px 2px;
+  font-size: 13px;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  min-height: 36px;
+  transition: all var(--transition);
+}
+.ap-cal-cell--active {
+  cursor: pointer;
+}
+.ap-cal-cell--active:hover {
+  background: var(--navy);
+  color: var(--white);
+  font-weight: 600;
+}
+
+/* ── Months Grid ──────────────────────────────────────────────────────────── */
+.ap-months-grid {
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+
+.ap-months-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.ap-month-cell {
+  text-align: center;
+  padding: 16px 6px;
+  font-size: 13px;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap-month-cell:hover {
+  background: var(--navy);
+  color: var(--white);
+  font-weight: 600;
+}
+
+/* ── Year Popup ───────────────────────────────────────────────────────────── */
+.ap-year-popup {
+  width: 220px;
+  padding-bottom: 8px;
+}
+
+.ap-year-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 6px 10px 10px;
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--navy-light) #e8edf5;
+}
+.ap-year-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.ap-year-scroll::-webkit-scrollbar-track {
+  background: #e8edf5;
+  border-radius: 10px;
+}
+.ap-year-scroll::-webkit-scrollbar-thumb {
+  background: var(--navy-light);
+  border-radius: 10px;
+}
+.ap-year-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--navy);
+}
+
+.ap-year-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin: 3px 0;
+  font-size: 14px;
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-weight: 500;
+  position: relative;
+}
+.ap-year-item:hover {
+  background: #eef3fb;
+  color: var(--navy);
+  padding-left: 18px;
+}
+.ap-year-item--current {
+  background: var(--navy);
+  color: var(--white) !important;
+  font-weight: 700;
+}
+.ap-year-item--current:hover {
+  background: var(--navy-light);
+  color: var(--white);
+  padding-left: 14px;
+}
+
+.ap-year-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--coral);
+  flex-shrink: 0;
+}
+
+.ap-year-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--coral);
+  color: var(--white);
+  border-radius: 10px;
+  padding: 2px 7px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ap-page { padding: 20px 16px; }
+  .ap-page-title { font-size: 20px; }
+  .ap-cal-popup { width: calc(100vw - 40px) !important; }
+}

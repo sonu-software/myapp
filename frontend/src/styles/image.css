@@ -1,0 +1,60 @@
+.image-page {
+  min-height: 100vh;
+  padding: 40px;
+  background: #000 url("/background_gif1.gif") center / cover no-repeat;
+}
+
+.image-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.image-header h1 {
+  font-size: 40px;
+  color: #fff;
+}
+
+.image-header p {
+  color: #cfcfcf;
+}
+
+.image-layout {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  gap: 30px;
+}
+
+.image-form,
+.image-output {
+  flex: 1;
+  background: #0d1628;
+  padding: 30px;
+  border-radius: 30px;
+}
+
+.image-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #e39a5f;
+  font-weight: 600;
+}
+
+.image-form input,
+.image-form select,
+.image-output textarea {
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.image-form button {
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    #f6c177,
+    #9c5a3c
+  );
+  color: #fff;
+}

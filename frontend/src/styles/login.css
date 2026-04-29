@@ -1,0 +1,376 @@
+/* ================================================
+   LOGIN PAGE — lp- prefix, immune to global CSS
+================================================ */
+
+/* ── PAGE: diagonal split background built in CSS ── */
+body:has(.lp-page) {
+  overflow: hidden !important;
+  margin: 0 !important;
+}
+
+.lp-page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 28px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* ── BACKGROUND: two panels + angled divider via pseudo-elements ── */
+.lp-page::before,
+.lp-page::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* Left side — dark image, sized to fit fully within the clipped left region */
+.lp-page::before {
+  background: url('/login_background.jpeg') left center / 78% 100% no-repeat;
+  /* Clip to left ~72% with an angled right edge */
+  clip-path: polygon(0% 0%, 78% 0%, 72% 100%, 0% 100%);
+}
+
+/* Right side — light/white panel */
+.lp-page::after {
+  background: #eef1f6;
+  /* Clip to right ~50%, starting from where the left ends */
+  clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 44% 100%);
+}
+
+/* Card must sit above the pseudo bg layers */
+.lp-card-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  height: calc(100vh - 56px);
+  max-height: 680px;
+  border-radius: 24px;
+  overflow: hidden;
+  /* Left half transparent, right half white — matches the two panels */
+  background: linear-gradient(to right, transparent 50%, #ffffff 50%);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* ────────────────────────────────────────────────
+   LEFT BOX — foreground image panel
+──────────────────────────────────────────────── */
+.lp-img-box {
+  flex: 0 0 50%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  margin: 0 10px;
+  background: transparent;
+  outline: 15px solid #ffffff;
+  outline-offset: -10px;
+}
+
+.lp-img {
+  display: none;
+}
+
+.lp-img-box::after {
+  content: none;
+}
+
+/* ────────────────────────────────────────────────
+   RIGHT BOX — white form panel
+──────────────────────────────────────────────── */
+.lp-form-box {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 52px;
+  overflow-y: auto;
+}
+
+/* ── LOGO ── */
+.lp-logo-row {
+  margin-bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.lp-logo {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── TAGLINE under logo ── */
+.lp-tagline {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e4a7a;
+  margin: 6px 0 24px 0;
+  letter-spacing: 0.1px;
+}
+
+/* ── TAB TOGGLE ── */
+.lp-tabs {
+  all: unset;
+  display: flex;
+  background: #f0f1f3;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lp-tab {
+  all: unset;
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.lp-tab:hover { color: #555; }
+
+.lp-tab--active {
+  background: #ffffff;
+  color: #1e4a7a;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* ────────────────────────────────────────────────
+   ANIMATION — fade + slide up on tab switch
+──────────────────────────────────────────────── */
+.lp-animated {
+  animation: lpSlideIn 0.30s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes lpSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── HEADING ── */
+.lp-heading {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 22px 0;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+}
+
+/* ── FORM ── */
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+/* ── FIELD ROW ── */
+.lp-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lp-field-icon {
+  position: absolute;
+  left: 14px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── INPUT ── */
+.lp-input {
+  all: unset;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px 14px 44px;
+  background: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14.5px;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: border-color 0.2s, background 0.2s;
+  line-height: 1.4;
+}
+
+.lp-input::placeholder { color: #b0b5be; }
+
+.lp-input:focus {
+  border-color: #1e4a7a;
+  background: #f9fbff;
+  outline: none;
+}
+
+.lp-field:has(.lp-eye) .lp-input {
+  padding-right: 44px;
+}
+
+/* ── EYE BUTTON ── */
+.lp-eye {
+  all: unset;
+  position: absolute;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.lp-eye:hover { color: #555; }
+
+/* ── MESSAGES ── */
+.lp-msg {
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 0;
+  line-height: 1.4;
+}
+.lp-msg--err { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; }
+.lp-msg--ok  { color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+/* ── SUBMIT ── */
+.lp-submit {
+  all: unset;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 15px;
+  background: #1e4a7a;
+  color: #ffffff;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.22s, transform 0.18s, box-shadow 0.18s;
+  box-shadow: 0 4px 14px rgba(30, 74, 122, 0.4);
+  line-height: 1.4;
+}
+.lp-submit:hover:not(:disabled) {
+  background: #163a61;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(30, 74, 122, 0.5);
+}
+.lp-submit:active:not(:disabled) { transform: translateY(0); }
+.lp-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ────────────────────────────────────────────────
+   RESPONSIVE
+──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .lp-page::before,
+  .lp-page::after { display: none; }
+  body:has(.lp-page) { background: #eef1f6 !important; }
+  .lp-img-box { display: none; }
+  .lp-form-box { padding: 40px 36px; }
+  .lp-card-wrapper { max-height: none; height: auto; min-height: calc(100vh - 56px); }
+}
+
+@media (max-width: 480px) {
+  .lp-page { padding: 16px; }
+  .lp-form-box { padding: 32px 24px; }
+  .lp-heading { font-size: 22px; }
+}
+
+/* ── CUSTOM SCROLLBAR ── */
+.lp-form-box::-webkit-scrollbar {
+  width: 5px;
+}
+.lp-form-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+.lp-form-box::-webkit-scrollbar-thumb {
+  background: #1e4a7a;
+  border-radius: 999px;
+}
+.lp-form-box::-webkit-scrollbar-thumb:hover {
+  background: #163a61;
+}
+
+
+/* Loading state */
+.lp-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  position: relative;
+}
+
+/* Optional subtle pulse animation */
+.lp-submit:disabled {
+  animation: lpPulse 1.2s infinite;
+}
+
+@keyframes lpPulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 0.9; }
+  100% { opacity: 0.7; }
+}
+
+.lp-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+/* ── FORGOT PASSWORD POSITION ── */
+.lp-forgot-row {
+  display: flex;
+  padding-left: 230px;
+  margin-top: -20px;              /* 🔥 pulls it closer to password */
+  margin-bottom: -15px;
+}
+
+.lp-forgot-btn {
+  background: none;
+  border: none;
+  color: #1e4a7a;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.lp-forgot-btn:hover {
+  color: #163a61;
+  text-decoration: underline;
+}

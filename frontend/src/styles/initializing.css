@@ -1,0 +1,276 @@
+/* =======================================================
+   AI GROWTH INITIALIZATION – CINEMATIC INTELLIGENCE UI
+======================================================= */
+
+.init-wrapper {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(
+  145deg,
+  #0f172a 0%,
+  #0b1120 50%,
+  #050814 100%
+);
+
+  font-family: 'Inter', sans-serif;
+  color: white;
+}
+
+/* Soft animated atmospheric glow */
+.init-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(32, 72, 109, 0.25),
+    transparent 60%
+  );
+  z-index: 0;
+}
+
+/* Moving subtle grid floor (growth symbolism) */
+.init-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: -200px;
+  width: 200%;
+  height: 400px;
+  background-image: 
+    linear-gradient(rgba(99,179,237,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,179,237,0.08) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: perspective(800px) rotateX(65deg);
+  animation: gridMove 12s linear infinite;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+/* Canvas */
+.init-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* =======================================================
+   OVERLAY PANEL – GLASS AI CONSOLE
+======================================================= */
+
+.init-overlay {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 850px;
+  padding: 50px 40px;
+  text-align: center;
+
+  backdrop-filter: blur(18px);
+  background: rgba(10, 20, 35, 0.35);
+  border: 1px solid rgba(99,179,237,0.2);
+  border-radius: 30px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.6),
+    0 0 40px rgba(59,130,246,0.15);
+
+  animation: fadeInScale 1.2s ease forwards;
+}
+
+/* =======================================================
+   TITLE – BRAND ACTIVATION
+======================================================= */
+
+.init-title {
+  margin-top: 40px;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 4px;
+
+  background: linear-gradient(
+    90deg,
+    #63b3ed,
+    #a0e7ff,
+    #ffffff,
+    #63b3ed
+  );
+
+  background-size: 300% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 25px rgba(99,179,237,0.6),
+    0 0 80px rgba(99,179,237,0.4);
+
+  animation:
+    shimmer 6s linear infinite,
+    titleRise 1.6s ease forwards;
+
+  opacity: 0;
+}
+
+/* Subtext */
+.init-sub {
+  margin-top: 20px;
+  font-size: 15px;
+  letter-spacing: 3px;
+  color: #9fd9ff;
+  opacity: 0.85;
+  animation: subtlePulse 4s ease-in-out infinite;
+}
+
+/* =======================================================
+   PROGRESS BAR – AI SYSTEM BOOT SEQUENCE
+======================================================= */
+
+.progress-bar {
+  margin: 55px auto 20px;
+  width: 80%;
+  height: 10px;
+  border-radius: 30px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+
+  box-shadow:
+    0 0 15px rgba(99,179,237,0.3),
+    inset 0 0 15px rgba(99,179,237,0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 50px;
+
+  background: linear-gradient(
+    90deg,
+    #3b82f6,
+    #06b6d4,
+    #63b3ed
+  );
+
+  box-shadow: 0 0 15px rgba(59,130,246,0.6);
+  transition: width 0.15s linear;
+}
+
+/* Light sweep */
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.6),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: sweep 4s linear infinite;
+}
+
+.progress-text {
+  margin-top: 10px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #63b3ed;
+  opacity: 0.75;
+}
+
+/* =======================================================
+   ANIMATIONS
+======================================================= */
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  from { background-position: 0% center; }
+  to { background-position: 300% center; }
+}
+
+@keyframes titleRise {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+    letter-spacing: 12px;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    letter-spacing: 4px;
+  }
+}
+
+@keyframes subtlePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes progressGlow {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+@keyframes ambientPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+@keyframes gridMove {
+  from { transform: perspective(800px) rotateX(65deg) translateY(0); }
+  to { transform: perspective(800px) rotateX(65deg) translateY(60px); }
+}
+
+/* =======================================================
+   RESPONSIVE
+======================================================= */
+
+@media (max-width: 768px) {
+
+  .init-overlay {
+    padding: 35px 25px;
+  }
+
+  .init-title {
+    font-size: 32px;
+  }
+
+  .progress-bar {
+    width: 95%;
+  }
+
+}
+
+
+
+
+.init-overlay {
+  border: 1px solid rgba(59,130,246,0.15);
+  backdrop-filter: blur(20px);
+}
