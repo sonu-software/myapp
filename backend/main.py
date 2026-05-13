@@ -1882,22 +1882,58 @@ def delete_occasion(occasion_id: int, user_id: int = Depends(get_current_user)):
 #  FILE UPLOADS  —  image / description
 # =============================================================================
 
+# =============================================================================
+#  FILE UPLOADS  —  image / description
+# =============================================================================
+
 @app.post("/upload-image")
 async def upload_image(
     file: UploadFile = File(...),
     user_id: int = Depends(get_current_user),
 ):
+    
+
+    print("UPLOAD API HIT")
     try:
+
         ext = file.filename.rsplit(".", 1)[-1].lower()
+
+        content_types = {
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "webp": "image/webp"
+        }
+
+        content_type = content_types.get(ext, "image/jpeg")
+
         key = f"userMedia/{user_id}/{uuid.uuid4()}.{ext}"
-        s3.upload_fileobj(
-            file.file, BUCKET_NAME, key,
-            ExtraArgs={"ContentType": file.content_type},
+
+        contents = await file.read()
+
+        s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=key,
+            Body=contents,
+            ContentType=content_type
         )
-        return {"success": True, "url": f"{S3_BASE_URL}/{key}"}
+
+        return {
+            "success": True,
+            "url": f"{S3_BASE_URL}/{key}"
+        }
+
     except Exception as e:
-        print("IMAGE UPLOAD ERROR:", e)
-        return {"success": False}
+
+        import traceback
+
+        print("IMAGE UPLOAD ERROR:")
+        traceback.print_exc()
+
+        return {
+            "success": False,
+            "message": str(e)
+        }
 
 
 @app.post("/upload-description")
