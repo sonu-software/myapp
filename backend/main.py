@@ -248,6 +248,11 @@ class ChatRequest(BaseModel):
     business: Optional[str] = ""
     product: Optional[str] = ""
     persona: Optional[str] = ""
+
+    execute_title: Optional[str] = ""
+    execute_description: Optional[str] = ""
+    visual_elements: Optional[str] = ""
+
     fields: Optional[List[str]] = []
 
 
@@ -1219,6 +1224,11 @@ async def chat_with_ai(
                 "business": req.business,
                 "product": req.product,
                 "persona": req.persona,
+
+                "execute_title": req.execute_title,
+                "execute_description": req.execute_description,
+                "visual_elements": req.visual_elements,
+
                 "fields": req.fields,
                 "previous_values": previous_values
             },

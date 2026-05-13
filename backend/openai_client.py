@@ -147,6 +147,15 @@ Product:
 Persona:
 {context.get("persona")}
 
+Execute Title:
+{context.get("execute_title")}
+
+Execute Description:
+{context.get("execute_description")}
+
+Visual Elements to Show:
+{context.get("visual_elements")}
+
 User Request:
 {message}
 
@@ -157,6 +166,7 @@ PREVIOUSLY GENERATED FIELD VALUES:
 {previous_block}
 
 INSTRUCTIONS:
+- Strongly use Execute Title, Execute Description, and Visual Elements
 - Generate NEW and FRESH values
 - DO NOT repeat or slightly modify previous values
 - Ensure outputs are clearly different from previous ones

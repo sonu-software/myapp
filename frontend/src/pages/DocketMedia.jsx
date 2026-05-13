@@ -281,6 +281,9 @@ const DocketMedia = () => {
   // ── Docket info ──────────────────────────────────────────────────────────
   const [docketTitle, setDocketTitle] = useState('');
 
+  const [executeDescription, setExecuteDescription] = useState('');
+  const [visualElements, setVisualElements] = useState('');
+
   // ── Product / Persona ─────────────────────────────────────────────────────
   const [productList,          setProductList]          = useState([]);
   const [selectedProductId,    setSelectedProductId]    = useState('');
@@ -399,6 +402,10 @@ const DocketMedia = () => {
           if (!data.success) return;
           const d = data.data;
           setDocketTitle(d.title);
+
+          setExecuteDescription(d.execute_description || '');
+          setVisualElements(d.visual_elements || '');
+
           setMode(d.media_name);
           setMediaType(d.media_type);
           setSubType(d.subtype_name);
@@ -713,6 +720,11 @@ const DocketMedia = () => {
           business: JSON.stringify(businessProfile  ?? {}),
           product:  JSON.stringify(selectedProductData ?? {}),
           persona:  JSON.stringify(finalPersonaData ?? {}),
+
+          execute_title: docketTitle,
+          execute_description: executeDescription,
+          visual_elements: visualElements,
+          
           fields:   fieldNames,
         }),
       });
