@@ -10,7 +10,7 @@ from openai import OpenAI
 
 load_dotenv()
 
-# ==============================
+
 # CONFIG
 # ==============================
 #MODEL = "gpt-4o-mini"   # fast + cheap (recommended)
@@ -28,7 +28,7 @@ Your responsibilities:
 - Do NOT generate irrelevant content
 """
 
-# ==============================
+
 # LOAD API KEYS
 # ==============================
 raw_keys = os.getenv("OPENAI_API_KEYS", "")
@@ -43,7 +43,7 @@ if not API_KEYS:
     raise Exception("❌ No OpenAI API keys found in .env")
 
 
-# ==============================
+
 # KEY MANAGER (same logic reused)
 # ==============================
 class OpenAIKeyManager:
@@ -81,7 +81,7 @@ class OpenAIKeyManager:
 key_manager = OpenAIKeyManager(API_KEYS)
 
 
-# ==============================
+
 # SAFE JSON PARSER (same)
 # ==============================
 def safe_json_parse(text: str) -> dict:
@@ -96,7 +96,7 @@ def safe_json_parse(text: str) -> dict:
         return {}
 
 
-# ==============================
+
 # OPENAI CALL
 # ==============================
 def generate_with_key(api_key: str, prompt: str):
@@ -114,7 +114,7 @@ def generate_with_key(api_key: str, prompt: str):
     return response.choices[0].message.content
 
 
-# ==============================
+
 # MAIN FUNCTION (same interface)
 # ==============================
 def ask_openai(message: str, context: dict) -> dict:
@@ -209,3 +209,130 @@ Example:
 
     print("🔥 ALL OPENAI KEYS FAILED")
     return {}
+
+
+
+
+
+
+###################################################################
+# =========================================================
+# PROFESSIONAL IMAGE PROMPT GENERATOR
+# =========================================================
+
+IMAGE_PROMPT_SYSTEM = """
+You are a world-class AI Creative Director specializing in premium commercial advertising visuals.
+
+Your task:
+Transform structured business, product, persona, and marketing JSON into a HIGH-QUALITY IMAGE GENERATION PROMPT for promotional creatives.
+
+Focus heavily on:
+- the actual DATA provided
+- product positioning
+- target audience psychology
+- business branding
+- marketing intent
+- media type and media subtype
+- visual storytelling
+
+The generated prompt should naturally create:
+- premium social media advertisements
+- modern promotional posters
+- commercial marketing creatives
+- LinkedIn, Instagram, and Facebook ad visuals
+
+Guidelines:
+- Keep the prompt visually descriptive and commercially realistic
+- Make the product/service the primary hero focus
+- Maintain clean premium composition
+- Include cinematic lighting, depth, and realistic advertising aesthetics
+- Ensure modern typography placement and CTA-friendly layout
+- Avoid excessive instructions or repetitive design directives
+- Let the DATA drive the creative direction
+
+Visual Style Expectations:
+- premium
+- modern
+- luxury commercial aesthetic
+- scroll-stopping
+- highly realistic
+- ad-agency quality
+- cinematic
+- polished branding
+
+The output should feel like a professionally art-directed advertising campaign visual.
+
+RETURN ONLY THE FINAL IMAGE PROMPT.
+NO JSON.
+NO MARKDOWN.
+NO EXPLANATION.
+"""
+
+
+def generate_professional_image_prompt(final_json: dict):
+
+    client = OpenAI(
+        api_key=key_manager.get_next_key()
+    )
+
+    prompt = f"""
+Analyze the following marketing DATA and generate a professional
+IMAGE GENERATION PROMPT for a premium promotional visual.
+
+DATA:
+{json.dumps(final_json, indent=2)}
+
+Requirements:
+- Use the DATA as the primary source of creative direction
+- Exactly Use Creative Context for the Creation
+- Exactly use the Persona for the Environment Creation
+- Exactly Use the Product to showcase of Product or Solution or Service
+- Understand the business, audience, product, and marketing purpose
+- Strictly Adapt the visual style according to MediaType and MediaSubtype
+- Create a realistic commercial advertising scene
+- Ensure strong visual hierarchy and premium composition
+- Keep space for headline, branding, and CTA placement
+- Use modern advertising aesthetics and cinematic realism
+- Make the output suitable for high-end social media marketing
+
+The generated prompt should feel like a professionally designed:
+- LinkedIn ad creative
+- Instagram promotional campaign
+- commercial marketing banner
+- premium advertising poster
+
+Include:
+- realistic environment direction
+- product presentation guidance
+- lighting and mood
+- typography placement guidance
+- composition direction
+- branding feel
+- premium commercial styling
+
+Mention:
+- ultra realistic
+- 8K quality
+- cinematic lighting
+- advertising composition
+- modern commercial visual styling
+
+Generate ONLY the final image generation prompt.
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": IMAGE_PROMPT_SYSTEM
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.9
+    )
+
+    return response.choices[0].message.content.strip()

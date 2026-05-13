@@ -38,6 +38,7 @@ load_dotenv()
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
 LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
+AWS_REGION = os.getenv("AWS_REGION")
 
 # ── AWS S3 client ─────────────────────────────────────────────────────────────
 s3 = boto3.client(
@@ -47,7 +48,7 @@ s3 = boto3.client(
     aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
 )
 BUCKET_NAME = os.getenv("S3_BUCKET")
-S3_BASE_URL = f"https://{BUCKET_NAME}.s3.ap-south-1.amazonaws.com"
+S3_BASE_URL = f"https://{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
 
 # ── FastAPI app ───────────────────────────────────────────────────────────────
 app = FastAPI(title="Elevantia PACE API")
@@ -259,6 +260,8 @@ class CreateDocketRequest(BaseModel):
     mediaType: str
     subType: str
     planner_date_time: datetime
+    execute_description: Optional[str] = ""
+    visual_elements: Optional[str] = ""
 
 
 class AssignExecuteRequest(BaseModel):
@@ -1291,15 +1294,37 @@ def create_docket(
         cursor.execute(
             """
             INSERT INTO docket
-            (title, tab, business_id, product_id, persona_id,
-             media_id, media_type_id, media_subtype_id, planner_date_time)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            (
+                title,
+                tab,
+                business_id,
+                product_id,
+                persona_id,
+                media_id,
+                media_type_id,
+                media_subtype_id,
+                planner_date_time,
+                execute_description,
+                visual_elements
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
-                req.title, req.tab, business_id, req.product_id, req.persona_id,
-                media_id, media_type_id, media_subtype_id, req.planner_date_time,
+                req.title,
+                req.tab,
+                business_id,
+                req.product_id,
+                req.persona_id,
+                media_id,
+                media_type_id,
+                media_subtype_id,
+                req.planner_date_time,
+                req.execute_description,
+                req.visual_elements,
             ),
         )
+
+
         docket_id = cursor.lastrowid
         db.commit()
         return {"success": True, "docket_id": docket_id}

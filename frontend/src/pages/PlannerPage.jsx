@@ -95,6 +95,9 @@ export default function PlannerPage() {
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedPersonaId, setSelectedPersonaId] = useState("");
 
+  const [executeDescription, setExecuteDescription] = useState("");
+  const [visualElements, setVisualElements] = useState("");
+
   const [occasions, setOccasions] = useState([]);
   const [occasionModalOpen, setOccasionModalOpen] = useState(false);
   const [editingOccasion, setEditingOccasion] = useState(null);
@@ -356,7 +359,10 @@ export default function PlannerPage() {
           mode,
           mediaType,
           subType,
-          planner_date_time: formattedDateTime
+          planner_date_time: formattedDateTime,
+
+          execute_description: executeDescription,
+          visual_elements: visualElements
         })
       });
 
@@ -787,6 +793,28 @@ export default function PlannerPage() {
                   className="form-input"
                   value={docketTitle}
                   onChange={e => setDocketTitle(e.target.value)}
+                />
+              </div>
+
+
+
+              <div className="docket-form-group">
+                <label>Execute Description</label>
+
+                <textarea
+                  value={executeDescription}
+                  onChange={(e) => setExecuteDescription(e.target.value)}
+                  placeholder="Enter execute description..."
+                />
+              </div>
+
+              <div className="docket-form-group">
+                <label>Visual Elements</label>
+
+                <textarea
+                  value={visualElements}
+                  onChange={(e) => setVisualElements(e.target.value)}
+                  placeholder="Enter visual elements..."
                 />
               </div>
 
