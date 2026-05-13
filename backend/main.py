@@ -1893,7 +1893,7 @@ async def upload_image(
 ):
     
 
-    print("UPLOAD API HIT")
+    print("UPLOAD API HITTT")
     try:
 
         ext = file.filename.rsplit(".", 1)[-1].lower()
