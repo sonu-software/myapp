@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import "../styles/plannerpage.css";
 import { useNavigate } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function PlannerPage() {
   // ========== STATE MANAGEMENT ==========
@@ -10,6 +12,7 @@ export default function PlannerPage() {
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [uploadedDateTime, setUploadedDateTime] = useState(new Date());
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
@@ -360,6 +363,9 @@ export default function PlannerPage() {
           mediaType,
           subType,
           planner_date_time: formattedDateTime,
+          uploaded_date_time: uploadedDateTime
+            ? new Date(uploadedDateTime).toISOString()
+            : null,
 
           execute_description: executeDescription,
           visual_elements: visualElements
@@ -550,12 +556,13 @@ export default function PlannerPage() {
               const dayDockets = filterTasks
                 ? allMonthDockets.filter(d => {
                     const dateField =
+                      d.uploaded_date_time ||
                       d.planner_date_time ||
-                      d.planner_date      ||
-                      d.date              ||
-                      d.created_at        ||
+                      d.planner_date ||
+                      d.date ||
+                      d.created_at ||
                       "";
-                    return String(dateField).startsWith(dateStr);
+                                        return String(dateField).startsWith(dateStr);
                   }).map(d => ({ ...d, _type: 'docket' }))
                 : [];
 
@@ -786,16 +793,36 @@ export default function PlannerPage() {
             </div>
 
             <div className="modal-body">
-              <div className="form-row">
-                <label className="form-label">Execute Title:</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={docketTitle}
-                  onChange={e => setDocketTitle(e.target.value)}
-                />
-              </div>
+              <div className="schedule-row">
 
+                <div className="schedule-title-field">
+                  <label className="form-label">Execute Title:</label>
+
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={docketTitle}
+                    onChange={e => setDocketTitle(e.target.value)}
+                  />
+                </div>
+
+                <div className="schedule-picker-field">
+                  <label className="form-label">Upload Schedule:</label>
+
+                  <DatePicker
+                    selected={uploadedDateTime}
+                    popperPlacement="bottom-end"
+                    onChange={(date) => setUploadedDateTime(date)}
+                    showTimeSelect
+                    dateFormat="MMM d, yyyy h:mm aa"
+                    timeFormat="hh:mm aa"
+                    timeIntervals={15}
+                    className="planner-datepicker"
+                    placeholderText="Select upload time"
+                  />
+                </div>
+
+              </div>
 
 
               <div className="docket-form-group">

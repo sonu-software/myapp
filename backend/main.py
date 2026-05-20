@@ -265,6 +265,7 @@ class CreateDocketRequest(BaseModel):
     mediaType: str
     subType: str
     planner_date_time: datetime
+    uploaded_date_time: Optional[datetime] = None
     execute_description: Optional[str] = ""
     visual_elements: Optional[str] = ""
 
@@ -1314,10 +1315,11 @@ def create_docket(
                 media_type_id,
                 media_subtype_id,
                 planner_date_time,
+                uploaded_date_time,
                 execute_description,
                 visual_elements
             )
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 req.title,
@@ -1329,6 +1331,7 @@ def create_docket(
                 media_type_id,
                 media_subtype_id,
                 req.planner_date_time,
+                req.uploaded_date_time or datetime.utcnow(),
                 req.execute_description,
                 req.visual_elements,
             ),
@@ -1417,7 +1420,7 @@ def get_my_dockets(
                 LEFT JOIN products p ON d.product_id = p.product_id
                 LEFT JOIN personas pe ON d.persona_id = pe.persona_id
                 WHERE (d.business_id=%s OR ea.assigned_to=%s)
-                AND DATE(d.planner_date_time)=%s
+                AND DATE(d.uploaded_date_time)=%s
                 ORDER BY d.planner_date_time DESC
                 """,
                 (business_id, user_id, selected_date),
@@ -1425,7 +1428,7 @@ def get_my_dockets(
         else:
             cursor.execute(
                 """
-                SELECT d.docket_id, d.title, d.tab, d.planner_date_time,
+                SELECT d.docket_id, d.title, d.tab, d.planner_date_time,d.uploaded_date_time,
                        m.media_name, mt.media_type, ms.subtype_name,
                        p.product_name, pe.persona_name
                 FROM docket d
@@ -1434,7 +1437,7 @@ def get_my_dockets(
                 LEFT JOIN media_subtype ms ON d.media_subtype_id = ms.media_subtype_id
                 LEFT JOIN products p ON d.product_id = p.product_id
                 LEFT JOIN personas pe ON d.persona_id = pe.persona_id
-                WHERE d.business_id=%s AND DATE(d.planner_date_time)=%s
+                WHERE d.business_id=%s AND DATE(d.uploaded_date_time)=%s
                 ORDER BY d.planner_date_time DESC
                 """,
                 (business_id, selected_date),
