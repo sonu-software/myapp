@@ -25,7 +25,7 @@ from auth import create_token, get_current_user, hash_password, verify_password
 from business_rules import get_categories, get_subcategories
 from database import get_db
 from gemini import ask_gemini          # available for future use
-from openai_client import ask_openai
+from openai_client import (ask_openai,generate_professional_image_prompt,generate_ai_image, generate_visual_caption)
 from otp_service import generate_otp, send_otp_email
 from prompts import build_prompt
 from subcategory_rules import SUBCATEGORY_RULES  # available for future use
@@ -1637,20 +1637,110 @@ def save_media_result(
 ):
     db = get_db()
     cursor = db.cursor()
+
     try:
+
+        # ==========================================
+        # SAVE GENERATED TEXT RESULT
+        # ==========================================
         cursor.execute(
-            "INSERT INTO docket_media_results (docket_id, submitted_request, visual_text, created_by, status) VALUES (%s,%s,%s,%s,0)",
-            (docket_id, req.get("submitted_request"), req.get("visual_text"), user_id),
+            """
+            INSERT INTO docket_media_results
+            (
+                docket_id,
+                submitted_request,
+                visual_text,
+                created_by,
+                status
+            )
+            VALUES (%s,%s,%s,%s,0)
+            """,
+            (
+                docket_id,
+                req.get("submitted_request"),
+                req.get("visual_text"),
+                user_id
+            ),
         )
+
+
+
+        # ==========================================
+        # CONVERT VISUAL JSON → IMAGE PROMPT
+        # ==========================================
+
+        visual_text = req.get("visual_text")
+
+        parsed_json = json.loads(visual_text)
+
+        image_prompt = generate_professional_image_prompt(parsed_json)
+
+
+
+        # ==========================================
+        # GENERATE AI IMAGE
+        # ==========================================
+
+        generated_image_url = generate_ai_image(image_prompt)
+
+    
+        # ==========================================
+        # GENERATE AI CAPTION
+        # ==========================================
+
+        caption_text = generate_visual_caption(parsed_json)
+
+
+
+        # ==========================================
+        # SAVE GENERATED IMAGE
+        # ==========================================
+
+        cursor.execute(
+            """
+            INSERT INTO docket_media_admin
+            (
+                docket_id,
+                uploaded_url,
+                message
+            )
+            VALUES (%s,%s,%s)
+            """,
+            (
+                docket_id,
+                generated_image_url,
+                caption_text
+            )
+        )
+
+
+
+        # ==========================================
+        # FINAL COMMIT
+        # ==========================================
+
         db.commit()
-        return {"success": True}
+
+        return {
+            "success": True,
+            "image_url": generated_image_url
+        }
+
     except Exception as e:
+
         db.rollback()
+
         print("SAVE MEDIA RESULT ERROR:", e)
-        return {"success": False}
+
+        return {
+            "success": False,
+            "message": str(e)
+        }
+
     finally:
         cursor.close()
         db.close()
+
 
 
 @app.get("/planner/docket/{docket_id}/media-history")

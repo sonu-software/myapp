@@ -315,6 +315,9 @@ const DocketMedia = () => {
   // ── Visual output ─────────────────────────────────────────────────────────
   const [visualImage,   setVisualImage]   = useState(null);
   const [visualMessage, setVisualMessage] = useState('');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+  const [uploadedDateTime, setUploadedDateTime] = useState(null);
 
   // ── Feedback ──────────────────────────────────────────────────────────────
   const [adminMediaId,           setAdminMediaId]           = useState(null);
@@ -405,6 +408,7 @@ const DocketMedia = () => {
 
           setExecuteDescription(d.execute_description || '');
           setVisualElements(d.visual_elements || '');
+          setUploadedDateTime(d.uploaded_date_time);
 
           setMode(d.media_name);
           setMediaType(d.media_type);
@@ -766,6 +770,7 @@ const DocketMedia = () => {
   // ===========================================================================
 
   const handleGenerate = useCallback(async () => {
+    setIsGeneratingImage(true);
     const [mandSaved, optSaved] = await Promise.all([
       handleSave('mandatory'),
       handleSave('optional'),
@@ -818,6 +823,21 @@ const DocketMedia = () => {
       });
       const data = await res.json();
       if (data.success) {
+        fetch(`${API}/planner/docket/${docketId}/visual`, { headers: AUTH() })
+          .then(r => r.json())
+          .then(v => {
+            if (v.success) {
+              setVisualImage(v.url);
+              setVisualMessage(v.message);
+              setAdminMediaId(v.admin_media_id);
+              setIsGeneratingImage(false);
+            }
+          });
+
+
+
+
+
         setShowSubmitToast(true);
         setTimeout(() => setShowSubmitToast(false), 3000);
         // Refresh history list
@@ -827,6 +847,7 @@ const DocketMedia = () => {
           .catch(console.error);
       }
     } catch (err) {
+      setIsGeneratingImage(false);
       console.error('Submit failed:', err);
     }
     setIsEditMode(false);
@@ -1131,16 +1152,74 @@ const DocketMedia = () => {
           <div className="docket-visual-output">
             <div className="docket-visual-header">
               <h3>VISUAL OUTPUT</h3>
-              <div className="docket-history-icon" onClick={handleOpenVisualHistory}><ClockIcon /></div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+
+                <div className="visual-upload-date">
+                  {uploadedDateTime
+                    ? new Date(uploadedDateTime).toLocaleString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : ""}
+                </div>
+
+                <div
+                  className="docket-history-icon"
+                  onClick={handleOpenVisualHistory}
+                >
+                  <ClockIcon />
+                </div>
+
+              </div>
             </div>
 
             <div className="docket-visual-body">
               <div className="docket-visual-content docket-visual-content--full">
-                {visualImage
-                  ? <img src={visualImage} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} alt="Visual output" />
-                  : <div className="docket-visual-placeholder">Waiting for admin upload</div>
-                }
+
+                {isGeneratingImage ? (
+
+                  <div className="visual-loading-container">
+
+                    <div className="visual-loader"></div>
+
+                    <div className="visual-loading-text">
+                      AI is generating your visual...
+                    </div>
+
+                  </div>
+
+                ) : visualImage ? (
+
+                  <img
+                    src={visualImage}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      objectFit: 'contain'
+                    }}
+                    alt="Visual output"
+                  />
+
+                ) : (
+
+                  <div className="docket-visual-placeholder">
+                    Waiting for admin upload
+                  </div>
+
+                )}
+
               </div>
+
 
               <div className="docket-visual-message-box">
                 <div className="docket-visual-message-title">Message with Visual</div>
@@ -1210,7 +1289,7 @@ const DocketMedia = () => {
               onClick={canGenerate ? handleGenerate : undefined}
               disabled={!canGenerate}
             >
-              SUBMIT
+              CREATE VISUAL
               {!canGenerate && (
                 <div className="docket-generate-tooltip">
                   <div className="docket-generate-tooltip-header">Please fill all mandatory fields:</div>

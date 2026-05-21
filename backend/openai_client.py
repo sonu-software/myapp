@@ -236,6 +236,7 @@ You are a world-class AI Creative Director specializing in premium commercial ad
 Your task:
 Transform structured business, product, persona, and marketing JSON into a HIGH-QUALITY IMAGE GENERATION PROMPT for promotional creatives.
 
+
 Focus heavily on:
 - the actual DATA provided
 - product positioning
@@ -244,6 +245,20 @@ Focus heavily on:
 - marketing intent
 - media type and media subtype
 - visual storytelling
+- ALL provided image URLs
+- business logo references
+- product image references
+- brand consistency
+
+IMPORTANT IMAGE HANDLING RULES:
+- If logo_url exists, use it as the official brand logo reference
+- If product images exist, use them as the exact product appearance reference
+- Use the provided image URLs to maintain realistic product consistency
+- Ensure the generated creative visually matches the uploaded products
+- Use uploaded images as visual guidance for product shape, color, material, branding, and presentation
+- Preserve brand identity using the provided reference images
+- Do NOT ignore image URLs inside the DATA
+
 
 The generated prompt should naturally create:
 - premium social media advertisements
@@ -343,6 +358,118 @@ Generate ONLY the final image generation prompt.
             }
         ],
         temperature=0.9
+    )
+
+    return response.choices[0].message.content.strip()
+
+
+
+
+#######################################################################################
+
+
+from openai import OpenAI
+import requests
+import uuid
+import boto3
+import os
+
+AWS_REGION = os.getenv("AWS_REGION")
+BUCKET_NAME = os.getenv("S3_BUCKET")
+
+s3 = boto3.client(
+    "s3",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+)
+
+S3_BASE_URL = f"https://{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
+
+
+def generate_ai_image(image_prompt: str):
+
+    api_key = key_manager.get_next_key()
+
+    client = OpenAI(api_key=api_key)
+
+    
+    response = client.images.generate(
+        model="gpt-image-2",
+        prompt=image_prompt,
+        size="1024x1024"
+    )
+
+    # ==========================================
+    # GPT IMAGE RETURNS BASE64
+    # ==========================================
+
+    import base64
+
+    image_base64 = response.data[0].b64_json
+
+    image_data = base64.b64decode(image_base64)
+
+    # upload to s3
+    filename = f"ai-generated/{uuid.uuid4()}.png"
+
+    s3.put_object(
+        Bucket=BUCKET_NAME,
+        Key=filename,
+        Body=image_data,
+        ContentType="image/png"
+    )
+
+    final_url = f"{S3_BASE_URL}/{filename}"
+
+    return final_url
+
+
+
+
+
+
+# =========================================================
+# AI CAPTION GENERATION
+# =========================================================
+
+def generate_visual_caption(prompt_data):
+
+    import json
+
+    api_key = key_manager.get_next_key()
+
+    client = OpenAI(api_key=api_key)
+
+    prompt = f"""
+Generate a professional social media caption.
+
+Requirements:
+- Engaging marketing tone
+- Include emojis
+- Include hashtags
+- Short and modern
+- Maximum 300 words
+- No markdown
+
+Context:
+{json.dumps(prompt_data, indent=2)}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a professional social media marketing copywriter."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.8,
+        max_tokens=500
     )
 
     return response.choices[0].message.content.strip()
