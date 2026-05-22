@@ -209,7 +209,10 @@ Example:
                 raise Exception("Invalid JSON")
 
             key_manager.mark_success(api_key)
-            return data
+            return {
+                "response": data,
+                "full_information": prompt
+            }
 
         except Exception as e:
             print(f"❌ Key failed: {api_key[:6]}... | Error: {e}")
@@ -218,7 +221,10 @@ Example:
             continue
 
     print("🔥 ALL OPENAI KEYS FAILED")
-    return {}
+    return {
+        "response": {},
+        "full_information": prompt
+    }
 
 
 
@@ -294,7 +300,10 @@ NO EXPLANATION.
 """
 
 
-def generate_professional_image_prompt(final_json: dict):
+def generate_professional_image_prompt(final_json: dict,
+    execute_title: str = "",
+    execute_description: str = "",
+    visual_elements: str = "",):
 
     client = OpenAI(
         api_key=key_manager.get_next_key()
@@ -303,6 +312,14 @@ def generate_professional_image_prompt(final_json: dict):
     prompt = f"""
 Analyze the following marketing DATA and generate a professional
 IMAGE GENERATION PROMPT for a premium promotional visual.
+Execute Title:
+{execute_title}
+
+Execute Description:
+{execute_description}
+
+Visual Elements to Show:
+{visual_elements}
 
 DATA:
 {json.dumps(final_json, indent=2)}

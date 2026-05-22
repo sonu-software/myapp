@@ -1200,8 +1200,18 @@ async def chat_with_ai(
     user_id: int = Depends(get_current_user),
 ):
     db = get_db()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
+
+        # ==========================================
+        # GET BUSINESS ID
+        # ==========================================
+
+        business_id = require_business(user_id, db)
+
+        # ==========================================
+        # FETCH PREVIOUS VALUES
+        # ==========================================
 
         cursor.execute("""
             SELECT label, value
@@ -1212,11 +1222,16 @@ async def chat_with_ai(
         rows = cursor.fetchall()
 
         previous_values = {
-            label: value for (label, value) in rows if value
+            row["label"]: row["value"]
+            for row in rows
+            if row["value"]
         }
 
+        # ==========================================
+        # ASK OPENAI
+        # ==========================================
 
-        field_values = ask_openai(
+        ai_result = ask_openai(
             message=req.message,
             context={
                 "mode": req.mode,
@@ -1235,6 +1250,10 @@ async def chat_with_ai(
             },
         )
 
+        field_values = ai_result["response"]
+
+        full_information = ai_result["full_information"]
+
         cursor.execute(
             "INSERT INTO chatbot_history (docket_id, input_json, output_json) VALUES (%s,%s,%s)",
             (
@@ -1248,6 +1267,38 @@ async def chat_with_ai(
                 json.dumps(field_values),
             ),
         )
+
+
+        # ==========================================
+        # SAVE FULL CHATBOT INFORMATION
+        # ==========================================
+
+        cursor.execute(
+            """
+            INSERT INTO chatbot_information
+            (
+                business_id,
+                docket_id,
+                query,
+                information
+            )
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                business_id,
+                req.docket_id,
+                req.message,
+                full_information
+            )
+        )
+
+        print("NEW CHAT API RUNNINGGGGGGGGGGGG")
+
+
+
+
+
+
         db.commit()
         return {"success": True, "fields": field_values}
 
