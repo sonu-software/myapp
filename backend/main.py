@@ -1452,7 +1452,10 @@ def get_my_dockets(
             cursor.execute(
                 """
                 SELECT DISTINCT
-                    d.docket_id, d.title, d.tab, d.planner_date_time,
+                    d.docket_id,
+                    d.title,
+                    d.tab,
+                    d.planner_date_time,
                     m.media_name, mt.media_type, ms.subtype_name,
                     p.product_name, pe.persona_name
                 FROM docket d
@@ -1479,15 +1482,55 @@ def get_my_dockets(
         else:
             cursor.execute(
                 """
-                SELECT d.docket_id, d.title, d.tab, d.planner_date_time,d.uploaded_date_time,
-                       m.media_name, mt.media_type, ms.subtype_name,
-                       p.product_name, pe.persona_name
+                SELECT 
+                    d.docket_id, 
+                    d.title, 
+                    d.tab, 
+                    d.planner_date_time,
+                    d.uploaded_date_time,
+
+                    dma.uploaded_url,
+                    ea.stage AS current_stage,
+
+                    m.media_name, 
+                    mt.media_type, 
+                    ms.subtype_name,
+                    p.product_name, 
+                    pe.persona_name
                 FROM docket d
                 LEFT JOIN media m ON d.media_id = m.media_id
                 LEFT JOIN media_type mt ON d.media_type_id = mt.media_type_id
                 LEFT JOIN media_subtype ms ON d.media_subtype_id = ms.media_subtype_id
                 LEFT JOIN products p ON d.product_id = p.product_id
                 LEFT JOIN personas pe ON d.persona_id = pe.persona_id
+                LEFT JOIN (
+                    SELECT x.*
+                    FROM docket_media_admin x
+                    INNER JOIN (
+                        SELECT docket_id, MAX(admin_media_id) AS latest_id
+                        FROM docket_media_admin
+                        GROUP BY docket_id
+                    ) y
+                    ON x.admin_media_id = y.latest_id
+                ) dma
+                ON dma.docket_id = d.docket_id
+
+
+                LEFT JOIN (
+                    SELECT ea1.*
+                    FROM execute_assignments ea1
+                    WHERE ea1.assignment_id = (
+                        SELECT ea2.assignment_id
+                        FROM execute_assignments ea2
+                        WHERE ea2.execute_id = ea1.execute_id
+                        ORDER BY ea2.created_at DESC
+                        LIMIT 1
+                    )
+                ) ea
+                ON ea.execute_id = d.docket_id
+
+
+
                 WHERE d.business_id=%s AND DATE(d.uploaded_date_time)=%s
                 ORDER BY d.planner_date_time DESC
                 """,
@@ -1495,6 +1538,148 @@ def get_my_dockets(
             )
 
         return {"success": True, "data": cursor.fetchall()}
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+
+
+
+# =============================================================================
+#  corousel in docket page
+# =============================================================================
+
+
+
+@app.get("/planner/carousel-dockets")
+def get_carousel_dockets(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    stage: Optional[str] = None,
+    user_id: int = Depends(get_current_user)
+):
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        business_id = require_business(user_id, db)
+
+        query = """
+            SELECT
+                d.docket_id,
+                d.title,
+                d.tab,
+                d.planner_date_time,
+                d.uploaded_date_time,
+
+                dma.uploaded_url,
+
+                ea.stage AS current_stage,
+
+                m.media_name,
+                mt.media_type,
+                ms.subtype_name,
+                p.product_name,
+                pe.persona_name
+
+            FROM docket d
+
+            LEFT JOIN media m
+                ON d.media_id = m.media_id
+
+            LEFT JOIN media_type mt
+                ON d.media_type_id = mt.media_type_id
+
+            LEFT JOIN media_subtype ms
+                ON d.media_subtype_id = ms.media_subtype_id
+
+            LEFT JOIN products p
+                ON d.product_id = p.product_id
+
+            LEFT JOIN personas pe
+                ON d.persona_id = pe.persona_id
+
+            LEFT JOIN (
+                SELECT x.*
+                FROM docket_media_admin x
+                INNER JOIN (
+                    SELECT docket_id, MAX(admin_media_id) AS latest_id
+                    FROM docket_media_admin
+                    GROUP BY docket_id
+                ) y
+                ON x.admin_media_id = y.latest_id
+            ) dma
+            ON dma.docket_id = d.docket_id
+
+            LEFT JOIN (
+                SELECT ea1.*
+                FROM execute_assignments ea1
+                WHERE ea1.assignment_id = (
+                    SELECT ea2.assignment_id
+                    FROM execute_assignments ea2
+                    WHERE ea2.execute_id = ea1.execute_id
+                    ORDER BY ea2.created_at DESC
+                    LIMIT 1
+                )
+            ) ea
+            ON ea.execute_id = d.docket_id
+
+            WHERE d.business_id = %s
+        """
+
+        params = [business_id]
+
+        # =====================================
+        # DATE FILTER
+        # =====================================
+
+        if start_date and end_date:
+
+            query += """
+                AND DATE(d.uploaded_date_time)
+                BETWEEN %s AND %s
+            """
+
+            params.extend([start_date, end_date])
+
+        
+        if stage:
+
+            if stage == "discovery":
+
+                query += """
+                    AND (
+                        ea.stage IS NULL
+                        OR ea.stage = 'discovery'
+                    )
+                """
+
+            else:
+
+                query += """
+                    AND ea.stage = %s
+                """
+
+                params.append(stage)
+
+        query += """
+            ORDER BY d.uploaded_date_time DESC
+        """
+
+        cursor.execute(query, tuple(params))
+
+        rows = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": rows
+        }
+
     finally:
         cursor.close()
         db.close()
@@ -1823,7 +2008,7 @@ def get_current_stage(docket_id: int):
             (docket_id,),
         )
         row = cursor.fetchone()
-        return {"success": True, "stage": row["stage"] if row else "draft"}
+        return {"success": True, "stage": row["stage"] if row else "discovery"}
     finally:
         cursor.close()
         db.close()
@@ -2503,6 +2688,107 @@ def post_to_linkedin_api(docket_id: int, user_id: int = Depends(get_current_user
         )
 
         return {"success": True, "post_id": post_id}
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+@app.get("/planner/stage-counts")
+def get_stage_counts(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    stage: Optional[str] = None,
+    user_id: int = Depends(get_current_user)
+):
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        business_id = require_business(user_id, db)
+
+        query = """
+            SELECT
+                d.docket_id,
+                COALESCE(ea.stage, 'discovery') AS current_stage
+            FROM docket d
+
+            LEFT JOIN (
+                SELECT ea1.*
+                FROM execute_assignments ea1
+                WHERE ea1.assignment_id = (
+                    SELECT ea2.assignment_id
+                    FROM execute_assignments ea2
+                    WHERE ea2.execute_id = ea1.execute_id
+                    ORDER BY ea2.created_at DESC
+                    LIMIT 1
+                )
+            ) ea
+            ON ea.execute_id = d.docket_id
+
+            WHERE d.business_id = %s
+        """
+
+        params = [business_id]
+
+        if stage:
+
+            if stage == "discovery":
+
+                query += """
+                    AND (
+                        ea.stage IS NULL
+                        OR ea.stage = 'discovery'
+                    )
+                """
+
+            else:
+
+                query += """
+                    AND ea.stage = %s
+                """
+
+                params.append(stage)
+
+        if start_date and end_date:
+            query += """
+                AND DATE(d.uploaded_date_time)
+                BETWEEN %s AND %s
+            """
+            params.extend([start_date, end_date])
+
+        cursor.execute(query, tuple(params))
+
+        rows = cursor.fetchall()
+
+        counts = {
+            "discovery": 0,
+            "draft": 0,
+            "generate": 0,
+            "review": 0,
+            "approve": 0,
+            "publish": 0,
+            "closed": 0,
+            "rejected": 0
+        }
+
+        for row in rows:
+
+            stage = (row["current_stage"] or "discovery").lower()
+
+            if stage == "approval":
+                stage = "approve"
+
+            if stage in counts:
+                counts[stage] += 1
+
+        return {
+            "success": True,
+            "data": counts
+        }
 
     finally:
         cursor.close()

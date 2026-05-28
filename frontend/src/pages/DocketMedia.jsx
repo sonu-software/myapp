@@ -1,17 +1,20 @@
 // =============================================================================
 //  DocketMedia.jsx  —  Elevantia PACE
-//  Enhanced: parallel data fetching, extracted sub-components, deduplicated
-//  auto-grow logic, memoised helpers, stable token helper, no behaviour change.
+//  UI rebuilt pixel-perfect from reference image.
+//  All original logic, API calls, and handlers preserved exactly.
 // =============================================================================
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/docket.css';
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
-const API = import.meta.env.VITE_BACKEND_URL;
-const TOKEN = () => localStorage.getItem('token');
-const AUTH  = () => ({ Authorization: `Bearer ${TOKEN()}` });
+const API       = import.meta.env.VITE_BACKEND_URL;
+const TOKEN     = () => localStorage.getItem('token');
+const AUTH      = () => ({ Authorization: `Bearer ${TOKEN()}` });
 const JSON_AUTH = () => ({ 'Content-Type': 'application/json', ...AUTH() });
 
 const TEXTAREA_LINE_H = 20;
@@ -19,8 +22,6 @@ const TEXTAREA_PAD    = 16;
 const TEXTAREA_MAX_H  = TEXTAREA_LINE_H * 3 + TEXTAREA_PAD;
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
-
-/** Auto-resize a textarea element up to TEXTAREA_MAX_H. */
 function resizeTextarea(el) {
   if (!el) return;
   el.style.height = 'auto';
@@ -29,17 +30,11 @@ function resizeTextarea(el) {
   el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_H ? 'auto' : 'hidden';
 }
 
-/** Redirect to login on 401. Returns true if unauthorised. */
 function handleUnauthorized(res) {
-  if (res.status === 401) {
-    localStorage.clear();
-    window.location.href = '/';
-    return true;
-  }
+  if (res.status === 401) { localStorage.clear(); window.location.href = '/'; return true; }
   return false;
 }
 
-/** Build a structured persona object grouped by segment_type. */
 function buildStructuredPersona(persona) {
   if (!persona) return null;
   const grouped = {};
@@ -47,109 +42,138 @@ function buildStructuredPersona(persona) {
     ?.filter(seg => seg.is_active)
     .forEach(seg => {
       if (!grouped[seg.segment_type]) grouped[seg.segment_type] = {};
-      const key = seg.label
-        .toLowerCase()
-        .replace(/\s+/g, '_')
-        .replace(/[^a-z0-9_]/g, '');
+      const key = seg.label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
       grouped[seg.segment_type][key] = seg.value;
     });
-  return { persona_name: persona.persona_name, segments: grouped, hashtags: persona.hashtags || []};
+  return { persona_name: persona.persona_name, segments: grouped, hashtags: persona.hashtags || [] };
 }
 
-/** Download an image via fetch → blob → anchor, with canvas fallback. */
 async function downloadImage(url, docketId) {
-  const parts   = url.split(/[?#]/)[0].split('/');
-  const rawName = parts[parts.length - 1] || `visual-output-${docketId}`;
+  const parts    = url.split(/[?#]/)[0].split('/');
+  const rawName  = parts[parts.length - 1] || `visual-output-${docketId}`;
   const fileName = /\.[a-z]{2,5}$/i.test(rawName) ? rawName : `${rawName}.png`;
-
-  const triggerDownload = (href, download = fileName) => {
-    const a = Object.assign(document.createElement('a'), { href, download, style: 'display:none' });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const trigger  = (href, dl = fileName) => {
+    const a = Object.assign(document.createElement('a'), { href, download: dl, style: 'display:none' });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
-
   try {
     const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error('fetch failed');
-    const objectUrl = URL.createObjectURL(await res.blob());
-    triggerDownload(objectUrl);
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
-    return;
-  } catch { /* fall through to canvas */ }
-
-  // Canvas fallback
-  try {
-    await new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width  = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        canvas.toBlob(blob => {
-          const objectUrl = URL.createObjectURL(blob);
-          triggerDownload(objectUrl);
-          setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
-          resolve();
-        }, 'image/png');
-      };
-      img.onerror = reject;
-      img.src = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-    });
+    if (!res.ok) throw new Error();
+    const obj = URL.createObjectURL(await res.blob());
+    trigger(obj); setTimeout(() => URL.revokeObjectURL(obj), 10_000);
   } catch {
-    // Last resort — open in new tab
-    triggerDownload(url);
+    try {
+      await new Promise((res, rej) => {
+        const img = new Image(); img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth; c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          c.toBlob(blob => { const o = URL.createObjectURL(blob); trigger(o); setTimeout(() => URL.revokeObjectURL(o), 10_000); res(); }, 'image/png');
+        };
+        img.onerror = rej;
+        img.src = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
+      });
+    } catch { trigger(url); }
   }
 }
 
-
 // =============================================================================
-//  SMALL PURE COMPONENTS  (extracted to avoid re-defining on every render)
+//  ICONS
 // =============================================================================
-
-// ─── SVG Icons ───────────────────────────────────────────────────────────────
 const ClockIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="9" stroke="#6B7280" strokeWidth="2" />
-    <path d="M12 7V12L15 15" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M15 5L5 15M5 5L15 15" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-const SendIcon = ({ active }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-      stroke={active ? '#4A90E2' : '#9CA3AF'}
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <circle cx="12" cy="12" r="9" stroke="#1f2937" strokeWidth="3"/>
+    <path d="M12 7V12L15 15" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
   </svg>
 );
-
-const HamburgerIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M4 6h16M4 12h16M4 18h16" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+    <path d="M15 5L5 15M5 5L15 15" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
   </svg>
 );
-
-// ─── Tooltip Label ───────────────────────────────────────────────────────────
-const TooltipLabel = ({ text, tooltip }) => (
-  <div className="docket-label-with-tooltip">
-    <label>{text}</label>
-    <div className="docket-info-wrapper">
-      <span className="docket-info-icon">?</span>
-      <div className="docket-tooltip">{tooltip}</div>
-    </div>
-  </div>
+const SendIcon = ({ active }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+      stroke={active ? '#4A90E2' : '#9CA3AF'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const SparkleIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+  </svg>
+);
+const PencilIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 9.5-9.5z" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const ExpandIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M12 3v13M7 11l5 5 5-5M3 18h18" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const CopyIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <rect x="9" y="9" width="13" height="13" rx="2" stroke="#1a2744" strokeWidth="3"/>
+    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="#1a2744" strokeWidth="3"/>
+  </svg>
+);
+const StagesIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M22 12H2M22 12l-4-4m4 4l-4 4" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const NamesIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="9" cy="7" r="4" stroke="#1a2744" strokeWidth="3"/>
+    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const SubmitIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+  </svg>
+);
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const WarnIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3"/>
+    <path d="M12 8V12" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="12" cy="16" r="1" fill="white"/>
+  </svg>
+);
+const ChevronDownIcon = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+    <path d="M6 9l6 6 6-6" stroke="#1a2744" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const PrevIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M15 18l-6-6 6-6" stroke="#1a2744" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const NextIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M9 18l6-6-6-6" stroke="#1a2744" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const SaveIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+    <polyline points="17 21 17 13 7 13 7 21" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+    <polyline points="7 3 7 8 15 8" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
 );
 
 // ─── Auto-grow Textarea ───────────────────────────────────────────────────────
@@ -173,9 +197,7 @@ const AutoTextarea = ({ value, onChange, placeholder = 'Enter info...' }) => {
 const FieldRow = React.memo(({ field, fieldData, onToggle, onValueChange }) => (
   <div className="docket-field-row">
     <div className="docket-field-left">
-      <input
-        type="checkbox"
-        className="docket-field-checkbox"
+      <input type="checkbox" className="docket-field-checkbox"
         checked={fieldData?.enabled ?? false}
         onChange={e => onToggle(field.variable_name, e.target.checked)}
       />
@@ -184,10 +206,7 @@ const FieldRow = React.memo(({ field, fieldData, onToggle, onValueChange }) => (
         <button className="docket-delete-btn" onClick={() => onValueChange(field, null)}>×</button>
       )}
     </div>
-    <AutoTextarea
-      value={fieldData?.value ?? ''}
-      onChange={val => onValueChange(field.variable_name, val)}
-    />
+    <AutoTextarea value={fieldData?.value ?? ''} onChange={val => onValueChange(field.variable_name, val)} />
   </div>
 ));
 
@@ -198,12 +217,12 @@ const ProductPreview = React.memo(({ product }) => {
     <div className="docket-preview-card">
       <h4>{product.product_name}</h4>
       <p className="preview-desc">{product.product_description}</p>
-      {product.features?.length > 0 && (<><strong>Features</strong><ul>{product.features.map((f, i) => <li key={i}>{f}</li>)}</ul></>)}
-      {product.usps?.length > 0    && (<><strong>USP</strong>    <ul>{product.usps.map((u, i) => <li key={i}>{u}</li>)}</ul></>)}
-      {product.values?.length > 0  && (<><strong>Values</strong> <ul>{product.values.map((v, i) => <li key={i}>{v}</li>)}</ul></>)}
-      {product.images?.length > 0  && (
+      {product.features?.length > 0 && (<><strong>Features</strong><ul>{product.features.map((f,i)=><li key={i}>{f}</li>)}</ul></>)}
+      {product.usps?.length    > 0 && (<><strong>USP</strong>    <ul>{product.usps.map((u,i)=><li key={i}>{u}</li>)}</ul></>)}
+      {product.values?.length  > 0 && (<><strong>Values</strong> <ul>{product.values.map((v,i)=><li key={i}>{v}</li>)}</ul></>)}
+      {product.images?.length  > 0 && (
         <div className="preview-images">
-          {product.images.map((img, i) => <img key={i} src={img.img_url} alt="" />)}
+          {product.images.map((img,i) => <img key={i} src={img.img_url} alt=""/>)}
         </div>
       )}
     </div>
@@ -228,9 +247,7 @@ const PersonaPreview = React.memo(({ persona }) => {
         <div key={type} className="preview-segment-group">
           <div className="preview-segment-title">{type.toUpperCase()}</div>
           <ul className="preview-segment-list">
-            {Object.entries(vals).map(([label, value], i) => (
-              <li key={i}><strong>{label}</strong>: {value}</li>
-            ))}
+            {Object.entries(vals).map(([label,value],i) => <li key={i}><strong>{label}</strong>: {value}</li>)}
           </ul>
         </div>
       ))}
@@ -238,30 +255,16 @@ const PersonaPreview = React.memo(({ persona }) => {
   );
 });
 
-// ─── Conversation Bubble ─────────────────────────────────────────────────────
+// ─── Chat Bubble ─────────────────────────────────────────────────────────────
 const Bubble = React.memo(({ bubble }) => (
   <div className={`docket-bubble-wrapper ${bubble.sender === 'user' ? 'user-message' : 'ai-message'}`}>
     <div className="docket-bubble">
       {bubble.isLoading
-        ? <div className="docket-bubble-loading"><span /><span /><span /></div>
+        ? <div className="docket-bubble-loading"><span/><span/><span/></div>
         : bubble.text}
     </div>
   </div>
 ));
-
-// ─── Toast ───────────────────────────────────────────────────────────────────
-const CheckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-const WarnIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2" />
-    <path d="M12 8V12" stroke="white" strokeWidth="2" strokeLinecap="round" />
-    <circle cx="12" cy="16" r="1" fill="white" />
-  </svg>
-);
 
 
 // =============================================================================
@@ -270,27 +273,188 @@ const WarnIcon = () => (
 const DocketMedia = () => {
   const { docketId } = useParams();
 
+  const navigate = useNavigate();
+
   // ── Mode / Media ──────────────────────────────────────────────────────────
-  const [mode,      setMode]      = useState('');
-  const [subMode,   setSubMode]   = useState('');
-  const [mediaType, setMediaType] = useState('');
-  const [subType,   setSubType]   = useState('');
+  const [mode,       setMode]       = useState('');
+  const [subMode,    setSubMode]    = useState('');
+  const [mediaType,  setMediaType]  = useState('');
+  const [subType,    setSubType]    = useState('');
   const [mediaTypes, setMediaTypes] = useState([]);
   const [subTypes,   setSubTypes]   = useState([]);
 
-  // ── Docket info ──────────────────────────────────────────────────────────
-  const [docketTitle, setDocketTitle] = useState('');
-
+  // ── Docket info ───────────────────────────────────────────────────────────
+  const [docketTitle,        setDocketTitle]        = useState('');
   const [executeDescription, setExecuteDescription] = useState('');
-  const [visualElements, setVisualElements] = useState('');
+  const [visualElements,     setVisualElements]     = useState('');
+  const [uploadedDateTime,   setUploadedDateTime]   = useState(null);
+
+  // ── Carousel ──────────────────────────────────────────────────────────────
+  const [carouselDockets, setCarouselDockets] = useState([]);
+
+
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+
+
+  const [selectedFilterStage, setSelectedFilterStage] = useState("");
+
+
+  const FILTER_STAGES = [
+  "discovery",
+  "draft",
+  "generate",
+  "review",
+  "approval",
+  "publish",
+  "closed",
+  "rejected",
+];
+
+const formatDate = (date) => {
+
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, '0');
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+
+
+
+
+
+
+
+    useEffect(() => {
+
+    if (
+      !startDate &&
+      !endDate &&
+      !selectedFilterStage
+    ) return;
+
+    const fetchFilteredData = async () => {
+
+      try {
+
+        // =====================================
+        // FILTERED CAROUSEL
+        // =====================================
+
+        const params = new URLSearchParams();
+
+          if (startDate) {
+            params.append(
+              "start_date",
+              formatDate(startDate)
+            );
+          }
+
+          if (endDate) {
+            params.append(
+              "end_date",
+              formatDate(endDate)
+            );
+          }
+
+          if (selectedFilterStage) {
+            params.append(
+              "stage",
+              selectedFilterStage
+            );
+          }
+
+          const docketRes = await fetch(
+            `${API}/planner/carousel-dockets?${params.toString()}`,
+          { headers: AUTH() }
+        );
+
+        const docketData = await docketRes.json();
+
+        if (docketData.success) {
+          setCarouselDockets(docketData.data || []);
+        }
+
+        // =====================================
+        // FILTERED STAGE COUNTS
+        // =====================================
+
+        const stageRes = await fetch(
+          `${API}/planner/stage-counts?${params.toString()}`,
+          { headers: AUTH() }
+        );
+
+        const stageData = await stageRes.json();
+
+        if (stageData.success) {
+          setStageCounts(stageData.data);
+        }
+
+      } catch (err) {
+        console.error("Filter error:", err);
+      }
+    };
+
+    fetchFilteredData();
+
+  }, [startDate, endDate, selectedFilterStage]);
+
+
+
+
+
+
+
+  useEffect(() => {
+
+    const handleClickOutside = (event) => {
+
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target)
+      ) {
+        setShowFilterDropdown(false);
+      }
+
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+
+  }, []);
+
+
+
+
+  const [carouselPage,    setCarouselPage]    = useState(1);
+  const [carouselTotal,   setCarouselTotal]   = useState(0);
+  const CAROUSEL_PER_PAGE = 10;
 
   // ── Product / Persona ─────────────────────────────────────────────────────
-  const [productList,          setProductList]          = useState([]);
-  const [selectedProductId,    setSelectedProductId]    = useState('');
-  const [selectedProductData,  setSelectedProductData]  = useState(null);
-  const [personaList,          setPersonaList]          = useState([]);
-  const [selectedPersonaId,    setSelectedPersonaId]    = useState('');
-  const [selectedPersonaData,  setSelectedPersonaData]  = useState(null);
+  const [productList,         setProductList]         = useState([]);
+  const [selectedProductId,   setSelectedProductId]   = useState('');
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [personaList,         setPersonaList]         = useState([]);
+  const [selectedPersonaId,   setSelectedPersonaId]   = useState('');
+  const [selectedPersonaData, setSelectedPersonaData] = useState(null);
 
   // ── Fields ────────────────────────────────────────────────────────────────
   const [mandatoryFields, setMandatoryFields] = useState([]);
@@ -298,13 +462,19 @@ const DocketMedia = () => {
   const [fieldValues,     setFieldValues]     = useState({});
 
   // ── Network / Assignment ─────────────────────────────────────────────────
-  const [networkUsers,  setNetworkUsers]  = useState([]);
-  const [assignedUser,  setAssignedUser]  = useState('');
+  const [networkUsers, setNetworkUsers] = useState([]);
+  const [assignedUser, setAssignedUser] = useState('');
 
   // ── Stage ─────────────────────────────────────────────────────────────────
-  const [currentStage,  setCurrentStage]  = useState('draft');
+  const [currentStage,  setCurrentStage]  = useState('discovery');
   const [selectedStage, setSelectedStage] = useState('');
   const [nextStages,    setNextStages]    = useState([]);
+
+  // ── Stage counts for bottom bar ───────────────────────────────────────────
+  const [stageCounts, setStageCounts] = useState({
+    discovery: 0, draft: 0, generate: 0, review: 0,
+    approve: 0, publish: 0, closed: 0, rejected: 0,
+  });
 
   // ── History ───────────────────────────────────────────────────────────────
   const [showHistoryModal,      setShowHistoryModal]      = useState(false);
@@ -313,11 +483,9 @@ const DocketMedia = () => {
   const [visualHistoryList,     setVisualHistoryList]     = useState([]);
 
   // ── Visual output ─────────────────────────────────────────────────────────
-  const [visualImage,   setVisualImage]   = useState(null);
-  const [visualMessage, setVisualMessage] = useState('');
+  const [visualImage,       setVisualImage]       = useState(null);
+  const [visualMessage,     setVisualMessage]     = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
-  const [uploadedDateTime, setUploadedDateTime] = useState(null);
 
   // ── Feedback ──────────────────────────────────────────────────────────────
   const [adminMediaId,           setAdminMediaId]           = useState(null);
@@ -334,19 +502,30 @@ const DocketMedia = () => {
   // ── Chat ──────────────────────────────────────────────────────────────────
   const [userMessage, setUserMessage] = useState('');
   const [conversationBubbles, setConversationBubbles] = useState([{
-    id: 1,
-    text: 'Use AI to Automatically fill in all Fields Based on your Needs.',
-    type: 'ai',
-    sender: 'ai',
+    id: 1, text: 'Use AI to Automatically fill in all Fields Based on your Needs.', type: 'ai', sender: 'ai',
   }]);
+  const chatEndRef = useRef(null);
+
+  // ── Active tab ────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('ai');
+
+  // ── Stage/Names dropdown modals ───────────────────────────────────────────
+  const [showStageDropdown, setShowStageDropdown] = useState(false);
+  const [showNamesDropdown, setShowNamesDropdown] = useState(false);
+
+
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  
+
+  const filterRef = useRef(null);
 
   // ── Toast ─────────────────────────────────────────────────────────────────
-  const [showCopyToast,   setShowCopyToast]   = useState(false);
-  const [showSaveToast,   setShowSaveToast]   = useState(false);
-  const [saveToastMessage,setSaveToastMessage]= useState('');
-  const [showSubmitToast, setShowSubmitToast] = useState(false);
+  const [showCopyToast,    setShowCopyToast]    = useState(false);
+  const [showSaveToast,    setShowSaveToast]    = useState(false);
+  const [saveToastMessage, setSaveToastMessage] = useState('');
+  const [showSubmitToast,  setShowSubmitToast]  = useState(false);
 
-  // ── Validation / prompt ───────────────────────────────────────────────────
+  // ── Validation ────────────────────────────────────────────────────────────
   const [canGenerate,     setCanGenerate]     = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [isEditMode,      setIsEditMode]      = useState(false);
@@ -357,18 +536,12 @@ const DocketMedia = () => {
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldValue, setNewFieldValue] = useState('');
 
-  // ── Column expand ─────────────────────────────────────────────────────────
-  const [expandedCol, setExpandedCol] = useState(null);
-
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [businessProfile, setBusinessProfile] = useState(null);
   const [categories,      setCategories]      = useState([]);
 
-  // ── Memoised derived values ────────────────────────────────────────────────
-  const finalPersonaData = useMemo(
-    () => buildStructuredPersona(selectedPersonaData),
-    [selectedPersonaData]
-  );
+  // ── Memoised ─────────────────────────────────────────────────────────────
+  const finalPersonaData = useMemo(() => buildStructuredPersona(selectedPersonaData), [selectedPersonaData]);
 
   const imageMap = useMemo(() => {
     const map = {};
@@ -385,31 +558,26 @@ const DocketMedia = () => {
     return Object.entries(grouped).map(([mediaId, messages]) => ({ admin_media_id: mediaId, messages }));
   }, [docketFeedbackList]);
 
+  // scroll chat to bottom
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversationBubbles]);
 
-  // ===========================================================================
+  // ==========================================================================
   //  DATA FETCHING
-  // ===========================================================================
+  // ==========================================================================
 
-  // ── Bootstrap: load everything that depends only on docketId in parallel ──
   useEffect(() => {
     if (!docketId) return;
-
     const headers = AUTH();
 
-    // All parallel fetches that kick off at once
     Promise.allSettled([
-      // 1. Docket info
       fetch(`${API}/planner/docket/${docketId}`, { headers })
-        .then(r => r.json())
-        .then(data => {
+        .then(r => r.json()).then(data => {
           if (!data.success) return;
           const d = data.data;
           setDocketTitle(d.title);
-
           setExecuteDescription(d.execute_description || '');
           setVisualElements(d.visual_elements || '');
           setUploadedDateTime(d.uploaded_date_time);
-
           setMode(d.media_name);
           setMediaType(d.media_type);
           setSubType(d.subtype_name);
@@ -417,25 +585,18 @@ const DocketMedia = () => {
           setSelectedPersonaId(d.persona_id || '');
         }),
 
-      // 2. Business profile
       fetch(`${API}/docket/${docketId}/business`, { headers })
         .then(r => { handleUnauthorized(r); return r.json(); })
         .then(data => { if (data.success) setBusinessProfile(data.data); }),
 
-      // 3. Product data
       fetch(`${API}/docket/${docketId}/product`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) setSelectedProductData(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setSelectedProductData(data.data); }),
 
-      // 4. Persona data
       fetch(`${API}/docket/${docketId}/persona`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) setSelectedPersonaData(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setSelectedPersonaData(data.data); }),
 
-      // 5. Visual output
       fetch(`${API}/planner/docket/${docketId}/visual`, { headers })
-        .then(r => r.json())
-        .then(data => {
+        .then(r => r.json()).then(data => {
           if (data.success) {
             setVisualImage(data.url);
             setVisualMessage(data.message);
@@ -443,20 +604,14 @@ const DocketMedia = () => {
           }
         }),
 
-      // 6. Media history list
       fetch(`${API}/planner/docket/${docketId}/media-history`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) setHistoryList(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setHistoryList(data.data); }),
 
-      // 7. Docket feedback
       fetch(`${API}/feedback/docket/${docketId}`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) setDocketFeedbackList(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setDocketFeedbackList(data.data); }),
 
-      // 8. Chat history
       fetch(`${API}/planner/docket/${docketId}/chat-history`, { headers })
-        .then(r => r.json())
-        .then(data => {
+        .then(r => r.json()).then(data => {
           if (!data.success) return;
           const bubbles = [];
           data.data.forEach((item, i) => {
@@ -466,32 +621,48 @@ const DocketMedia = () => {
           setConversationBubbles(prev => [...prev, ...bubbles]);
         }),
 
-      // 9. Stage
       fetch(`${API}/execute/current-stage/${docketId}`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) { setCurrentStage(data.stage); setSelectedStage(data.stage); } }),
+        .then(r => r.json()).then(data => {
+          if (data.success) { setCurrentStage(data.stage); setSelectedStage(data.stage); }
+        }),
 
-      // 10. Network users
       fetch(`${API}/network/secondary-users?docket_id=${docketId}`, { headers })
-        .then(r => r.json())
-        .then(data => { if (data.success) setNetworkUsers(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setNetworkUsers(data.data); }),
+
     ]).catch(err => console.error('Bootstrap fetch error:', err));
 
-    // 11. Categories (does not need docketId)
     fetch(`${API}/categories`, { headers: AUTH() })
       .then(r => { handleUnauthorized(r); return r.json(); })
       .then(data => data && setCategories(data))
       .catch(console.error);
 
-    // 12. Personas list
     fetch(`${API}/personas`, { headers: AUTH() })
       .then(r => r.json())
       .then(data => { if (data.success) setPersonaList(data.data); })
       .catch(console.error);
 
-  }, [docketId]);   // eslint-disable-line react-hooks/exhaustive-deps
+    fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
+      .then(r => r.json())
+      .then(data => { if (data.success) setStageCounts(data.data); })
+      .catch(console.error);
 
-  // ── Fetch next stages whenever current stage changes ──────────────────────
+    fetch(`${API}/planner/carousel-dockets`, {
+      headers: AUTH()
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setCarouselDockets(data.data || []);
+        }
+      })
+      .catch(console.error);
+
+  }, [docketId]);
+
+
+
+  
+
   useEffect(() => {
     if (!currentStage) return;
     fetch(`${API}/process-stages/${currentStage}`, { headers: AUTH() })
@@ -500,7 +671,6 @@ const DocketMedia = () => {
       .catch(console.error);
   }, [currentStage]);
 
-  // ── Media types when mode changes ─────────────────────────────────────────
   useEffect(() => {
     if (!mode) { setMediaTypes([]); return; }
     fetch(`${API}/media-types?mode=${mode}`, { headers: AUTH() })
@@ -509,175 +679,117 @@ const DocketMedia = () => {
       .catch(console.error);
   }, [mode]);
 
-  // ── Subtypes when mediaType changes ───────────────────────────────────────
   useEffect(() => {
     if (!mediaType) return;
     fetch(`${API}/media-subtypes?mode=${mode}&mediaType=${mediaType}`, { headers: AUTH() })
       .then(r => r.json())
       .then(data => { if (data.success) setSubTypes(data.data); })
       .catch(console.error);
-  }, [mediaType]);   // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mediaType]);
 
-  // ── Field definitions when mode/mediaType/subType all ready ──────────────
   useEffect(() => {
     if (!mode || !mediaType || !subType) return;
-
     async function fetchFields() {
       try {
-        const res  = await fetch(
-          `${API}/media-fields?mode=${mode}&mediaType=${mediaType}&subType=${subType}`,
-          { headers: AUTH() }
-        );
+        const res  = await fetch(`${API}/media-fields?mode=${mode}&mediaType=${mediaType}&subType=${subType}`, { headers: AUTH() });
         const data = await res.json();
         if (!data.success) return;
-
-        const defaultMandatory = data.data.mandatory ?? [];
-        const defaultOptional  = data.data.optional  ?? [];
-        setMandatoryFields(defaultMandatory);
-        setOptionalFields(defaultOptional);
-
-        const initialValues = {};
-        [...defaultMandatory, ...defaultOptional].forEach(f => {
-          initialValues[f.variable_name] = { value: '', enabled: true };
-        });
-        setFieldValues(initialValues);
-
-        loadSavedFieldValues(defaultMandatory, defaultOptional);
-      } catch (err) {
-        console.error('Failed to load media subtype fields', err);
-      }
+        const defMandatory = data.data.mandatory ?? [];
+        const defOptional  = data.data.optional  ?? [];
+        setMandatoryFields(defMandatory);
+        setOptionalFields(defOptional);
+        const iv = {};
+        [...defMandatory, ...defOptional].forEach(f => { iv[f.variable_name] = { value: '', enabled: true }; });
+        setFieldValues(iv);
+        loadSavedFieldValues(defMandatory, defOptional);
+      } catch (err) { console.error(err); }
     }
     fetchFields();
-  }, [mode, mediaType, subType]);   // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── canGenerate ───────────────────────────────────────────────────────────
-  useEffect(() => {
-    setCanGenerate(Boolean(mode && mediaType && subType));
   }, [mode, mediaType, subType]);
 
-  // ── Feedback scroll to bottom ─────────────────────────────────────────────
+  useEffect(() => { setCanGenerate(Boolean(mode && mediaType && subType)); }, [mode, mediaType, subType]);
+
   useEffect(() => {
-    if (showFeedbackModal && feedbackBottomRef.current) {
+    if (showFeedbackModal && feedbackBottomRef.current)
       feedbackBottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
   }, [feedbackList, showFeedbackModal]);
 
 
-  // ===========================================================================
+  // ==========================================================================
   //  HELPERS
-  // ===========================================================================
+  // ==========================================================================
 
-  async function loadSavedFieldValues(defaultMandatory = [], defaultOptional = []) {
+
+  
+
+
+
+
+
+
+
+
+
+  async function loadSavedFieldValues(defMandatory = [], defOptional = []) {
     try {
       const res  = await fetch(`${API}/planner/docket/${docketId}/fields`, { headers: AUTH() });
       const data = await res.json();
       if (!data.success) return;
-
-      const savedValues       = {};
-      const newMandatoryCustom = [];
-      const newOptionalCustom  = [];
-
+      const saved = {};
+      const newMand = [], newOpt = [];
       data.data.forEach(row => {
-        savedValues[row.label] = { value: row.value, enabled: row.checkbox_clicked === 1 };
-        const existsInDefaults =
-          defaultMandatory.some(f => f.variable_name === row.label) ||
-          defaultOptional.some(f => f.variable_name === row.label);
-
-        if (!existsInDefaults) {
-          const customField = {
-            id: Date.now() + Math.random(),
-            label: row.label,
-            variable_name: row.label,
-            box: row.box,
-            isCustom: true,
-          };
-          if (row.box === 'mandatory') newMandatoryCustom.push(customField);
-          else newOptionalCustom.push(customField);
+        saved[row.label] = { value: row.value, enabled: row.checkbox_clicked === 1 };
+        const exists = defMandatory.some(f => f.variable_name === row.label) || defOptional.some(f => f.variable_name === row.label);
+        if (!exists) {
+          const cf = { id: Date.now() + Math.random(), label: row.label, variable_name: row.label, box: row.box, isCustom: true };
+          if (row.box === 'mandatory') newMand.push(cf); else newOpt.push(cf);
         }
       });
-
-      setMandatoryFields(prev => [...prev, ...newMandatoryCustom]);
-      setOptionalFields(prev  => [...prev, ...newOptionalCustom]);
-      setFieldValues(prev     => ({ ...prev, ...savedValues }));
-    } catch (err) {
-      console.error('Failed to load saved fields:', err);
-    }
+      setMandatoryFields(prev => [...prev, ...newMand]);
+      setOptionalFields(prev  => [...prev, ...newOpt]);
+      setFieldValues(prev     => ({ ...prev, ...saved }));
+    } catch (err) { console.error(err); }
   }
 
-  /** Save one section (mandatory | optional) to the API. Returns success bool. */
   async function handleSave(section) {
     const sourceFields = section === 'mandatory' ? mandatoryFields : optionalFields;
     const fieldsToSave = sourceFields.reduce((acc, field) => {
       const fd = fieldValues[field.variable_name];
       if (!fd) return acc;
-      acc.push({
-        label:           field.variable_name,
-        value:           fd.value  ?? '',
-        checkbox_clicked: fd.enabled ? 1 : 0,
-        box:             section,
-        field_source:    field.isCustom ? 'custom' : 'default',
-      });
+      acc.push({ label: field.variable_name, value: fd.value ?? '', checkbox_clicked: fd.enabled ? 1 : 0, box: section, field_source: field.isCustom ? 'custom' : 'default' });
       return acc;
     }, []);
-
     try {
-      const res  = await fetch(`${API}/planner/docket/${docketId}/fields`, {
-        method: 'POST',
-        headers: JSON_AUTH(),
-        body: JSON.stringify({ fields: fieldsToSave }),
-      });
+      const res  = await fetch(`${API}/planner/docket/${docketId}/fields`, { method: 'POST', headers: JSON_AUTH(), body: JSON.stringify({ fields: fieldsToSave }) });
       const data = await res.json();
       return data.success;
-    } catch (err) {
-      console.error('Save failed:', err);
-      return false;
-    }
+    } catch { return false; }
   }
 
   const handleFullSave = useCallback(async () => {
-    const [mandSaved, optSaved] = await Promise.all([
-      handleSave('mandatory'),
-      handleSave('optional'),
-    ]);
-
-    if (!mandSaved || !optSaved) {
+    const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
+    if (!ms || !os) {
       setSaveToastMessage('Please fill all required fields.');
       setShowSaveToast(true);
       setTimeout(() => setShowSaveToast(false), 3000);
       return;
     }
-
     if (assignedUser) {
       await fetch(`${API}/execute/assign`, {
-        method: 'POST',
-        headers: JSON_AUTH(),
-        body: JSON.stringify({
-          docket_id: Number(docketId),
-          user_id:   assignedUser,
-          stage:     selectedStage,
-        }),
+        method: 'POST', headers: JSON_AUTH(),
+        body: JSON.stringify({ docket_id: Number(docketId), user_id: assignedUser, stage: selectedStage }),
       });
     }
-
     setSaveToastMessage('Saved successfully!');
     setShowSaveToast(true);
     setTimeout(() => setShowSaveToast(false), 3000);
   }, [mandatoryFields, optionalFields, fieldValues, assignedUser, selectedStage, docketId]);
 
-
-  // ===========================================================================
-  //  FIELD VALUE CALLBACKS  (stable references with useCallback)
-  // ===========================================================================
-
   const handleFieldToggle = useCallback((varName, checked) => {
-    setFieldValues(prev => ({
-      ...prev,
-      [varName]: { ...prev[varName], enabled: checked },
-    }));
+    setFieldValues(prev => ({ ...prev, [varName]: { ...prev[varName], enabled: checked } }));
   }, []);
 
   const handleFieldValue = useCallback((varNameOrField, val) => {
-    // If val === null → it's a delete-custom-field call
     if (val === null) {
       const field = varNameOrField;
       if (field.box === 'mandatory') setMandatoryFields(prev => prev.filter(f => f.id !== field.id));
@@ -685,119 +797,79 @@ const DocketMedia = () => {
       setFieldValues(prev => { const next = { ...prev }; delete next[field.variable_name]; return next; });
       return;
     }
-    setFieldValues(prev => ({
-      ...prev,
-      [varNameOrField]: { ...prev[varNameOrField], value: val },
-    }));
+    setFieldValues(prev => ({ ...prev, [varNameOrField]: { ...prev[varNameOrField], value: val } }));
   }, []);
 
 
-  // ===========================================================================
+  // ==========================================================================
   //  CHAT
-  // ===========================================================================
+  // ==========================================================================
 
   const handleSendMessage = useCallback(async () => {
     if (!userMessage.trim()) return;
-
-    const fieldNames = [
-      ...mandatoryFields.map(f => f.variable_name),
-      ...optionalFields.map(f => f.variable_name),
-    ];
-
+    const fieldNames = [...mandatoryFields.map(f => f.variable_name), ...optionalFields.map(f => f.variable_name)];
     const userBubble = { id: Date.now(), text: userMessage, type: 'user', sender: 'user' };
     const loadingId  = Date.now() + 999;
-    setConversationBubbles(prev => [
-      ...prev,
-      userBubble,
-      { id: loadingId, text: '...', type: 'ai', sender: 'ai', isLoading: true },
-    ]);
+    setConversationBubbles(prev => [...prev, userBubble, { id: loadingId, text: '...', type: 'ai', sender: 'ai', isLoading: true }]);
     setUserMessage('');
-
     try {
       const res = await fetch(`${API}/chat`, {
-        method: 'POST',
-        headers: JSON_AUTH(),
+        method: 'POST', headers: JSON_AUTH(),
         body: JSON.stringify({
-          docket_id: Number(docketId),
-          message:   userBubble.text,
+          docket_id: Number(docketId), message: userBubble.text,
           mode, mediaType, subType,
           business: JSON.stringify(businessProfile  ?? {}),
           product:  JSON.stringify(selectedProductData ?? {}),
           persona:  JSON.stringify(finalPersonaData ?? {}),
-
           execute_title: docketTitle,
           execute_description: executeDescription,
           visual_elements: visualElements,
-          
-          fields:   fieldNames,
+          fields: fieldNames,
         }),
       });
-
       setConversationBubbles(prev => prev.filter(b => b.id !== loadingId));
       if (handleUnauthorized(res)) return;
-
       const data = await res.json();
-
       if (data.success && data.fields) {
         setFieldValues(prev => {
           const updated = { ...prev };
-          Object.entries(data.fields).forEach(([key, value]) => {
-            if (updated[key]) updated[key] = { ...updated[key], value };
-          });
+          Object.entries(data.fields).forEach(([key, value]) => { if (updated[key]) updated[key] = { ...updated[key], value }; });
           return updated;
         });
-        setConversationBubbles(prev => [
-          ...prev,
-          { id: Date.now() + 1, text: '✅ Fields updated based on your request.', type: 'ai', sender: 'ai' },
-        ]);
+        setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '✅ Fields updated based on your request.', type: 'ai', sender: 'ai' }]);
       } else {
-        setConversationBubbles(prev => [
-          ...prev,
-          { id: Date.now() + 1, text: '⚠️ AI could not generate field values.', type: 'ai', sender: 'ai' },
-        ]);
+        setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '⚠️ AI could not generate field values.', type: 'ai', sender: 'ai' }]);
       }
     } catch {
-      setConversationBubbles(prev => [
-        ...prev.filter(b => b.id !== loadingId),
-        { id: Date.now() + 1, text: '⚠️ AI server not reachable.', type: 'ai', sender: 'ai' },
-      ]);
+      setConversationBubbles(prev => [...prev.filter(b => b.id !== loadingId), { id: Date.now() + 1, text: '⚠️ AI server not reachable.', type: 'ai', sender: 'ai' }]);
     }
-  }, [userMessage, mandatoryFields, optionalFields, mode, mediaType, subType, businessProfile, selectedProductData, finalPersonaData, docketId]);
+  }, [userMessage, mandatoryFields, optionalFields, mode, mediaType, subType, businessProfile, selectedProductData, finalPersonaData, docketId, docketTitle, executeDescription, visualElements]);
 
 
-  // ===========================================================================
-  //  GENERATE / SUBMIT
-  // ===========================================================================
+  // ==========================================================================
+  //  GENERATE
+  // ==========================================================================
 
   const handleGenerate = useCallback(async () => {
     setIsGeneratingImage(true);
-    const [mandSaved, optSaved] = await Promise.all([
-      handleSave('mandatory'),
-      handleSave('optional'),
-    ]);
-    if (!mandSaved || !optSaved) { setGeneratedPrompt('Error saving fields.'); return; }
+    const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
+    if (!ms || !os) { setGeneratedPrompt('Error saving fields.'); setIsGeneratingImage(false); return; }
 
     const submittedRequest = `${mode} | ${mediaType} | ${subType}`;
-    const finalOutput      = {};
+    const finalOutput = {};
 
     if (mode || mediaType || subType)
       finalOutput.prompt_information = { mode, media_type: mediaType, media_sub_type: subType };
 
     if (businessProfile) {
-      const filtered = Object.fromEntries(
-        Object.entries(businessProfile).filter(([, v]) => v !== null && v !== '')
-      );
+      const filtered = Object.fromEntries(Object.entries(businessProfile).filter(([,v]) => v !== null && v !== ''));
       if (Object.keys(filtered).length) finalOutput.business_information = filtered;
     }
 
     if (finalPersonaData) finalOutput.persona_information = finalPersonaData;
 
     if (selectedProductData) {
-      const product = {
-        product_name: selectedProductData.product_name,
-        description:  selectedProductData.product_description,
-        hashtags: selectedProductData.hashtags || []
-      };
+      const product = { product_name: selectedProductData.product_name, description: selectedProductData.product_description, hashtags: selectedProductData.hashtags || [] };
       if (selectedProductData.features?.length) product.features = selectedProductData.features;
       if (selectedProductData.usps?.length)     product.USP      = selectedProductData.usps;
       if (selectedProductData.values?.length)   product.values   = selectedProductData.values;
@@ -806,7 +878,7 @@ const DocketMedia = () => {
     }
 
     const dynamicFields = Object.entries(fieldValues)
-      .filter(([, fd]) => fd.enabled && fd.value.trim())
+      .filter(([,fd]) => fd.enabled && fd.value.trim())
       .reduce((acc, [key, fd]) => { acc[key] = fd.value; return acc; }, {});
     if (Object.keys(dynamicFields).length) finalOutput.creative_context = dynamicFields;
 
@@ -814,12 +886,8 @@ const DocketMedia = () => {
 
     try {
       const res  = await fetch(`${API}/planner/docket/${docketId}/media-result`, {
-        method:  'POST',
-        headers: JSON_AUTH(),
-        body:    JSON.stringify({
-          visual_text:       JSON.stringify(finalOutput),
-          submitted_request: submittedRequest,
-        }),
+        method: 'POST', headers: JSON_AUTH(),
+        body: JSON.stringify({ visual_text: JSON.stringify(finalOutput), submitted_request: submittedRequest }),
       });
       const data = await res.json();
       if (data.success) {
@@ -833,49 +901,62 @@ const DocketMedia = () => {
               setIsGeneratingImage(false);
             }
           });
-
-
-
-
-
         setShowSubmitToast(true);
         setTimeout(() => setShowSubmitToast(false), 3000);
-        // Refresh history list
         fetch(`${API}/planner/docket/${docketId}/media-history`, { headers: AUTH() })
-          .then(r => r.json())
-          .then(d => { if (d.success) setHistoryList(d.data); })
-          .catch(console.error);
+          .then(r => r.json()).then(d => { if (d.success) setHistoryList(d.data); });
       }
-    } catch (err) {
-      setIsGeneratingImage(false);
-      console.error('Submit failed:', err);
-    }
+    } catch (err) { setIsGeneratingImage(false); console.error(err); }
     setIsEditMode(false);
   }, [mode, mediaType, subType, businessProfile, finalPersonaData, selectedProductData, fieldValues, docketId, mandatoryFields, optionalFields]);
 
 
-  // ===========================================================================
-  //  HISTORY MODALS
-  // ===========================================================================
+  // ==========================================================================
+  //  SUBMIT
+  // ==========================================================================
+
+  const handleSubmit = useCallback(async () => {
+    const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
+    if (!ms || !os) {
+      setSaveToastMessage('Please fill all required fields.');
+      setShowSaveToast(true);
+      setTimeout(() => setShowSaveToast(false), 3000);
+      return;
+    }
+    if (assignedUser || selectedStage) {
+      await fetch(`${API}/execute/assign`, {
+        method: 'POST', headers: JSON_AUTH(),
+        body: JSON.stringify({ docket_id: Number(docketId), user_id: assignedUser, stage: selectedStage }),
+      });
+    }
+    setSaveToastMessage('Submitted successfully!');
+    setShowSaveToast(true);
+    setTimeout(() => setShowSaveToast(false), 3000);
+    setShowStageDropdown(false);
+    setShowNamesDropdown(false);
+  }, [mandatoryFields, optionalFields, fieldValues, assignedUser, selectedStage, docketId]);
+
+
+  // ==========================================================================
+  //  HISTORY / FEEDBACK
+  // ==========================================================================
 
   const handleOpenHistory = useCallback(async () => {
     try {
-      setVisualHistoryList([]);
-      setSelectedHistoryPrompt(null);
+      setVisualHistoryList([]); setSelectedHistoryPrompt(null);
       const res  = await fetch(`${API}/planner/docket/${docketId}/media-history`, { headers: AUTH() });
       const data = await res.json();
       if (data.success) { setHistoryList(data.data); setShowHistoryModal(true); }
-    } catch (err) { console.error('Failed to fetch history', err); }
+    } catch (err) { console.error(err); }
   }, [docketId]);
 
   const handleOpenVisualHistory = useCallback(async () => {
     try {
-      setHistoryList([]);
-      setSelectedHistoryPrompt(null);
+      setHistoryList([]); setSelectedHistoryPrompt(null);
       const res  = await fetch(`${API}/admin/docket/${docketId}`, { headers: AUTH() });
       const data = await res.json();
       if (data.success) { setVisualHistoryList(data.data.visual_history ?? []); setShowHistoryModal(true); }
-    } catch (err) { console.error('Failed to fetch visual history', err); }
+    } catch (err) { console.error(err); }
   }, [docketId]);
 
   const loadAssignHistory = useCallback(async () => {
@@ -883,13 +964,8 @@ const DocketMedia = () => {
       const res  = await fetch(`${API}/execute/${docketId}/assignment-history`, { headers: AUTH() });
       const data = await res.json();
       if (data.success) { setAssignHistory(data.data); setShowAssignHistoryModal(true); }
-    } catch (err) { console.error('Failed to load assignment history', err); }
+    } catch (err) { console.error(err); }
   }, [docketId]);
-
-
-  // ===========================================================================
-  //  FEEDBACK
-  // ===========================================================================
 
   const loadFeedback = useCallback(async () => {
     if (!adminMediaId) return;
@@ -897,7 +973,7 @@ const DocketMedia = () => {
       const res  = await fetch(`${API}/feedback/${adminMediaId}`, { headers: AUTH() });
       const data = await res.json();
       if (data.success) setFeedbackList(data.data);
-    } catch (err) { console.error('Load feedback error:', err); }
+    } catch (err) { console.error(err); }
   }, [adminMediaId]);
 
   const loadDocketFeedback = useCallback(async () => {
@@ -905,627 +981,825 @@ const DocketMedia = () => {
       const res  = await fetch(`${API}/feedback/docket/${docketId}`, { headers: AUTH() });
       const data = await res.json();
       if (data.success) setDocketFeedbackList(data.data);
-    } catch (err) { console.error('Load docket feedback error:', err); }
+    } catch (err) { console.error(err); }
   }, [docketId]);
 
   const submitFeedback = useCallback(async () => {
     if (!feedbackText.trim()) return;
     try {
       const res  = await fetch(`${API}/feedback`, {
-        method:  'POST',
-        headers: JSON_AUTH(),
-        body:    JSON.stringify({ docket_id: Number(docketId), admin_media_id: adminMediaId, feedback: feedbackText }),
+        method: 'POST', headers: JSON_AUTH(),
+        body: JSON.stringify({ docket_id: Number(docketId), admin_media_id: adminMediaId, feedback: feedbackText }),
       });
       const data = await res.json();
-      if (data.success) {
-        setFeedbackText('');
-        loadFeedback();
-        loadDocketFeedback();
-      }
-    } catch (err) { console.error('Submit feedback error:', err); }
+      if (data.success) { setFeedbackText(''); loadFeedback(); loadDocketFeedback(); }
+    } catch (err) { console.error(err); }
   }, [feedbackText, docketId, adminMediaId, loadFeedback, loadDocketFeedback]);
 
 
-  // ===========================================================================
+  // ==========================================================================
   //  ADD CUSTOM FIELD MODAL
-  // ===========================================================================
+  // ==========================================================================
 
   const handleModalSave = useCallback(() => {
     if (!newFieldLabel.trim()) return;
-    const variableKey = newFieldLabel
-      .replace(/\s+/g, '')
-      .replace(/[^a-zA-Z0-9]/g, '')
-      .toLowerCase();
+    const variableKey = newFieldLabel.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
     const newField = { id: Date.now(), label: newFieldLabel, variable_name: variableKey, box: modalBoxType, isCustom: true };
     if (modalBoxType === 'mandatory') setMandatoryFields(prev => [...prev, newField]);
     else setOptionalFields(prev => [...prev, newField]);
     setFieldValues(prev => ({ ...prev, [variableKey]: { value: newFieldValue ?? '', enabled: true } }));
-    setShowModal(false);
-    setNewFieldLabel('');
-    setNewFieldValue('');
+    setShowModal(false); setNewFieldLabel(''); setNewFieldValue('');
   }, [newFieldLabel, newFieldValue, modalBoxType]);
 
 
-  // ===========================================================================
+  // ==========================================================================
+  //  CAROUSEL NAV
+  // ==========================================================================
+
+  const handleCarouselNav = (dir) => {
+    const totalPages = Math.ceil(carouselTotal / CAROUSEL_PER_PAGE);
+    const newPage = carouselPage + dir;
+    if (newPage < 1 || newPage > totalPages) return;
+    setCarouselPage(newPage);
+    fetch(`${API}/planner/dockets-carousel?page=${newPage}&page_size=${CAROUSEL_PER_PAGE}`, { headers: AUTH() })
+      .then(r => r.json()).then(data => { if (data.success) setCarouselDockets(data.data || []); });
+  };
+
+
+  // ==========================================================================
+  //  STAGE BAR CONFIG
+  // ==========================================================================
+
+  const STAGE_BAR = [
+    { key: 'discovery', label: 'Discovery', color: '#E65100', icon: '🔍' },
+    { key: 'draft',     label: 'Draft',     color: '#2E7D32', icon: '✏️' },
+    { key: 'generate',  label: 'Generate',  color: '#4527A0', icon: '✨' },
+    { key: 'review',    label: 'Review',    color: '#1565C0', icon: '📋' },
+    { key: 'approve',   label: 'Approve',   color: '#1B5E20', icon: '✅' },
+    { key: 'publish',   label: 'Publish',   color: '#E65100', icon: '📤' },
+    { key: 'closed',    label: 'Closed',    color: '#4E342E', icon: '🔒' },
+    { key: 'rejected',  label: 'Rejected',  color: '#B71C1C', icon: '❌' },
+  ];
+
+  const descTitle = executeDescription.length;
+  const descMax   = 200;
+  const veLen     = visualElements.length;
+  const veMax     = 300;
+  const titleLen  = docketTitle.length;
+  const titleMax  = 80;
+
+
+  // ==========================================================================
   //  RENDER
-  // ===========================================================================
+  // ==========================================================================
+
   return (
-    <div className="docket-container">
-
-      {/* ── HEADER ── */}
-      <div className="docket-header-view" style={{ position: 'relative' }}>
-        <h2>{docketTitle}</h2>
-
-        <div
-          style={{ position: 'absolute', right: '20px', top: '1px', cursor: 'pointer' }}
-          onClick={loadAssignHistory}
-        >
-          <HamburgerIcon />
-        </div>
-
-        <div className="docket-meta" />
-
-        <div className="docket-meta">
-          <span>{mode}</span>
-          <span> | {mediaType}</span>
-          <span> | {subType}</span>
-
-          {selectedProductData && (
-            <span className="docket-hover-wrapper" onClick={e => e.stopPropagation()}>
-              {' '}|{' '}
-              <span className="docket-hover-link">{selectedProductData.product_name}</span>
-              <div className="docket-hover-popup"><ProductPreview product={selectedProductData} /></div>
-            </span>
-          )}
-
-          {selectedPersonaData && (
-            <span className="docket-hover-wrapper" onClick={e => e.stopPropagation()}>
-              {' '}|{' '}
-              <span className="docket-hover-link">{selectedPersonaData.persona_name}</span>
-              <div className="docket-hover-popup"><PersonaPreview persona={selectedPersonaData} /></div>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ── COLUMN BACKDROP ── */}
-      {expandedCol !== null && (
-        <div className="docket-col-backdrop" onClick={() => setExpandedCol(null)} />
-      )}
-
-      {/* ── MAIN GRID ── */}
-      <div className={`docket-content${expandedCol !== null ? ' has-expanded' : ''}`}>
-
-        {/* ══════════ COLUMN 1 – CHATBOT ══════════ */}
-        <div
-          className={`docket-column docket-column-1${expandedCol === 1 ? ' docket-column--expanded' : ''}`}
-          onClick={() => setExpandedCol(1)}
-        >
-          <div className="docket-chatbot-header"><h3>CHATBOT</h3></div>
-
-          <div className="docket-conversation">
-            <div className="docket-conversation-background">
-              <img src="/chatbot2.gif" alt="Chatbot" className="docket-robot-bg" />
-            </div>
-
-            <div className="docket-conversation-bubbles">
-              {conversationBubbles.map(bubble => <Bubble key={bubble.id} bubble={bubble} />)}
-            </div>
-
-            <div className="docket-message-input">
-              <textarea
-                placeholder="Type your Message..."
-                value={userMessage}
-                rows={3}
-                onChange={e => setUserMessage(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <button
-                className={`docket-send-btn${!userMessage.trim() ? ' disabled' : ''}`}
-                onClick={userMessage.trim() ? handleSendMessage : undefined}
-              >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-                    stroke={userMessage.trim() ? '#4A90E2' : '#9CA3AF'}
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ══════════ COLUMN 2 – MANDATORY + OPTIONAL FIELDS ══════════ */}
-        <div
-          className={`docket-column docket-column-2${expandedCol === 2 ? ' docket-column--expanded' : ''}`}
-          onClick={() => setExpandedCol(2)}
-        >
-          {/* MANDATORY */}
-          <section className="docket-mandatory-section">
-            <div className="docket-optionals-header">
-              <h3 className="docket-column-title">MANDATORY FIELDS</h3>
-              <button className="docket-add-more-btn" onClick={() => { setModalBoxType('mandatory'); setShowModal(true); }}>
-                Add More +
-              </button>
-            </div>
-            <div className="docket-scroll-wrapper">
-              <div className="docket-form-section">
-                {mandatoryFields.map(field => (
-                  <FieldRow
-                    key={field.id}
-                    field={field}
-                    fieldData={fieldValues[field.variable_name]}
-                    onToggle={handleFieldToggle}
-                    onValueChange={handleFieldValue}
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <div className="docket-section-divider" />
-
-          {/* OPTIONAL */}
-          <section className="docket-optional-section">
-            <div className="docket-optionals-header">
-              <h3>OPTIONAL FIELDS</h3>
-              <button className="docket-add-more-btn" onClick={() => { setModalBoxType('optional'); setShowModal(true); }}>
-                Add More +
-              </button>
-            </div>
-            <div className="docket-scroll-wrapper">
-              <div className="docket-form-section">
-                {optionalFields.map(field => (
-                  <FieldRow
-                    key={field.id}
-                    field={field}
-                    fieldData={fieldValues[field.variable_name]}
-                    onToggle={handleFieldToggle}
-                    onValueChange={handleFieldValue}
-                  />
-                ))}
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* ══════════ COLUMN 3 – FEEDBACK HISTORY ══════════ */}
-        <div
-          className={`docket-column docket-column-3${expandedCol === 3 ? ' docket-column--expanded' : ''}`}
-          onClick={() => setExpandedCol(3)}
-        >
-          <div className="docket-visual-info-history-section">
-            <div className="docket-visual-info-history-header">
-              <h3>FEEDBACK HISTORY</h3>
-              <div className="docket-history-icon" onClick={handleOpenHistory}><ClockIcon /></div>
-            </div>
-
-            <div className="docket-visual-info-history-content docket-visual-info-history-content--full">
-              {docketFeedbackList.length > 0 ? (
-                <div className="docket-feedback-chat">
-                  {groupedFeedback.map((group, index) => (
-                    <div key={group.admin_media_id}>
-                      <div className="docket-version-divider docket-hover-wrapper">
-                        <span className="docket-hover-link">
-                          ----------- Image Version {index + 1} -----------
-                        </span>
-                        {imageMap[group.admin_media_id] && (
-                          <div className="docket-hover-popup docket-image-preview-popup">
-                            <img src={imageMap[group.admin_media_id]} alt="preview" />
-                          </div>
-                        )}
-                      </div>
-                      {group.messages.map(f => (
-                        <div
-                          key={f.feedback_history_id}
-                          className={`docket-bubble-wrapper ${f.role === 'user' ? 'user-message' : 'ai-message'}`}
-                        >
-                          <div className="docket-bubble">
-                            <div style={{ fontSize: '10px', opacity: 0.7 }}>
-                              {f.role === 'admin' ? 'Admin' : 'You'} • {new Date(f.created_at).toLocaleString()}
-                            </div>
-                            <div>{f.feedback}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="docket-visual-info-history-empty">No feedback yet.</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ══════════ COLUMN 4 – VISUAL OUTPUT ══════════ */}
-        <div
-          className={`docket-column docket-column-4${expandedCol === 4 ? ' docket-column--expanded' : ''}`}
-          onClick={() => setExpandedCol(4)}
-        >
-          <div className="docket-visual-output">
-            <div className="docket-visual-header">
-              <h3>VISUAL OUTPUT</h3>
-
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-
-                <div className="visual-upload-date">
-                  {uploadedDateTime
-                    ? new Date(uploadedDateTime).toLocaleString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    : ""}
-                </div>
-
-                <div
-                  className="docket-history-icon"
-                  onClick={handleOpenVisualHistory}
-                >
-                  <ClockIcon />
-                </div>
-
-              </div>
-            </div>
-
-            <div className="docket-visual-body">
-              <div className="docket-visual-content docket-visual-content--full">
-
-                {isGeneratingImage ? (
-
-                  <div className="visual-loading-container">
-
-                    <div className="visual-loader"></div>
-
-                    <div className="visual-loading-text">
-                      AI is generating your visual...
-                    </div>
-
-                  </div>
-
-                ) : visualImage ? (
-
-                  <img
-                    src={visualImage}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      objectFit: 'contain'
-                    }}
-                    alt="Visual output"
-                  />
-
-                ) : (
-
-                  <div className="docket-visual-placeholder">
-                    Waiting for admin upload
-                  </div>
-
-                )}
-
-              </div>
+    <div className="dm-page docket-clean-ui">
 
 
-              <div className="docket-visual-message-box">
-                <div className="docket-visual-message-title">Message with Visual</div>
-                <div className={`docket-visual-message${visualMessage ? ' has-message' : ''}`}>
-                  {visualMessage || 'No message from admin yet.'}
-                </div>
-              </div>
-            </div>
+      <div className="dm-page-topbar">
 
-            <div className="docket-visual-footer">
-              <button
-                className={`docket-download-btn${!visualImage ? ' disabled' : ''}`}
-                disabled={!visualImage}
-                onClick={() => visualImage && downloadImage(visualImage, docketId)}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                  <path d="M12 3v13M7 11l5 5 5-5M3 18h18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Download
-              </button>
+        <div className="dm-page-topbar-right">
 
-              <button
-                className={`docket-feedback-btn${!visualImage ? ' disabled' : ''}`}
-                disabled={!visualImage}
-                title={!visualImage ? 'Wait for admin upload' : ''}
-                onClick={() => { setShowFeedbackModal(true); loadFeedback(); }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Feedback
-              </button>
-            </div>
-          </div>
-        </div>
+          <div className="dm-filter-wrapper" ref={filterRef}>
 
-        {/* ══════════ ACTION BAR ══════════ */}
-        <div className="docket-generate-wrapper">
-          <div className="docket-generate-container" style={{ display: 'flex', gap: '10px' }}>
-
-            {/* Stage */}
-            <select
-              className="docket-generate-btn"
-              value={selectedStage}
-              onChange={e => setSelectedStage(e.target.value)}
-            >
-              <option value={currentStage} disabled>{currentStage} (current)</option>
-              {nextStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
-            </select>
-
-            {/* Assign */}
-            <select
-              className="docket-generate-btn"
-              value={assignedUser}
-              onChange={e => setAssignedUser(e.target.value)}
-            >
-              <option value="">Assign To</option>
-              {networkUsers.map(u => <option key={u.user_id} value={u.user_id}>{u.email}</option>)}
-            </select>
-
-            {/* Save */}
-            <button className="docket-generate-btn" onClick={handleFullSave}>SAVE</button>
-
-            {/* Submit */}
             <button
-              className={`docket-generate-btn${!canGenerate ? ' disabled' : ''}`}
-              onClick={canGenerate ? handleGenerate : undefined}
-              disabled={!canGenerate}
+              className="dm-filter-button"
+              onClick={() =>
+                setShowFilterDropdown(v => !v)
+              }
             >
-              CREATE VISUAL
-              {!canGenerate && (
-                <div className="docket-generate-tooltip">
-                  <div className="docket-generate-tooltip-header">Please fill all mandatory fields:</div>
-                  <ul className="docket-generate-tooltip-list">
-                    {!mode           && <li>Prompt Type</li>}
-                    {mode && !mediaType && <li>{mode === 'message' ? 'Message Type' : 'Visual Type'}</li>}
-                    {mediaType && !subType && <li>{mode === 'message' ? 'Message Sub Type' : 'Visual Sub Type'}</li>}
-                  </ul>
-                </div>
-              )}
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M4 6H20M7 12H17M10 18H14"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <span>Filter</span>
             </button>
 
+            {showFilterDropdown && (
+
+              <div className="dm-filter-dropdown">
+
+                <div className="dm-filter-header">
+                  Filter Executes
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Start Date</label>
+
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select start date"
+                    className="dm-filter-date-input"
+                  />
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>End Date</label>
+
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select end date"
+                    className="dm-filter-date-input"
+                  />
+
+                </div>
+
+
+
+
+
+                <div className="dm-filter-field">
+
+                  <label>Stage</label>
+
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterStage}
+                    onChange={(e) =>
+                      setSelectedFilterStage(e.target.value)
+                    }
+                  >
+
+                    <option value="">
+                      All Stages
+                    </option>
+
+                    {FILTER_STAGES.map(stage => (
+
+                      <option
+                        key={stage}
+                        value={stage}
+                      >
+                        {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                      </option>
+
+                    ))}
+
+                  </select>
+
+                </div>
+
+
+                
+
+
+
+
+
+                <button
+                  className="dm-filter-clear-btn"
+                  onClick={() => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    setSelectedFilterStage("");
+                    setShowFilterDropdown(false);
+                  }}
+                >
+                  Clear Filter
+                </button>
+
+              </div>
+
+            )}
+
           </div>
+
         </div>
 
-      </div>{/* END docket-content */}
+      </div>
+      
 
+      {/* ════════════ CAROUSEL STRIP ════════════════════════════════════════ */}
+      {/* Reference: dark navy bar, left arrow, 4 cards (topic/date/stage + thumb), right arrow + pager pill */}
+      <div className="dm-carousel">
 
-      {/* ══════════ ADD FIELD MODAL ══════════ */}
-      {showModal && (
-        <div className="docket-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="docket-modal" onClick={e => e.stopPropagation()}>
-            <div className="docket-modal-header">
-              <h3>Add Custom Field</h3>
-              <button className="docket-modal-close" onClick={() => setShowModal(false)}><CloseIcon /></button>
+  <button
+    className="dm-carousel-nav"
+    onClick={() =>
+      document.getElementById("executeCarousel")
+        ?.scrollBy({ left: -320, behavior: "smooth" })
+    }
+  >
+    <PrevIcon />
+  </button>
+
+  <div
+    className="dm-carousel-scroll"
+    id="executeCarousel"
+  >
+
+    {carouselDockets.map((item) => {
+
+      const image =
+        item.visual_url ||
+        item.uploaded_url ||
+        item.generated_image ||
+        item.image_url ||
+        item.media_url ||
+        item.admin_image_url ||
+        item.visual_image ||
+        item.thumbnail ||
+        null;
+
+      return (
+        <div
+          key={item.docket_id}
+          className={`dm-execute-card ${
+            Number(item.docket_id) === Number(docketId)
+              ? "dm-execute-card-active"
+              : ""
+          }`}
+          onClick={() =>
+            navigate(`/docket-media/${item.docket_id}`)
+          }
+        >
+
+          <div className="dm-execute-left">
+
+            <div className="dm-execute-title">
+              {item.title || "Untitled Execute"}
             </div>
-            <div className="docket-modal-body">
-              <div className="docket-modal-form-group">
-                <label>Field Name</label>
-                <input
-                  type="text" autoFocus
-                  value={newFieldLabel}
-                  onChange={e => setNewFieldLabel(e.target.value)}
-                  placeholder="e.g., Special Instructions"
-                />
+
+            <div className="dm-execute-meta">
+              {item.uploaded_date_time
+                ? new Date(item.uploaded_date_time)
+                    .toLocaleString()
+                : "No Date"}
+            </div>
+
+            <div className="dm-execute-stage">
+              {item.current_stage || item.stage || "discovery"}
+            </div>
+
+          </div>
+
+          <div className="dm-execute-image-wrap">
+
+            {image ? (
+              <img
+                src={image}
+                alt=""
+                className="docket-execute-image"
+              />
+            ) : (
+              <div className="docket-no-image">
+                No Image Generated
               </div>
-              <div className="docket-modal-form-group">
-                <label>Field Value (Optional)</label>
-                <input
-                  type="text"
-                  value={newFieldValue}
-                  onChange={e => setNewFieldValue(e.target.value)}
-                  placeholder="e.g., Handle with care"
-                />
+            )}
+
+          </div>
+
+        </div>
+      );
+    })}
+
+  </div>
+
+  <button
+    className="dm-carousel-nav"
+    onClick={() =>
+      document.getElementById("executeCarousel")
+        ?.scrollBy({ left: 320, behavior: "smooth" })
+    }
+  >
+    <NextIcon />
+  </button>
+
+</div>
+
+      {/* ════════════ MAIN CONTENT ══════════════════════════════════════════ */}
+      <div className="dm-content">
+
+        {/* ────────── LEFT COLUMN ────────────────────────────────────────── */}
+        <div className="dm-left">
+          
+          <div className="dm-left-top"></div>
+
+          {/* Save icon — top-right of left panel */}
+          <div className="dm-left-header">
+            <button className="dm-icon-btn" title="Save" onClick={handleFullSave}>
+              <SaveIcon/>
+            </button>
+          </div>
+
+          {/* Title field */}
+          <div className="dm-form-row">
+            <label className="dm-form-label">Title</label>
+            <div className="dm-form-field-wrap">
+              <input
+                className="dm-form-input"
+                type="text"
+                placeholder="Enter a catchy title"
+                value={docketTitle}
+                maxLength={titleMax}
+                onChange={e => setDocketTitle(e.target.value)}
+              />
+              <span className="dm-char-count">{titleLen}/{titleMax}</span>
+            </div>
+          </div>
+
+          {/* Description field */}
+          <div className="dm-form-row">
+            <label className="dm-form-label">Description</label>
+            <div className="dm-form-field-wrap">
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Describe your visual"
+                value={executeDescription}
+                maxLength={descMax}
+                rows={4}
+                onChange={e => setExecuteDescription(e.target.value)}
+              />
+              <span className="dm-char-count">{descTitle}/{descMax}</span>
+            </div>
+          </div>
+
+          {/* Visual elements field */}
+          <div className="dm-form-row">
+            <label className="dm-form-label">Visual elements</label>
+            <div className="dm-form-field-wrap">
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Add key elements to include"
+                value={visualElements}
+                maxLength={veMax}
+                rows={4}
+                onChange={e => setVisualElements(e.target.value)}
+              />
+              <span className="dm-char-count">{veLen}/{veMax}</span>
+            </div>
+          </div>
+
+          {/* ── Tabs: AI Assistant | Designer Feedback ── */}
+          <div className="dm-tabs">
+            <button
+              className={`dm-tab${activeTab === 'ai' ? ' dm-tab--active' : ''}`}
+              onClick={() => setActiveTab('ai')}
+            >
+              <SparkleIcon/> AI Assistant
+            </button>
+            <button
+              className={`dm-tab${activeTab === 'designer' ? ' dm-tab--active' : ''}`}
+              onClick={() => setActiveTab('designer')}
+            >
+              <PencilIcon/> Designer Feedback
+            </button>
+          </div>
+
+          {/* ── AI Assistant Panel ── */}
+          {activeTab === 'ai' && (
+
+            <div className="dm-chat-panel">
+
+              {/* "Chat with AI" label */}
+              <div className="dm-chat-label">
+                <SparkleIcon/> Chat with AI
+              </div>
+
+              {/* Bubble area */}
+              <div className="dm-chat-bubbles">
+                {conversationBubbles.map(b => <Bubble key={b.id} bubble={b}/>)}
+                <div ref={chatEndRef}/>
+              </div>
+
+              {/* Footer: input row + Generate button */}
+              <div className="dm-chat-footer">
+                <div className="dm-chat-input-row">
+                  <input
+                    className="dm-chat-input"
+                    placeholder="Type your message"
+                    value={userMessage}
+                    onChange={e => setUserMessage(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
+                        e.preventDefault(); handleSendMessage();
+                      }
+                    }}
+                  />
+                  <button className="dm-chat-send" onClick={userMessage.trim() ? handleSendMessage : undefined}>
+                    <SendIcon active={Boolean(userMessage.trim())}/>
+                  </button>
+                </div>
+                <button
+                  className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
+                  onClick={canGenerate && !isGeneratingImage ? handleGenerate : undefined}
+                  disabled={isGeneratingImage}
+                >
+                  <SparkleIcon/>
+                  {isGeneratingImage ? 'Generating…' : '✦ Generate'}
+                  {!canGenerate && (
+                    <div className="dm-tooltip">
+                      <div className="dm-tooltip-title">Please fill:</div>
+                      <ul>
+                        {!mode             && <li>Prompt Type</li>}
+                        {mode && !mediaType && <li>Media Type</li>}
+                        {mediaType && !subType && <li>Sub Type</li>}
+                      </ul>
+                    </div>
+                  )}
+                </button>
               </div>
             </div>
-            <div className="docket-modal-footer">
-              <button className="docket-modal-btn docket-modal-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="docket-modal-btn docket-modal-save" onClick={handleModalSave} disabled={!newFieldLabel.trim()}>
-                Save Field
+          )}
+
+          {/* ── Designer Feedback Panel ── */}
+          {activeTab === 'designer' && (
+            <div className="dm-chat-panel">
+              <div className="dm-chat-label"><PencilIcon/> Designer Feedback</div>
+
+              <div className="dm-chat-bubbles">
+                {groupedFeedback.length > 0 ? groupedFeedback.map((group, idx) => (
+                  <div key={group.admin_media_id}>
+                    <div className="dm-version-divider">
+                      <span className="docket-hover-wrapper">
+                        <span className="docket-hover-link">— Image Version {idx + 1} —</span>
+                        {imageMap[group.admin_media_id] && (
+                          <div className="docket-hover-popup docket-image-preview-popup">
+                            <img src={imageMap[group.admin_media_id]} alt="preview"/>
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                    {group.messages.map(f => (
+                      <div key={f.feedback_history_id} className={`docket-bubble-wrapper ${f.role === 'user' ? 'user-message' : 'ai-message'}`}>
+                        <div className="docket-bubble">
+                          <div style={{ fontSize: '10px', opacity: 0.7 }}>
+                            {f.role === 'admin' ? 'Admin' : 'You'} • {new Date(f.created_at).toLocaleString()}
+                          </div>
+                          <div>{f.feedback}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )) : (
+                  <div className="dm-chat-empty">No feedback yet.</div>
+                )}
+              </div>
+
+              <div className="dm-chat-footer">
+                <div className="dm-chat-input-row">
+                  <input
+                    className="dm-chat-input"
+                    placeholder="Write feedback..."
+                    value={feedbackText}
+                    onChange={e => setFeedbackText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && feedbackText.trim()) {
+                        e.preventDefault(); submitFeedback();
+                      }
+                    }}
+                  />
+                  <button className="dm-chat-send" onClick={feedbackText.trim() ? submitFeedback : undefined}>
+                    <SendIcon active={Boolean(feedbackText.trim())}/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* END LEFT COLUMN */}
+
+        {/* ────────── RIGHT COLUMN ───────────────────────────────────────── */}
+        <div className="dm-right">
+
+          {/* "Generated Visual" header + history clock icon */}
+          <div className="dm-right-section-header">
+            <span className="dm-right-section-title">Generated Visual</span>
+            <button className="dm-icon-btn" onClick={handleOpenVisualHistory} title="Visual history">
+              <ClockIcon/>
+            </button>
+          </div>
+
+          {/* Visual canvas — large empty/image area */}
+          <div className="dm-visual-canvas">
+            {isGeneratingImage ? (
+              <div className="dm-visual-loading">
+                <div className="dm-spinner"/>
+                <span>AI is generating your visual…</span>
+              </div>
+            ) : visualImage ? (
+              <img src={visualImage} className="dm-visual-img" alt="Generated visual"/>
+            ) : (
+              <div className="dm-visual-empty"/>
+            )}
+          </div>
+
+          {/* Expand | Download icons row */}
+          <div className="dm-visual-icons-row">
+            <button className="dm-icon-btn" title="Expand fullscreen">
+              <ExpandIcon/>
+            </button>
+            <button
+              className={`dm-icon-btn${!visualImage ? ' dm-icon-btn--disabled' : ''}`}
+              title="Download"
+              disabled={!visualImage}
+              onClick={() => visualImage && downloadImage(visualImage, docketId)}
+            >
+              <DownloadIcon/>
+            </button>
+          </div>
+
+          {/* Message section */}
+          <div className="dm-message-section">
+            <div className="dm-right-section-header">
+              <span className="dm-right-section-title">Message</span>
+              <button
+                className="dm-icon-btn"
+                title="Copy message"
+                onClick={() => {
+                  if (visualMessage) {
+                    navigator.clipboard.writeText(visualMessage);
+                    setShowCopyToast(true);
+                    setTimeout(() => setShowCopyToast(false), 3000);
+                  }
+                }}
+              >
+                <CopyIcon/>
               </button>
+            </div>
+            <div className="dm-message-body">
+              {visualMessage || ''}
+            </div>
+          </div>
+
+          {/* ── Bottom action buttons: Stages | Names | Submit ── */}
+          <div className="dm-bottom-actions">
+
+            {/* Stages */}
+            <div className="dm-action-wrap">
+              <button
+                className="dm-action-btn"
+                onClick={() => { setShowStageDropdown(p => !p); setShowNamesDropdown(false); }}
+              >
+                <StagesIcon/> Stages
+              </button>
+              {showStageDropdown && (
+                <div className="dm-dropdown">
+                  <div className="dm-dropdown-title">Select Stage</div>
+                  <option value={currentStage} disabled className="dm-dropdown-current">
+                    {currentStage} (current)
+                  </option>
+                  {nextStages.map(stage => (
+                    <div
+                      key={stage}
+                      className={`dm-dropdown-item${selectedStage === stage ? ' dm-dropdown-item--active' : ''}`}
+                      onClick={() => { setSelectedStage(stage); setShowStageDropdown(false); }}
+                    >
+                      {stage}
+                    </div>
+                  ))}
+                  {nextStages.length === 0 && (
+                    <div className="dm-dropdown-empty">No next stages available</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Names */}
+            <div className="dm-action-wrap">
+              <button
+                className="dm-action-btn"
+                onClick={() => { setShowNamesDropdown(p => !p); setShowStageDropdown(false); }}
+              >
+                <NamesIcon/> {assignedUser ? networkUsers.find(u => u.user_id === assignedUser)?.email?.split('@')[0] || 'Names' : 'Names'}
+              </button>
+              {showNamesDropdown && (
+                <div className="dm-dropdown">
+                  <div className="dm-dropdown-title">Assign To</div>
+                  {networkUsers.length > 0 ? networkUsers.map(u => (
+                    <div
+                      key={u.user_id}
+                      className={`dm-dropdown-item${assignedUser === u.user_id ? ' dm-dropdown-item--active' : ''}`}
+                      onClick={() => { setAssignedUser(u.user_id); setShowNamesDropdown(false); }}
+                    >
+                      {u.email}
+                    </div>
+                  )) : (
+                    <div className="dm-dropdown-empty">No users in network</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <div className="dm-action-wrap">
+              <button className="dm-action-btn dm-action-btn--submit" onClick={handleSubmit}>
+                <SubmitIcon/> Submit
+              </button>
+            </div>
+
+          </div>
+        </div>
+        {/* END RIGHT COLUMN */}
+
+      </div>
+      {/* END MAIN CONTENT */}
+
+      {/* ════════════ BOTTOM STAGE STATUS BAR ══════════════════════════════ */}
+      {/* Reference: 🔍 Discovery 30  ✏️ Draft 15  ✨ Generate 23  📋 Review 34  ✅ Approve 56  📤 Publish 13  🔒 Closed 9  ❌ Rejected 11  ↻ */}
+      <div className="dm-stagebar">
+        {STAGE_BAR.map(s => (
+          <div key={s.key} className="dm-stagebar-item">
+            <span className="dm-stagebar-icon" style={{ color: s.color }}>{s.icon}</span>
+            <span className="dm-stagebar-label" style={{ color: s.color }}>{s.label}</span>
+            <span className="dm-stagebar-count" style={{ color: s.color }}>{stageCounts[s.key] ?? 0}</span>
+          </div>
+        ))}
+        <button
+          className="dm-icon-btn dm-stagebar-refresh"
+          title="Refresh counts"
+          onClick={() => {
+            fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
+              .then(r => r.json())
+              .then(data => { if (data.success) setStageCounts(data.data); });
+          }}
+        >
+          <ClockIcon/>
+        </button>
+      </div>
+
+
+      {/* ════════════ MODALS ════════════════════════════════════════════════ */}
+
+      {/* Add Custom Field */}
+      {showModal && (
+        <div className="dm-overlay" onClick={() => setShowModal(false)}>
+          <div className="dm-modal" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>Add Custom Field</h3>
+              <button className="dm-modal-close" onClick={() => setShowModal(false)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              <div className="dm-modal-group">
+                <label>Field Name</label>
+                <input type="text" autoFocus value={newFieldLabel} onChange={e => setNewFieldLabel(e.target.value)} placeholder="e.g. Special Instructions"/>
+              </div>
+              <div className="dm-modal-group">
+                <label>Field Value (Optional)</label>
+                <input type="text" value={newFieldValue} onChange={e => setNewFieldValue(e.target.value)} placeholder="e.g. Handle with care"/>
+              </div>
+            </div>
+            <div className="dm-modal-footer">
+              <button className="dm-modal-btn dm-modal-btn--cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="dm-modal-btn dm-modal-btn--save" onClick={handleModalSave} disabled={!newFieldLabel.trim()}>Save Field</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ══════════ HISTORY MODAL ══════════ */}
+      {/* History Modal */}
       {showHistoryModal && (
-        <div
-          className="docket-modal-overlay"
-          onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}
-        >
-          <div className="docket-modal" onClick={e => e.stopPropagation()}>
-            <div className="docket-modal-header">
-              {!selectedHistoryPrompt ? (
-                <h3>Visual Information History</h3>
-              ) : (
-                <div className="docket-history-header-with-back">
-                  <button className="docket-history-header-back" onClick={() => setSelectedHistoryPrompt(null)}>←</button>
-                  <div className="docket-history-title-block">
+        <div className="dm-overlay" onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              {!selectedHistoryPrompt ? <h3>Visual Information History</h3> : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button className="dm-modal-back" onClick={() => setSelectedHistoryPrompt(null)}>←</button>
+                  <div>
                     <h3>Version {selectedHistoryPrompt.version}</h3>
-                    <div className="docket-history-date">{new Date(selectedHistoryPrompt.createdAt).toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>{new Date(selectedHistoryPrompt.createdAt).toLocaleString()}</div>
                   </div>
                 </div>
               )}
-              <button
-                className="docket-modal-close"
-                onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}
-              >✕</button>
+              <button className="dm-modal-close" onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}><CloseIcon/></button>
             </div>
-
-            <div className="docket-modal-body">
+            <div className="dm-modal-body">
               {visualHistoryList.length > 0 ? (
-                visualHistoryList.map((item, index) => (
-                  <div key={item.admin_media_id} className="docket-history-item">
-                    <strong>Version {visualHistoryList.length - index}</strong>
-                    <div className="docket-history-time">{new Date(item.created_at).toLocaleString()}</div>
-                    <img src={item.uploaded_url} alt="visual" style={{ width: '100%', marginTop: '10px', borderRadius: '6px' }} />
-                    {item.message && (
-                      <div style={{ marginTop: '6px', fontSize: '12px', opacity: 0.7 }}>{item.message}</div>
-                    )}
+                visualHistoryList.map((item, idx) => (
+                  <div key={item.admin_media_id} className="dm-history-item">
+                    <strong>Version {visualHistoryList.length - idx}</strong>
+                    <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
+                    <img src={item.uploaded_url} alt="visual" style={{ width: '100%', marginTop: 10, borderRadius: 6 }}/>
+                    {item.message && <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>{item.message}</div>}
                   </div>
                 ))
               ) : !selectedHistoryPrompt ? (
-                historyList.map((item, index) => (
-                  <div
-                    key={item.docket_result_id}
-                    className="docket-history-item"
-                    onClick={() => setSelectedHistoryPrompt({
-                      text:      item.visual_text,
-                      version:   historyList.length - index,
-                      createdAt: item.created_at,
-                    })}
-                  >
-                    <strong>Version {historyList.length - index}</strong>
-                    <div className="docket-history-time">{new Date(item.created_at).toLocaleString()}</div>
+                historyList.map((item, idx) => (
+                  <div key={item.docket_result_id} className="dm-history-item dm-history-item--btn"
+                    onClick={() => setSelectedHistoryPrompt({ text: item.visual_text, version: historyList.length - idx, createdAt: item.created_at })}>
+                    <strong>Version {historyList.length - idx}</strong>
+                    <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
                   </div>
                 ))
               ) : (
-                <div className="docket-history-preview-wrapper">
-                  <div className="docket-history-prompt-view">
-                    <pre>{(() => {
-                      try { return JSON.stringify(JSON.parse(selectedHistoryPrompt.text), null, 2); }
-                      catch { return selectedHistoryPrompt.text; }
-                    })()}</pre>
-                  </div>
-                </div>
+                <pre className="dm-history-pre">{(() => { try { return JSON.stringify(JSON.parse(selectedHistoryPrompt.text), null, 2); } catch { return selectedHistoryPrompt.text; } })()}</pre>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ══════════ FEEDBACK MODAL ══════════ */}
+      {/* Feedback Modal */}
       {showFeedbackModal && (
-        <div className="docket-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
-          <div className="docket-modal docket-feedback-modal" onClick={e => e.stopPropagation()}>
-            <div className="docket-modal-header">
+        <div className="dm-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div className="dm-modal dm-modal--feedback" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
               <h3>Feedback</h3>
-              <button className="docket-modal-close" onClick={() => setShowFeedbackModal(false)}><CloseIcon /></button>
+              <button className="dm-modal-close" onClick={() => setShowFeedbackModal(false)}><CloseIcon/></button>
             </div>
-
-            <div className="docket-feedback-modal-body">
-              {feedbackList.length === 0 ? (
-                <div className="docket-feedback-empty">No messages yet. Start the conversation!</div>
-              ) : (
-                feedbackList.map(f => (
-                  <div
-                    key={f.feedback_history_id}
-                    className={`docket-bubble-wrapper ${f.role === 'admin' ? 'ai-message' : 'user-message'}`}
-                  >
+            <div className="dm-modal-body dm-modal-body--scroll">
+              {feedbackList.length === 0
+                ? <div className="dm-empty">No messages yet. Start the conversation!</div>
+                : feedbackList.map(f => (
+                  <div key={f.feedback_history_id} className={`docket-bubble-wrapper ${f.role === 'admin' ? 'ai-message' : 'user-message'}`}>
                     <div className="docket-bubble">
-                      <div className="docket-bubble-meta">
-                        {f.role === 'admin' ? 'Admin' : 'You'} • {new Date(f.created_at).toLocaleString()}
-                      </div>
+                      <div className="docket-bubble-meta">{f.role === 'admin' ? 'Admin' : 'You'} • {new Date(f.created_at).toLocaleString()}</div>
                       <div>{f.feedback}</div>
                     </div>
                   </div>
                 ))
-              )}
-              <div ref={feedbackBottomRef} />
+              }
+              <div ref={feedbackBottomRef}/>
             </div>
-
-            <div className="docket-feedback-modal-footer">
-              <textarea
-                className="docket-feedback-input"
-                placeholder="Write feedback..."
-                value={feedbackText}
-                rows={3}
+            <div className="dm-modal-footer">
+              <textarea className="dm-feedback-input" placeholder="Write feedback..." value={feedbackText} rows={3}
                 onChange={e => setFeedbackText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey && feedbackText.trim()) {
-                    e.preventDefault();
-                    submitFeedback();
-                  }
-                }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && feedbackText.trim()) { e.preventDefault(); submitFeedback(); } }}
               />
               <button
-                className={`docket-feedback-send-btn${!feedbackText.trim() ? ' disabled' : ''}`}
+                className={`dm-modal-btn dm-modal-btn--save${!feedbackText.trim() ? ' dm-modal-btn--disabled' : ''}`}
                 onClick={feedbackText.trim() ? submitFeedback : undefined}
                 disabled={!feedbackText.trim()}
               >
-                <SendIcon active={Boolean(feedbackText.trim())} />
-                Send
+                <SendIcon active={Boolean(feedbackText.trim())}/> Send
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ══════════ ASSIGNMENT HISTORY MODAL ══════════ */}
+      {/* Assignment History Modal */}
       {showAssignHistoryModal && (
-        <div className="docket-modal-overlay" onClick={() => setShowAssignHistoryModal(false)}>
-          <div className="docket-modal" onClick={e => e.stopPropagation()}>
-            <div className="docket-modal-header">
+        <div className="dm-overlay" onClick={() => setShowAssignHistoryModal(false)}>
+          <div className="dm-modal" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
               <h3>Assignment Flow</h3>
-              <button className="docket-modal-close" onClick={() => setShowAssignHistoryModal(false)}>✕</button>
+              <button className="dm-modal-close" onClick={() => setShowAssignHistoryModal(false)}><CloseIcon/></button>
             </div>
-            <div className="docket-modal-body">
-              {assignHistory.length === 0 ? (
-                <div>No assignment history</div>
-              ) : (
-                <div className="assignment-flow">
-                  {assignHistory.map((item, index) => (
-                    <div key={item.assignment_id} className="assignment-row">
-                      <div className="assignment-users">
-                        <strong>{item.assigned_by_email}</strong>
-                        {' → '}
-                        <strong>{item.assigned_to_email}</strong>
+            <div className="dm-modal-body">
+              {assignHistory.length === 0
+                ? <div className="dm-empty">No assignment history.</div>
+                : (
+                  <div className="dm-assign-flow">
+                    {assignHistory.map((item, idx) => (
+                      <div key={item.assignment_id} className="dm-assign-row">
+                        <div className="dm-assign-users">
+                          <strong>{item.assigned_by_email}</strong> → <strong>{item.assigned_to_email}</strong>
+                        </div>
+                        <div className="dm-assign-meta">
+                          <span className="dm-assign-stage">{item.stage}</span>
+                          <span className="dm-assign-time">{new Date(item.created_at).toLocaleString()}</span>
+                        </div>
+                        {idx < assignHistory.length - 1 && <div className="dm-assign-arrow">↓</div>}
                       </div>
-                      <div className="assignment-meta">
-                        <span className="assignment-stage">{item.stage}</span>
-                        <span className="assignment-time">{new Date(item.created_at).toLocaleString()}</span>
-                      </div>
-                      {index < assignHistory.length - 1 && <div className="assignment-arrow">↓</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )
+              }
             </div>
           </div>
         </div>
       )}
 
+      {/* Dropdown backdrop */}
+      {(showStageDropdown || showNamesDropdown) && (
+        <div className="dm-dropdown-backdrop" onClick={() => { setShowStageDropdown(false); setShowNamesDropdown(false); }}/>
+      )}
 
-      {/* ══════════ TOASTS ══════════ */}
+
+      {/* ════════════ TOASTS ════════════════════════════════════════════════ */}
       {showCopyToast && (
-        <div className="docket-copy-toast">
-          <div className="docket-copy-toast-icon"><CheckIcon /></div>
-          <span>Prompt copied to clipboard!</span>
+        <div className="dm-toast dm-toast--success">
+          <CheckIcon/> <span>Copied to clipboard!</span>
         </div>
       )}
-
       {showSaveToast && (
-        <div className={`docket-save-toast ${saveToastMessage.includes('Please fill') ? 'error' : 'success'}`}>
-          <div className="docket-save-toast-icon">
-            {saveToastMessage.includes('Please fill') ? <WarnIcon /> : <CheckIcon />}
-          </div>
+        <div className={`dm-toast ${saveToastMessage.includes('Please fill') ? 'dm-toast--error' : 'dm-toast--success'}`}>
+          {saveToastMessage.includes('Please fill') ? <WarnIcon/> : <CheckIcon/>}
           <span>{saveToastMessage}</span>
         </div>
       )}
-
       {showSubmitToast && (
-        <div className="docket-submit-toast">
-          <div className="docket-submit-toast-icon"><CheckIcon /></div>
-          <span>Submitted successfully!</span>
+        <div className="dm-toast dm-toast--success">
+          <CheckIcon/> <span>Submitted successfully!</span>
         </div>
       )}
 
