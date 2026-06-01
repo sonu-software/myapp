@@ -25,7 +25,7 @@ from auth import create_token, get_current_user, hash_password, verify_password
 from business_rules import get_categories, get_subcategories
 from database import get_db
 from gemini import ask_gemini          # available for future use
-from openai_client import (ask_openai,generate_professional_image_prompt,generate_ai_image, generate_visual_caption)
+from openai_client import (ask_openai,enrich_description_and_visuals,generate_professional_image_prompt,generate_ai_image, generate_visual_caption)
 from otp_service import generate_otp, send_otp_email
 from prompts import build_prompt
 from subcategory_rules import SUBCATEGORY_RULES  # available for future use
@@ -299,6 +299,14 @@ class FieldValueItem(BaseModel):
 
 class SaveFieldValuesRequest(BaseModel):
     fields: List[FieldValueItem]
+
+
+
+
+class UpdateDocketRequest(BaseModel):
+    title: str
+    execute_description: str
+    visual_elements: str
 
 
 class UploadVisualRequest(BaseModel):
@@ -1227,6 +1235,65 @@ async def chat_with_ai(
             if row["value"]
         }
 
+
+        # ==========================================
+        # GET FIELD DESCRIPTIONS
+        # ==========================================
+
+        _, _, media_subtype_id = resolve_media_subtype(
+            cursor,
+            req.mode,
+            req.mediaType,
+            req.subType
+        )
+
+        cursor.execute(
+            """
+            SELECT description
+            FROM media_subtype
+            WHERE media_subtype_id=%s
+            """,
+            (media_subtype_id,)
+        )
+
+        subtype_row = cursor.fetchone()
+
+        media_subtype_description = ""
+
+        if subtype_row:
+            media_subtype_description = (
+                subtype_row["description"] or ""
+            )
+
+        cursor.execute(
+            """
+            SELECT
+                label,
+                label_description
+            FROM media_subtype_default_value
+            WHERE media_subtype_id=%s
+            """,
+            (media_subtype_id,)
+        )
+
+        field_rows = cursor.fetchall()
+
+        fields_for_ai = []
+
+        for row in field_rows:
+
+            fields_for_ai.append({
+                "label": row["label"],
+                "description": row["label_description"] or ""
+            })
+
+
+
+
+
+
+
+
         # ==========================================
         # ASK OPENAI
         # ==========================================
@@ -1237,6 +1304,7 @@ async def chat_with_ai(
                 "mode": req.mode,
                 "mediaType": req.mediaType,
                 "subType": req.subType,
+                "subTypeDescription": media_subtype_description,
                 "business": req.business,
                 "product": req.product,
                 "persona": req.persona,
@@ -1245,12 +1313,121 @@ async def chat_with_ai(
                 "execute_description": req.execute_description,
                 "visual_elements": req.visual_elements,
 
-                "fields": req.fields,
+                "fields": fields_for_ai,
                 "previous_values": previous_values
             },
         )
 
-        field_values = ai_result["response"]
+        response_data = ai_result["response"]
+
+        field_values = response_data.get("fields", {})
+        print("AI FIELD VALUES:", field_values)
+
+        new_execute_description = response_data.get(
+            "execute_description",
+            req.execute_description
+        )
+
+        new_visual_elements = response_data.get(
+            "visual_elements",
+            req.visual_elements
+        )
+
+
+        normal_execute_description = new_execute_description
+        normal_visual_elements = new_visual_elements
+
+
+
+        # ==========================================
+        # SECOND AI PASS
+        # ==========================================
+
+        enhanced_result = enrich_description_and_visuals(
+            field_values=field_values,
+            execute_description=new_execute_description,
+            visual_elements=new_visual_elements
+        )
+
+        new_execute_description = enhanced_result.get(
+            "execute_description",
+            new_execute_description
+        )
+
+        new_visual_elements = enhanced_result.get(
+            "visual_elements",
+            new_visual_elements
+        )
+
+
+
+
+
+
+
+
+
+        # ==========================================
+        # SAVE AI GENERATED FIELD VALUES
+        # ==========================================
+
+        cursor.execute(
+            """
+            SELECT label, box, field_source, checkbox_clicked
+            FROM media_subtype_field_value
+            WHERE docket_id=%s
+            """,
+            (req.docket_id,)
+        )
+
+        existing_rows = cursor.fetchall()
+
+        for row in existing_rows:
+
+            db_label = row["label"]
+
+            if db_label in field_values:
+
+                cursor.execute(
+                    """
+                    UPDATE media_subtype_field_value
+                    SET value=%s
+                    WHERE docket_id=%s
+                    AND label=%s
+                    """,
+                    (
+                        str(field_values[db_label]),
+                        req.docket_id,
+                        db_label
+                    )
+                )
+
+
+
+        cursor.execute("""
+            UPDATE docket
+            SET
+                normal_execute_description=%s,
+                normal_visual_elements=%s,
+
+                execute_description=%s,
+                visual_elements=%s
+
+            WHERE docket_id=%s
+        """, (
+            normal_execute_description,
+            normal_visual_elements,
+
+            new_execute_description,
+            new_visual_elements,
+
+            req.docket_id
+        ))
+
+
+
+
+
 
         full_information = ai_result["full_information"]
 
@@ -1300,7 +1477,12 @@ async def chat_with_ai(
 
 
         db.commit()
-        return {"success": True, "fields": field_values}
+        return {
+            "success": True,
+            "fields": field_values,
+            "execute_description": new_execute_description,
+            "visual_elements": new_visual_elements
+        }
 
     except Exception as e:
         db.rollback()
@@ -1334,7 +1516,191 @@ def get_chat_history(docket_id: int, user_id: int = Depends(get_current_user)):
 #  DOCKETS  —  create / get / planner list
 # =============================================================================
 
+
+
+def generate_default_ai_fields(
+    cursor,
+    docket_id,
+    business_id,
+    product_id,
+    persona_id,
+    mode,
+    media_type,
+    sub_type,
+    title,
+    execute_description,
+    visual_elements
+):
+    # BUSINESS
+
+    cursor.execute(
+        "SELECT * FROM businesses WHERE business_id=%s",
+        (business_id,)
+    )
+
+    business = cursor.fetchone()
+
+
+    # PRODUCT
+
+    product = _fetch_product_detail(
+        cursor,
+        product_id
+    )
+
+
+    # PERSONA
+
+    cursor.execute(
+        "SELECT * FROM personas WHERE persona_id=%s",
+        (persona_id,)
+    )
+
+    persona = cursor.fetchone()
+
+    cursor.execute(
+        """
+        SELECT
+            segment_type,
+            label,
+            value,
+            is_active
+        FROM persona_segments
+        WHERE persona_id=%s
+        """,
+        (persona_id,)
+    )
+
+    persona["segments"] = cursor.fetchall()
+
+
+    # MEDIA SUBTYPE
+
+    _, _, media_subtype_id = resolve_media_subtype(
+        cursor,
+        mode,
+        media_type,
+        sub_type
+    )
+
+
+    cursor.execute(
+        """
+        SELECT description
+        FROM media_subtype
+        WHERE media_subtype_id=%s
+        """,
+        (media_subtype_id,)
+    )
+
+    subtype_data = cursor.fetchone()
+
+    media_subtype_description = ""
+
+    if subtype_data:
+        media_subtype_description = (
+            subtype_data["description"] or ""
+        )
+
+
+    # GET FIELDS
+
+    cursor.execute(
+        """
+        SELECT
+            label,
+            label_description,
+            box
+        FROM media_subtype_default_value
+        WHERE media_subtype_id=%s
+        """,
+        (media_subtype_id,)
+    )
+
+    field_rows = cursor.fetchall()
+
+    fields_for_ai = []
+
+    for row in field_rows:
+
+        fields_for_ai.append({
+            "label": row["label"],
+            "description": row["label_description"] or ""
+        })
+
+
+    # AI CALL
+
+    ai_result = ask_openai(
+        message="Generate all fields",
+        context={
+            "mode": mode,
+            "mediaType": media_type,
+            "subType": sub_type,
+            "subTypeDescription": media_subtype_description,
+            "business": business,
+            "product": product,
+            "persona": persona,
+            "execute_title": title,
+            "execute_description": execute_description,
+            "visual_elements": visual_elements,
+            "fields": fields_for_ai,
+            "previous_values": {}
+        }
+    )
+
+    generated = ai_result["response"].get(
+        "fields",
+        {}
+    )
+
+
+    # SAVE VALUES
+
+    for field in field_rows:
+
+        label = field["label"]
+
+        value = generated.get(
+            label,
+            ""
+        )
+
+        cursor.execute(
+            """
+            INSERT INTO media_subtype_field_value
+            (
+                docket_id,
+                label,
+                value,
+                checkbox_clicked,
+                box,
+                field_source
+            )
+            VALUES (%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                docket_id,
+                label,
+                value,
+                1,
+                field["box"],
+                "default"
+            )
+        )
+
+
+
+
+
+
+
 @app.post("/planner/docket")
+
+
+
+    
+
 def create_docket(
     req: CreateDocketRequest,
     user_id: int = Depends(get_current_user),
@@ -1390,7 +1756,23 @@ def create_docket(
 
 
         docket_id = cursor.lastrowid
+
+        generate_default_ai_fields(
+            cursor=cursor,
+            docket_id=docket_id,
+            business_id=business_id,
+            product_id=req.product_id,
+            persona_id=req.persona_id,
+            mode=req.mode,
+            media_type=req.mediaType,
+            sub_type=req.subType,
+            title=req.title,
+            execute_description=req.execute_description,
+            visual_elements=req.visual_elements
+        )
+
         db.commit()
+
         return {"success": True, "docket_id": docket_id}
 
     except HTTPException:
@@ -1899,6 +2281,8 @@ def save_media_result(
             ),
         )
 
+        docket_media_result_id = cursor.lastrowid
+
 
 
         # ==========================================
@@ -1910,6 +2294,19 @@ def save_media_result(
         parsed_json = json.loads(visual_text)
 
         image_prompt = generate_professional_image_prompt(parsed_json)
+
+        cursor.execute(
+            """
+            UPDATE docket_media_results
+            SET image_prompt=%s
+            WHERE docket_media_result_id=%s
+            """,
+            (
+                image_prompt,
+                docket_media_result_id
+            )
+        )
+        db.commit()
 
 
 
@@ -2789,6 +3186,50 @@ def get_stage_counts(
             "success": True,
             "data": counts
         }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+@app.put("/planner/docket/{docket_id}")
+def update_docket(
+    docket_id: int,
+    req: UpdateDocketRequest,
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+
+        cursor.execute(
+            """
+            UPDATE docket
+            SET
+                title=%s,
+                execute_description=%s,
+                visual_elements=%s
+            WHERE docket_id=%s
+            """,
+            (
+                req.title,
+                req.execute_description,
+                req.visual_elements,
+                docket_id
+            )
+        )
+
+        db.commit()
+
+        return {"success": True}
+
+    except Exception as e:
+        db.rollback()
+        print("UPDATE DOCKET ERROR:", e)
+        return {"success": False}
 
     finally:
         cursor.close()

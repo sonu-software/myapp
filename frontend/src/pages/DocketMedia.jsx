@@ -767,6 +767,19 @@ const formatDate = (date) => {
   }
 
   const handleFullSave = useCallback(async () => {
+    await fetch(
+      `${API}/planner/docket/${docketId}`,
+      {
+        method: 'PUT',
+        headers: JSON_AUTH(),
+        body: JSON.stringify({
+          title: docketTitle,
+          execute_description: executeDescription,
+          visual_elements: visualElements
+        })
+      }
+    );
+
     const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
     if (!ms || !os) {
       setSaveToastMessage('Please fill all required fields.');
@@ -783,7 +796,15 @@ const formatDate = (date) => {
     setSaveToastMessage('Saved successfully!');
     setShowSaveToast(true);
     setTimeout(() => setShowSaveToast(false), 3000);
-  }, [mandatoryFields, optionalFields, fieldValues, assignedUser, selectedStage, docketId]);
+  }, [mandatoryFields,
+      optionalFields,
+      fieldValues,
+      assignedUser,
+      selectedStage,
+      docketId,
+      docketTitle,
+      executeDescription,
+      visualElements]);
 
   const handleFieldToggle = useCallback((varName, checked) => {
     setFieldValues(prev => ({ ...prev, [varName]: { ...prev[varName], enabled: checked } }));
@@ -836,6 +857,17 @@ const formatDate = (date) => {
           Object.entries(data.fields).forEach(([key, value]) => { if (updated[key]) updated[key] = { ...updated[key], value }; });
           return updated;
         });
+
+        setExecuteDescription(
+          data.execute_description || ""
+        );
+
+        setVisualElements(
+          data.visual_elements || ""
+        );
+
+
+
         setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '✅ Fields updated based on your request.', type: 'ai', sender: 'ai' }]);
       } else {
         setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '⚠️ AI could not generate field values.', type: 'ai', sender: 'ai' }]);
@@ -1042,9 +1074,9 @@ const formatDate = (date) => {
   ];
 
   const descTitle = executeDescription.length;
-  const descMax   = 200;
+  const descMax   = 5000;
   const veLen     = visualElements.length;
-  const veMax     = 300;
+  const veMax     = 5000;
   const titleLen  = docketTitle.length;
   const titleMax  = 80;
 

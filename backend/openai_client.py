@@ -14,11 +14,11 @@ load_dotenv()
 # CONFIG
 # ==============================
 #MODEL = "gpt-4o-mini"   # fast + cheap (recommended)
-MODEL = "gpt-4o"
+MODEL = "gpt-4o-mini"
 KEY_COOLDOWN_SECONDS = 60
 
 SYSTEM_CONTEXT = """
-You are an AI assistant inside a Business AI Prompt Generator app.
+You are an AI assistant inside a Business AI Image Prompt Generator app.
 
 Your responsibilities:
 - Help users understand and improve AI prompts
@@ -108,7 +108,7 @@ def generate_with_key(api_key: str, prompt: str):
             {"role": "system", "content": SYSTEM_CONTEXT},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.9
+        temperature=0.4
     )
 
     return response.choices[0].message.content
@@ -120,7 +120,34 @@ def generate_with_key(api_key: str, prompt: str):
 def ask_openai(message: str, context: dict) -> dict:
 
     fields = context.get("fields", [])
-    field_list = "\n".join(fields)
+
+    field_list = ""
+
+    example_fields = ""
+
+    for field in fields:
+
+        if isinstance(field, str):
+
+            label = field
+            description = ""
+
+        else:
+
+            label = field["label"]
+            description = field.get("description", "")
+
+        field_list += f"""
+    Field Name: {label}
+    Description: {description}
+
+    """
+
+        example_fields += f'      "{label}": "generated value",\n'
+
+    example_fields = example_fields.rstrip(",\n")
+
+
 
     previous_values = context.get("previous_values", {})
 
@@ -132,11 +159,22 @@ def ask_openai(message: str, context: dict) -> dict:
         previous_block = "None"
 
     prompt = f"""
-Your job is to fill the dynamic fields for a marketing visual.
+Your job is to improve and Generate:
+
+1. Dynamic Fields
+2. Execute Description
+3. Visual Elements
+
+based on the user's request.
+{message}
 
 Mode: {context.get("mode")}
 Media Type: {context.get("mediaType")}
 Media Sub Type: {context.get("subType")}
+
+Media Sub Type Description:
+{context.get("subTypeDescription")}
+
 
 Business:
 {context.get("business")}
@@ -168,20 +206,26 @@ PREVIOUSLY GENERATED FIELD VALUES:
 INSTRUCTIONS:
 - Strongly use Execute Title, Execute Description, and Visual Elements
 - Generate NEW and FRESH values
-- DO NOT repeat or slightly modify previous values
-- Ensure outputs are clearly different from previous ones
-- Fill all fields
+- DO NOT repeat previous values
+- Update Dynamic Fields
+- Update Execute Description
+- Update Visual Elements
 - Use exact field names
 - Return ONLY JSON
 - No explanations
 
-Example:
+Return ONLY valid JSON.
+
+Use EXACTLY the same field names provided in Dynamic Fields.
+
+Return JSON in this exact structure:
 
 {{
-"headline": "...",
-"caption": "...",
-"cta": "...",
-"color": "..."
+  "fields": {{
+{example_fields}
+  }},
+  "execute_description": "generated description",
+  "visual_elements": "generated visual elements"
 }}
 """
 
@@ -228,7 +272,129 @@ Example:
 
 
 
+###################################################################
+# =========================================================
+# Secind Api Hit to generate description and visual elelmtn
+# =========================================================
 
+
+
+
+def enrich_description_and_visuals(
+    field_values: dict,
+    execute_description: str,
+    visual_elements: str
+):
+
+    api_key = key_manager.get_next_key()
+
+    client = OpenAI(api_key=api_key)
+
+    prompt = f"""
+You are an expert Creative Director.
+
+Your task:
+
+Using ONLY the provided field values,
+create a MUCH MORE DETAILED version of:
+
+1. Execute Description
+2. Visual Elements
+
+Rules:
+
+- Use every field value naturally
+- Expand into highly detailed professional marketing content
+- Create rich storytelling
+- Create visual composition details
+- Create environment details
+- Create lighting details
+- Create product placement details
+- Create character details if applicable
+- Create mood details
+- Create color details
+- Create camera details
+- Create typography guidance
+
+- Structure the content professionally
+- Use natural formatting wherever appropriate
+- Use paragraphs, sections, bullet points, numbered lists, sub-sections, and spacing whenever they improve readability
+- Do NOT force a fixed template or predefined structure
+- Let the content naturally decide its structure
+- Organize information logically
+- Group related concepts together
+- Avoid giant blocks of text
+- Break large ideas into readable sections
+- Make the output look like a professional creative brief written by a senior advertising strategist
+- Preserve line breaks and spacing
+- Prioritize readability, completeness, and clarity
+
+VERY IMPORTANT:
+
+Do NOT invent new business facts.
+
+Use only information present in:
+
+FIELDS
+DESCRIPTION
+VISUAL ELEMENTS
+
+FIELDS:
+{json.dumps(field_values, indent=2)}
+
+CURRENT DESCRIPTION:
+{execute_description}
+
+CURRENT VISUAL ELEMENTS:
+{visual_elements}
+
+
+
+Formatting Requirements:
+
+The output must be professionally structured and easy to read.
+
+You may naturally use:
+- paragraphs
+- bullet points
+- numbered lists
+- sections
+- sub-sections
+
+Use whichever structure best suits the content.
+
+Do NOT force everything into one paragraph.
+Do NOT force a rigid template.
+Let the information naturally determine the format.
+
+Preserve all line breaks.
+
+Return ONLY JSON:
+
+{{
+    "execute_description":"...",
+    "visual_elements":"..."
+}}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a senior advertising strategist."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.4
+    )
+
+    return safe_json_parse(
+        response.choices[0].message.content
+    )
 
 
 ###################################################################
@@ -309,17 +475,15 @@ def generate_professional_image_prompt(final_json: dict,
         api_key=key_manager.get_next_key()
     )
 
+    creative_context = final_json.get("creative_context", {})
+
+    final_json = {
+        "creative_context": creative_context
+    }
+
     prompt = f"""
 Analyze the following marketing DATA and generate a professional
 IMAGE GENERATION PROMPT for a premium promotional visual.
-Execute Title:
-{execute_title}
-
-Execute Description:
-{execute_description}
-
-Visual Elements to Show:
-{visual_elements}
 
 DATA:
 {json.dumps(final_json, indent=2)}
@@ -327,9 +491,6 @@ DATA:
 Requirements:
 - Use the DATA as the primary source of creative direction
 - Exactly Use Creative Context for the Creation
-- Exactly use the Persona for the Environment Creation
-- Exactly Use the Product to showcase of Product or Solution or Service
-- Understand the business, audience, product, and marketing purpose
 - Strictly Adapt the visual style according to MediaType and MediaSubtype
 - Create a realistic commercial advertising scene
 - Ensure strong visual hierarchy and premium composition
@@ -374,7 +535,7 @@ Generate ONLY the final image generation prompt.
                 "content": prompt
             }
         ],
-        temperature=0.9
+        temperature=0.4
     )
 
     return response.choices[0].message.content.strip()
@@ -414,7 +575,8 @@ def generate_ai_image(image_prompt: str):
     response = client.images.generate(
         model="gpt-image-2",
         prompt=image_prompt,
-        size="1024x1024"
+        size="1024x1024",
+        quality="low"
     )
 
     # ==========================================
@@ -442,7 +604,7 @@ def generate_ai_image(image_prompt: str):
     return final_url
 
 
-
+     
 
 
 
@@ -485,7 +647,7 @@ Context:
                 "content": prompt
             }
         ],
-        temperature=0.8,
+        temperature=0.4,
         max_tokens=500
     )
 
