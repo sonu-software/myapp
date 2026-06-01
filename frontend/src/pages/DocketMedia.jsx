@@ -671,6 +671,20 @@ const formatDate = (date) => {
       .catch(console.error);
   }, [currentStage]);
 
+
+
+
+  useEffect(() => {
+
+    const interval = setInterval(
+      refreshStage,
+      2000
+    );
+
+    return () => clearInterval(interval);
+
+  }, [docketId]);
+
   useEffect(() => {
     if (!mode) { setMediaTypes([]); return; }
     fetch(`${API}/media-types?mode=${mode}`, { headers: AUTH() })
@@ -720,6 +734,38 @@ const formatDate = (date) => {
   // ==========================================================================
 
 
+
+
+
+  const refreshStage = async () => {
+
+    try {
+
+      const res = await fetch(
+        `${API}/execute/current-stage/${docketId}`,
+        {
+          headers: AUTH()
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        setCurrentStage(data.stage);
+
+        setSelectedStage(data.stage);
+
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+  };
+
+
   
 
 
@@ -756,7 +802,7 @@ const formatDate = (date) => {
     const fieldsToSave = sourceFields.reduce((acc, field) => {
       const fd = fieldValues[field.variable_name];
       if (!fd) return acc;
-      acc.push({ label: field.variable_name, value: fd.value ?? '', checkbox_clicked: fd.enabled ? 1 : 0, box: section, field_source: field.isCustom ? 'custom' : 'default' });
+      acc.push({ label: field.label, value: fd.value ?? '', checkbox_clicked: fd.enabled ? 1 : 0, box: section, field_source: field.isCustom ? 'custom' : 'default' });
       return acc;
     }, []);
     try {
@@ -884,6 +930,9 @@ const formatDate = (date) => {
 
   const handleGenerate = useCallback(async () => {
     setIsGeneratingImage(true);
+    setCurrentStage("generate");
+    setSelectedStage("generate");
+
     const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
     if (!ms || !os) { setGeneratedPrompt('Error saving fields.'); setIsGeneratingImage(false); return; }
 
@@ -917,6 +966,29 @@ const formatDate = (date) => {
     setGeneratedPrompt(JSON.stringify(finalOutput, null, 2));
 
     try {
+
+      setCurrentStage("generate");
+        setSelectedStage("generate");
+
+        await fetch(
+          `${API}/execute/assign`,
+          {
+            method: "POST",
+            headers: JSON_AUTH(),
+            body: JSON.stringify({
+              docket_id: Number(docketId),
+              user_id: Number(assignedUser || 0),
+              stage: "generate"
+            })
+          }
+        );
+
+        await refreshStage();
+
+
+
+
+
       const res  = await fetch(`${API}/planner/docket/${docketId}/media-result`, {
         method: 'POST', headers: JSON_AUTH(),
         body: JSON.stringify({ visual_text: JSON.stringify(finalOutput), submitted_request: submittedRequest }),

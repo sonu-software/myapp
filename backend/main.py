@@ -24,7 +24,6 @@ from pydantic import BaseModel
 from auth import create_token, get_current_user, hash_password, verify_password
 from business_rules import get_categories, get_subcategories
 from database import get_db
-from gemini import ask_gemini          # available for future use
 from openai_client import (ask_openai,enrich_description_and_visuals,generate_professional_image_prompt,generate_ai_image, generate_visual_caption)
 from otp_service import generate_otp, send_otp_email
 from prompts import build_prompt
@@ -2170,6 +2169,70 @@ def save_docket_fields(
                 for f in req.fields
             ],
         )
+
+
+        # ==========================================
+        # AUTO MOVE DISCOVERY -> DRAFT
+        # ==========================================
+
+        cursor.execute(
+            """
+            SELECT stage, assigned_to
+            FROM execute_assignments
+            WHERE execute_id=%s
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (docket_id,)
+        )
+
+        latest = cursor.fetchone()
+
+        if not latest:
+
+            cursor.execute(
+                """
+                INSERT INTO execute_assignments
+                (
+                    execute_id,
+                    assigned_to,
+                    assigned_by,
+                    stage
+                )
+                VALUES (%s,%s,%s,%s)
+                """,
+                (
+                    docket_id,
+                    user_id,
+                    user_id,
+                    "draft"
+                )
+            )
+
+        elif latest[0].lower() == "discovery":
+
+            cursor.execute(
+                """
+                INSERT INTO execute_assignments
+                (
+                    execute_id,
+                    assigned_to,
+                    assigned_by,
+                    stage
+                )
+                VALUES (%s,%s,%s,%s)
+                """,
+                (
+                    docket_id,
+                    latest[1],
+                    user_id,
+                    "draft"
+                )
+            )
+
+
+
+
         db.commit()
         return {"success": True}
 
@@ -2311,6 +2374,30 @@ def save_media_result(
 
 
         # ==========================================
+        # generate stage
+        # ==========================================
+        cursor.execute(
+            """
+            INSERT INTO execute_assignments
+            (
+                execute_id,
+                assigned_to,
+                assigned_by,
+                stage
+            )
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                docket_id,
+                user_id,
+                user_id,
+                "generate"
+            )
+        )
+
+        db.commit()
+
+        # ==========================================
         # GENERATE AI IMAGE
         # ==========================================
 
@@ -2343,6 +2430,27 @@ def save_media_result(
                 docket_id,
                 generated_image_url,
                 caption_text
+            )
+        )
+
+
+
+        cursor.execute(
+            """
+            INSERT INTO execute_assignments
+            (
+                execute_id,
+                assigned_to,
+                assigned_by,
+                stage
+            )
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                docket_id,
+                user_id,
+                user_id,
+                "review"
             )
         )
 
