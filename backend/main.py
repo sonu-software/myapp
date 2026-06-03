@@ -1319,7 +1319,15 @@ async def chat_with_ai(
 
         response_data = ai_result["response"]
 
+
+        print(json.dumps(response_data, indent=2))
+
         field_values = response_data.get("fields", {})
+        print("========== AI FIELDS ==========")
+        print(json.dumps(field_values, indent=2))
+        print("================================")
+
+
         print("AI FIELD VALUES:", field_values)
 
         new_execute_description = response_data.get(

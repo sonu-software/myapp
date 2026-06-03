@@ -85,14 +85,25 @@ key_manager = OpenAIKeyManager(API_KEYS)
 # SAFE JSON PARSER (same)
 # ==============================
 def safe_json_parse(text: str) -> dict:
+
     text = text.strip()
 
-    if text.startswith("```"):
-        text = text.replace("```json", "").replace("```", "").strip()
+    if "```json" in text:
+        text = text.split("```json")[1]
+        text = text.split("```")[0]
+
+    elif "```" in text:
+        text = text.split("```")[1]
+        text = text.split("```")[0]
 
     try:
         return json.loads(text)
-    except Exception:
+
+    except Exception as e:
+        print("JSON PARSE ERROR:", e)
+        print("FAILED TEXT:")
+        print(text)
+
         return {}
 
 
@@ -115,7 +126,7 @@ def generate_with_key(api_key: str, prompt: str):
             }
         ],
         temperature=0.4,
-        max_completion_tokens=500
+        max_completion_tokens=3000
     )
 
     return response.choices[0].message.content
@@ -250,6 +261,10 @@ Return JSON in this exact structure:
 
         try:
             text = generate_with_key(api_key, prompt)
+
+            print("\n\nRAW GPT RESPONSE:")
+            print(text)
+            print("\n\n")
 
             if not text:
                 raise Exception("Empty response")
@@ -386,6 +401,7 @@ Return ONLY JSON:
 
     response = client.chat.completions.create(
         model="gpt-5.4-mini",
+        response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
@@ -657,7 +673,7 @@ Context:
             }
         ],
         temperature=0.4,
-        max_completion_tokens=500
+        max_completion_tokens=800
     )
 
     return response.choices[0].message.content.strip()
