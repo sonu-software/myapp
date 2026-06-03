@@ -2408,7 +2408,11 @@ def save_media_result(
         # GENERATE AI CAPTION
         # ==========================================
 
-        caption_text = generate_visual_caption(parsed_json)
+        try:
+            caption_text = generate_visual_caption(parsed_json)
+        except Exception as e:
+            print("CAPTION ERROR:", e)
+            caption_text = ""
 
 
 

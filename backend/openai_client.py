@@ -14,7 +14,7 @@ load_dotenv()
 # CONFIG
 # ==============================
 #MODEL = "gpt-4o-mini"   # fast + cheap (recommended)
-MODEL = "gpt-4o-mini"
+MODEL = "gpt-5.4-mini"
 KEY_COOLDOWN_SECONDS = 60
 
 SYSTEM_CONTEXT = """
@@ -103,12 +103,19 @@ def generate_with_key(api_key: str, prompt: str):
     client = OpenAI(api_key=api_key)
 
     response = client.chat.completions.create(
-        model=MODEL,
+        model="gpt-5.4-mini",
         messages=[
-            {"role": "system", "content": SYSTEM_CONTEXT},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "You are a professional social media marketing copywriter."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ],
-        temperature=0.4
+        temperature=0.4,
+        max_completion_tokens=500
     )
 
     return response.choices[0].message.content
@@ -378,7 +385,7 @@ Return ONLY JSON:
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.4-mini",
         messages=[
             {
                 "role": "system",
@@ -524,7 +531,7 @@ Generate ONLY the final image generation prompt.
 """
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-5.4-mini",
         messages=[
             {
                 "role": "system",
@@ -570,7 +577,7 @@ def generate_ai_image(image_prompt: str):
     api_key = key_manager.get_next_key()
 
     client = OpenAI(api_key=api_key)
-
+    print("START IMAGE GENERATION")
     
     response = client.images.generate(
         model="gpt-image-2",
@@ -578,6 +585,8 @@ def generate_ai_image(image_prompt: str):
         size="1024x1024",
         quality="low"
     )
+
+    print("IMAGE GENERATED SUCCESSFULLY")
 
     # ==========================================
     # GPT IMAGE RETURNS BASE64
@@ -636,7 +645,7 @@ Context:
 """
 
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-5.4-mini",
         messages=[
             {
                 "role": "system",
@@ -648,7 +657,7 @@ Context:
             }
         ],
         temperature=0.4,
-        max_tokens=500
+        max_completion_tokens=500
     )
 
     return response.choices[0].message.content.strip()

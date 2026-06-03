@@ -1,149 +1,261 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import "../styles/appFrame.css";
 
+import {
+Target,
+Lightbulb,
+Users,
+CalendarDays,
+Sparkles,
+LayoutDashboard,
+UserCircle2
+} from "lucide-react";
+
+import "../styles/appFrame.css";
 
 const API = import.meta.env.VITE_BACKEND_URL;
 
 export default function AppFrame() {
-  const navigate = useNavigate();
-  const [businessName, setBusinessName] = useState("My Business");
-  const [email, setEmail] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const location = useLocation();
-  
 
-  useEffect(() => {
-    async function loadAccount() {
-      try {
-        const res = await fetch(`${API}/me`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
-        });
+const navigate = useNavigate();
+const location = useLocation();
 
-        if (res.status === 401) {
-          logout();
-          return;
-        }
+const [businessName, setBusinessName] = useState("My Business");
+const [email, setEmail] = useState("");
+const [menuOpen, setMenuOpen] = useState(false);
 
-        const data = await res.json();
-        setBusinessName(data.business_name);
-        setEmail(data.email);
+useEffect(() => {
+loadAccount();
 
-      } catch (err) {
-        console.error("Failed to load account", err);
-      }
+
+const shouldRefresh =
+  sessionStorage.getItem("refreshAccount");
+
+if (shouldRefresh) {
+  loadAccount();
+  sessionStorage.removeItem("refreshAccount");
+}
+
+
+}, [location.pathname]);
+
+useEffect(() => {
+
+
+function handleOutsideClick() {
+  setMenuOpen(false);
+}
+
+if (menuOpen) {
+  document.addEventListener(
+    "click",
+    handleOutsideClick
+  );
+}
+
+return () => {
+  document.removeEventListener(
+    "click",
+    handleOutsideClick
+  );
+};
+
+}, [menuOpen]);
+
+async function loadAccount() {
+
+try {
+
+  const res = await fetch(`${API}/me`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`
     }
+  });
 
-    loadAccount();
-
-
-    // 🔥 If business was updated, reload and clear flag
-    const shouldRefresh = sessionStorage.getItem("refreshAccount");
-
-    if (shouldRefresh) {
-      loadAccount();
-      sessionStorage.removeItem("refreshAccount");
-    }
-
-  }, [location.pathname]);
-
-
-
-  function logout() {
-    localStorage.clear();
-    navigate("/");
+  if (res.status === 401) {
+    logout();
+    return;
   }
 
-  return (
-    <div className="app-shell">
-      
-    <div className="app-body ai-border-runner">
+  const data = await res.json();
 
-      
-      
-      {/* HEADER */}
-      <header className="app-header">
-        <div className="header-left">
-          <div className="ai-logo md">
-            <img
-              src="/white_elevantia_pace.png"
-              alt="Elevantia Pace Logo"
-              className="ai-logo-img logo-clickable"
-              onClick={() => navigate("/home")}
-              style={{ cursor: "pointer" }}
-            />
-          </div>
+  setBusinessName(
+    data.business_name || "My Business"
+  );
+
+  setEmail(
+    data.email || ""
+  );
+
+} catch (err) {
+
+  console.error(
+    "Failed to load account",
+    err
+  );
+}
+
+}
+
+function logout() {
+
+localStorage.clear();
+navigate("/");
+
+}
+
+const navItems = [
+{
+label: "Purpose",
+route: "/setup-business",
+icon: <Target size={14} />
+},
+{
+label: "Solution",
+route: "/product",
+icon: <Lightbulb size={14} />
+},
+{
+label: "Audience",
+route: "/persona",
+icon: <Users size={14} />
+},
+{
+label: "Planner",
+route: "/planner",
+icon: <CalendarDays size={14} />
+},
+{
+label: "Execute",
+route: "/Planner",
+icon: <Sparkles size={14} />
+}
+];
+
+return ( <div className="app-shell">
 
 
-
-        </div>
-
-        <div className="header-right">
-          <div
-            className="business-chip"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {businessName.toUpperCase()} 👤
-            <span className="caret">▾</span>
-          </div>
-
-          {menuOpen && (
-  <div
-    className="dropdown-overlay"
-    onClick={() => setMenuOpen(false)}
-  >
+  {menuOpen && (
     <div
-      className="dropdown-menu"
-      onClick={(e) => e.stopPropagation()}
-    >
+      className="profile-backdrop"
+      onClick={() => setMenuOpen(false)}
+    />
+  )}
 
-              {/* Account Info Section */}
-              <div className="dropdown-account">
-                <div className="dropdown-business">
-                  {businessName.toUpperCase()}
-                </div>
-                <div className="dropdown-email">
-                  {email}
-                </div>
+  <aside className="sidebar">
+
+    <div
+      className="sidebar-logo"
+      onClick={() => navigate("/home")}
+    >
+      <img
+        src="/white_visualgrab_logo.png"
+        alt="VisualGrab"
+      />
+    </div>
+
+    <div className="sidebar-menu">
+
+      {navItems.map((item) => {
+
+        const active =
+          location.pathname === item.route;
+
+        return (
+          <button
+            key={item.label}
+            className={`sidebar-item ${
+              active ? "active" : ""
+            }`}
+            onClick={() =>
+              navigate(item.route)
+            }
+          >
+            <div className="sidebar-icon">
+              {item.icon}
+            </div>
+
+            <span>
+              {item.label}
+            </span>
+          </button>
+        );
+      })}
+
+    </div>
+
+    <div className="sidebar-footer">
+
+     
+
+      <div className="account-section">
+
+        <button
+          className="account-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(!menuOpen);
+          }}
+        >
+          <UserCircle2 size={18} />
+          <span>Profile</span>
+        </button>
+
+        {menuOpen && (
+
+          <div
+            className="profile-menu"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            <div className="profile-header">
+
+              <img
+                src="/white_visualgrab_logo.png"
+                alt="VisualGrab"
+                className="profile-logo"
+              />
+
+              <div className="profile-business">
+                {businessName}
               </div>
 
-      
-
-              <div className="dropdown-divider" />
-
-              <button onClick={() => navigate("/home")}>🏠︎ Home </button>
-              <button onClick={() => navigate("/setup-business")}>
-                💼 Update Business Profile 
-              </button>
-
-              <button onClick={() => navigate("/planner")}>
-                📅 Planner
-              </button>
-
-              <button onClick={() => navigate("/persona")}>
-                👨‍👩‍👧‍👦 Create Personas
-              </button>
-              <button onClick={() => navigate("/product")}>📦 Create Products</button>
-              
-              <button className="danger" onClick={logout}>
-                ➜] Logout
-              </button>
+              <div className="profile-email">
+                {email}
+              </div>
 
             </div>
-            </div>
-          )}
 
-        </div>
-      </header>
+            <div className="profile-divider" />
 
-      {/* BODY */}
-      
-        <main className="app-content">
-          <Outlet />
-        </main>
+            <button
+              className="logout-menu-btn"
+              onClick={logout}
+            >
+              Logout
+            </button>
+
+          </div>
+        )}
+
       </div>
+
     </div>
-  );
+
+  </aside>
+
+  <main className="main-container">
+
+    <div className="app-content">
+      <Outlet />
+    </div>
+
+  </main>
+
+</div>
+
+
+);
 }
