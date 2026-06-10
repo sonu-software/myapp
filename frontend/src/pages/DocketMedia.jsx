@@ -289,6 +289,13 @@ const DocketMedia = () => {
   const [visualElements,     setVisualElements]     = useState('');
   const [uploadedDateTime,   setUploadedDateTime]   = useState(null);
 
+
+
+
+  const [carouselPage,    setCarouselPage]    = useState(1);
+  const [carouselTotal,   setCarouselTotal]   = useState(0);
+  const CAROUSEL_PER_PAGE = 10;
+
   // ── Carousel ──────────────────────────────────────────────────────────────
   const [carouselDockets, setCarouselDockets] = useState([]);
 
@@ -299,6 +306,49 @@ const DocketMedia = () => {
 
 
   const [selectedFilterStage, setSelectedFilterStage] = useState("");
+
+
+  const [selectedFilterProduct,
+  setSelectedFilterProduct] = useState("");
+
+  const [selectedFilterPersona,
+  setSelectedFilterPersona] = useState("");
+
+  const [selectedFilterOccasion,
+  setSelectedFilterOccasion] = useState("");
+
+  const [selectedFilterMediaType,
+  setSelectedFilterMediaType] = useState("");
+
+  const [selectedFilterSubType,
+  setSelectedFilterSubType] = useState("");
+
+  const [searchText,
+  setSearchText] = useState("");
+
+  const [showCreateExecuteModal, setShowCreateExecuteModal] = useState(false);
+
+  const [newDocketTitle, setNewDocketTitle] = useState("");
+  const [newMode, setNewMode] = useState("");
+  const [newMediaType, setNewMediaType] = useState("");
+  const [newSubType, setNewSubType] = useState("");
+  const [newProductId, setNewProductId] = useState("");
+  const [newPersonaId, setNewPersonaId] = useState("");
+
+  const [newOccasionId, setNewOccasionId] = useState("");
+  const [occasionList, setOccasionList] = useState([]);
+
+
+  const [newExecuteDescription, setNewExecuteDescription] = useState("");
+  const [newVisualElements, setNewVisualElements] = useState("");
+  const [newUploadedDateTime, setNewUploadedDateTime] = useState(new Date());
+
+  const [createMediaTypes, setCreateMediaTypes] = useState([]);
+  const [createSubTypes, setCreateSubTypes] = useState([]);
+
+  
+
+
 
 
   const FILTER_STAGES = [
@@ -336,12 +386,6 @@ const formatDate = (date) => {
 
     useEffect(() => {
 
-    if (
-      !startDate &&
-      !endDate &&
-      !selectedFilterStage
-    ) return;
-
     const fetchFilteredData = async () => {
 
       try {
@@ -372,6 +416,62 @@ const formatDate = (date) => {
               selectedFilterStage
             );
           }
+
+
+
+          if (selectedFilterProduct) {
+            params.append(
+              "product_id",
+              selectedFilterProduct
+            );
+          }
+
+          if (selectedFilterPersona) {
+            params.append(
+              "persona_id",
+              selectedFilterPersona
+            );
+          }
+
+
+          if (selectedFilterOccasion) {
+              params.append(
+                "occasion_id",
+                selectedFilterOccasion
+              );
+            }
+
+
+
+
+
+
+          if (selectedFilterMediaType) {
+            params.append(
+              "media_type",
+              selectedFilterMediaType
+            );
+          }
+
+          if (selectedFilterSubType) {
+            params.append(
+              "subtype_name",
+              selectedFilterSubType
+            );
+          }
+
+          if (searchText.trim()) {
+            params.append(
+              "search",
+              searchText.trim()
+            );
+          }
+
+
+
+
+
+
 
           const docketRes = await fetch(
             `${API}/planner/carousel-dockets?${params.toString()}`,
@@ -406,7 +506,26 @@ const formatDate = (date) => {
 
     fetchFilteredData();
 
-  }, [startDate, endDate, selectedFilterStage]);
+  }, [
+
+    startDate,
+    endDate,
+
+    selectedFilterStage,
+
+    selectedFilterProduct,
+    selectedFilterPersona,
+
+    selectedFilterOccasion,
+
+    selectedFilterMediaType,
+    selectedFilterSubType,
+
+    searchText,
+
+    carouselPage
+
+  ]);
 
 
 
@@ -444,9 +563,7 @@ const formatDate = (date) => {
 
 
 
-  const [carouselPage,    setCarouselPage]    = useState(1);
-  const [carouselTotal,   setCarouselTotal]   = useState(0);
-  const CAROUSEL_PER_PAGE = 10;
+  
 
   // ── Product / Persona ─────────────────────────────────────────────────────
   const [productList,         setProductList]         = useState([]);
@@ -641,6 +758,38 @@ const formatDate = (date) => {
       .then(data => { if (data.success) setPersonaList(data.data); })
       .catch(console.error);
 
+
+
+
+    fetch(`${API}/products`, {
+      headers: AUTH()
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success)
+          setProductList(data.data);
+      })
+      .catch(console.error);
+
+
+
+
+    fetch(`${API}/planner/all-occasions`, {
+      headers: AUTH()
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setOccasionList(data.data || []);
+        }
+      })
+      .catch(console.error);
+
+
+    
+
+
+
     fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
       .then(r => r.json())
       .then(data => { if (data.success) setStageCounts(data.data); })
@@ -700,6 +849,54 @@ const formatDate = (date) => {
       .then(data => { if (data.success) setSubTypes(data.data); })
       .catch(console.error);
   }, [mediaType]);
+
+
+
+
+
+  useEffect(() => {
+    if (!newMode) {
+      setCreateMediaTypes([]);
+      return;
+    }
+
+    fetch(`${API}/media-types?mode=${newMode}`, {
+      headers: AUTH()
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setCreateMediaTypes(data.data);
+        }
+      });
+  }, [newMode]);
+
+  useEffect(() => {
+    if (!newMediaType) {
+      setCreateSubTypes([]);
+      return;
+    }
+
+    fetch(
+      `${API}/media-subtypes?mode=${newMode}&mediaType=${newMediaType}`,
+      { headers: AUTH() }
+    )
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setCreateSubTypes(data.data);
+        }
+      });
+  }, [newMediaType]);
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     if (!mode || !mediaType || !subType) return;
@@ -866,6 +1063,101 @@ const formatDate = (date) => {
     }
     setFieldValues(prev => ({ ...prev, [varNameOrField]: { ...prev[varNameOrField], value: val } }));
   }, []);
+
+
+
+
+
+  const reloadCarousel = async () => {
+    try {
+
+      const res = await fetch(
+        `${API}/planner/carousel-dockets`,
+        {
+          headers: AUTH()
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setCarouselDockets(data.data || []);
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
+
+
+  const handleCreateExecute = async () => {
+
+    if (
+      !newDocketTitle ||
+      !newMode ||
+      !newMediaType ||
+      !newSubType
+    ) {
+      alert("Please fill all required fields");
+      return;
+    }
+
+    try {
+
+      const res = await fetch(
+        `${API}/planner/docket`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${TOKEN()}`
+          },
+          body: JSON.stringify({
+            title: newDocketTitle,
+            tab: "media",
+            product_id: newProductId || null,
+            persona_id: newPersonaId || null,
+
+            occasion_id: newOccasionId || null,
+            mode: newMode,
+            mediaType: newMediaType,
+            subType: newSubType,
+            planner_date_time: new Date().toISOString(),
+            uploaded_date_time: newUploadedDateTime,
+            execute_description: newExecuteDescription,
+            visual_elements: newVisualElements
+          })
+        }
+      );
+
+      const data = await res.json();
+
+
+      if (data.success) {
+
+        await reloadCarousel();
+
+        setShowCreateExecuteModal(false);
+
+        navigate(`/docket-media/${data.docket_id}`);
+      }
+
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
+
+
+
+
+
+
+
 
 
   // ==========================================================================
@@ -1262,6 +1554,116 @@ const formatDate = (date) => {
                 </div>
 
 
+
+
+                <div className="dm-filter-field">
+
+                  <label>Topic</label>
+
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterOccasion}
+                    onChange={(e) =>
+                      setSelectedFilterOccasion(
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option value="">
+                      All Topics
+                    </option>
+
+                    {occasionList.map((event) => (
+                      <option
+                        key={event.occasion_id}
+                        value={event.occasion_id}
+                      >
+                        {event.title}
+                      </option>
+                    ))}
+                  </select>
+
+                </div>
+
+
+
+
+
+                <div className="dm-filter-field">
+
+                  <label>Product</label>
+
+                  <select
+                    value={selectedFilterProduct}
+                    onChange={(e) =>
+                      setSelectedFilterProduct(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      All Products
+                    </option>
+
+                    {productList.map(product => (
+                      <option
+                        key={product.product_id}
+                        value={product.product_id}
+                      >
+                        {product.product_name}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+
+                <div className="dm-filter-field">
+
+                  <label>Persona</label>
+
+                  <select
+                    value={selectedFilterPersona}
+                    onChange={(e) =>
+                      setSelectedFilterPersona(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      All Personas
+                    </option>
+
+                    {personaList.map(persona => (
+                      <option
+                        key={persona.persona_id}
+                        value={persona.persona_id}
+                      >
+                        {persona.persona_name}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+
+
+
+
+                <div className="dm-filter-field">
+
+                  <label>Search</label>
+
+                  <input
+                    type="text"
+                    value={searchText}
+                    onChange={(e) =>
+                      setSearchText(e.target.value)
+                    }
+                    placeholder="Search title"
+                  />
+
+                </div>
+
+
                 
 
 
@@ -1271,10 +1673,27 @@ const formatDate = (date) => {
                 <button
                   className="dm-filter-clear-btn"
                   onClick={() => {
+
                     setStartDate(null);
+
                     setEndDate(null);
+
                     setSelectedFilterStage("");
+
+                    setSelectedFilterProduct("");
+
+                    setSelectedFilterPersona("");
+
+                    setSelectedFilterMediaType("");
+
+                    setSelectedFilterOccasion("");
+
+                    setSelectedFilterSubType("");
+
+                    setSearchText("");
+
                     setShowFilterDropdown(false);
+
                   }}
                 >
                   Clear Filter
@@ -1294,6 +1713,14 @@ const formatDate = (date) => {
       {/* ════════════ CAROUSEL STRIP ════════════════════════════════════════ */}
       {/* Reference: dark navy bar, left arrow, 4 cards (topic/date/stage + thumb), right arrow + pager pill */}
       <div className="dm-carousel">
+
+
+        <button
+          className="create-execute-btn"
+          onClick={() => setShowCreateExecuteModal(true)}
+        >
+          +
+        </button>
 
   <button
     className="dm-carousel-nav"
@@ -1717,6 +2144,330 @@ const formatDate = (date) => {
       </div>
       {/* END MAIN CONTENT */}
 
+
+
+      {/* CREATE EXECUTE MODAL */}
+      {showCreateExecuteModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowCreateExecuteModal(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              onClick={() => setShowCreateExecuteModal(false)}
+            >
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+                <line
+                  x1="1"
+                  y1="1"
+                  x2="13"
+                  y2="13"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1="13"
+                  y1="1"
+                  x2="1"
+                  y2="13"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            <div className="modal-tabs">
+              <label className="tab-button active">
+                <span>Media</span>
+                <input
+                  type="radio"
+                  checked={true}
+                  readOnly
+                  className="tab-radio"
+                />
+              </label>
+            </div>
+
+            <div className="modal-body">
+
+              <div className="schedule-row">
+
+                <div className="schedule-title-field">
+                  <label className="form-label">
+                    Execute Title:
+                  </label>
+
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newDocketTitle}
+                    onChange={(e) =>
+                      setNewDocketTitle(e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className="schedule-picker-field">
+                  <label className="form-label">
+                    Upload Schedule:
+                  </label>
+
+                  <DatePicker
+                    selected={newUploadedDateTime}
+                    popperPlacement="bottom-end"
+                    onChange={(date) =>
+                      setNewUploadedDateTime(date)
+                    }
+                    showTimeSelect
+                    dateFormat="MMM d, yyyy h:mm aa"
+                    timeFormat="hh:mm aa"
+                    timeIntervals={15}
+                    className="planner-datepicker"
+                    placeholderText="Select upload time"
+                  />
+                </div>
+
+              </div>
+
+              <div className="docket-form-group">
+                <label>Execute Description</label>
+
+                <textarea
+                  value={newExecuteDescription}
+                  onChange={(e) =>
+                    setNewExecuteDescription(e.target.value)
+                  }
+                  placeholder="Enter execute description..."
+                />
+              </div>
+
+              <div className="docket-form-group">
+                <label>Visual Elements</label>
+
+                <textarea
+                  value={newVisualElements}
+                  onChange={(e) =>
+                    setNewVisualElements(e.target.value)
+                  }
+                  placeholder="Enter visual elements..."
+                />
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">
+                  Prompt Type:
+                </label>
+
+                <select
+                  className="form-input"
+                  value={newMode}
+                  onChange={(e) => {
+                    setNewMode(e.target.value);
+                    setNewMediaType("");
+                    setNewSubType("");
+                  }}
+                >
+                  <option value="">
+                    Select Prompt Type
+                  </option>
+
+                  <option value="message">
+                    Message
+                  </option>
+
+                  <option value="visuals">
+                    Visuals
+                  </option>
+                </select>
+              </div>
+
+              {newMode && (
+                <div className="form-row">
+                  <label className="form-label">
+                    {newMode === "message"
+                      ? "Message Type:"
+                      : "Visual Type:"}
+                  </label>
+
+                  <select
+                    className="form-input"
+                    value={newMediaType}
+                    onChange={(e) => {
+                      setNewMediaType(e.target.value);
+                      setNewSubType("");
+                    }}
+                  >
+                    <option value="">
+                      Select Type
+                    </option>
+
+                    {createMediaTypes.map((t) => (
+                      <option
+                        key={t.media_type}
+                        value={t.media_type}
+                      >
+                        {t.media_type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {newMediaType && (
+                <div className="form-row">
+                  <label className="form-label">
+                    {newMode === "message"
+                      ? "Message Sub Type:"
+                      : "Visual Sub Type:"}
+                  </label>
+
+                  <select
+                    className="form-input"
+                    value={newSubType}
+                    onChange={(e) =>
+                      setNewSubType(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Select Sub Type
+                    </option>
+
+                    {createSubTypes.map((s) => (
+                      <option
+                        key={s.subtype_name}
+                        value={s.subtype_name}
+                      >
+                        {s.subtype_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="form-row">
+                <label className="form-label">
+                  Product:
+                </label>
+
+                <select
+                  className="form-input"
+                  value={newProductId}
+                  onChange={(e) =>
+                    setNewProductId(e.target.value)
+                  }
+                >
+                  <option value="">
+                    Select Product
+                  </option>
+
+                  {productList.map((p) => (
+                    <option
+                      key={p.product_id}
+                      value={p.product_id}
+                    >
+                      {p.product_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label className="form-label">
+                  Persona:
+                </label>
+
+                <select
+                  className="form-input"
+                  value={newPersonaId}
+                  onChange={(e) =>
+                    setNewPersonaId(e.target.value)
+                  }
+                >
+                  <option value="">
+                    Select Persona
+                  </option>
+
+                  {personaList.map((p) => (
+                    <option
+                      key={p.persona_id}
+                      value={p.persona_id}
+                    >
+                      {p.persona_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+
+              <div className="form-row">
+                <label className="form-label">
+                  Event:
+                </label>
+
+                <select
+                  className="form-input"
+                  value={newOccasionId}
+                  onChange={(e) =>
+                    setNewOccasionId(e.target.value)
+                  }
+                >
+                  <option value="">
+                    Select Event
+                  </option>
+
+                  {occasionList.map((event) => (
+                    <option
+                      key={event.occasion_id}
+                      value={event.occasion_id}
+                    >
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+
+
+
+
+
+
+            </div>
+
+            <div className="modal-actions">
+
+              <button
+                className="modal-cancel-btn"
+                onClick={() =>
+                  setShowCreateExecuteModal(false)
+                }
+              >
+                CANCEL
+              </button>
+
+              <button
+                className="modal-save-btn"
+                onClick={handleCreateExecute}
+              >
+                CREATE EXECUTE
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      
+
       {/* ════════════ BOTTOM STAGE STATUS BAR ══════════════════════════════ */}
       {/* Reference: 🔍 Discovery 30  ✏️ Draft 15  ✨ Generate 23  📋 Review 34  ✅ Approve 56  📤 Publish 13  🔒 Closed 9  ❌ Rejected 11  ↻ */}
       <div className="dm-stagebar">
@@ -1882,6 +2633,7 @@ const formatDate = (date) => {
           </div>
         </div>
       )}
+      
 
       {/* Dropdown backdrop */}
       {(showStageDropdown || showNamesDropdown) && (

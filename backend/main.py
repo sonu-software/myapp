@@ -101,6 +101,61 @@ def require_business(user_id: int, db) -> int:
         cursor.close()
 
 
+def require_business_for_network_user(user_id: int, db) -> int:
+
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT primary_user_id
+            FROM network
+            WHERE secondary_user_id = %s
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        network_row = cursor.fetchone()
+
+        owner_user_id = (
+            network_row["primary_user_id"]
+            if network_row
+            else user_id
+        )
+
+        cursor.execute(
+            """
+            SELECT b.business_id
+            FROM businesses b
+            JOIN profiles p
+                ON b.profile_id = p.profile_id
+            WHERE p.user_id = %s
+            """,
+            (owner_user_id,)
+        )
+
+        row = cursor.fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=400,
+                detail="BUSINESS_REQUIRED"
+            )
+
+        return row["business_id"]
+
+    finally:
+        cursor.close()
+
+
+
+
+
+
+
+
 def resolve_media_subtype(cursor, mode: str, media_type: str, sub_type: str):
     """
     Walk media → media_type → media_subtype in a single helper.
@@ -258,6 +313,7 @@ class ChatRequest(BaseModel):
 class CreateDocketRequest(BaseModel):
     title: str
     tab: str
+    occasion_id: Optional[int] = None
     product_id: Optional[int] = None
     persona_id: Optional[int] = None
     mode: str
@@ -649,12 +705,32 @@ def get_secondary_users(
         # If primary → return only their added members
         cursor.execute(
             """
-            SELECT secondary_user_id AS user_id, secondary_email AS email
+            SELECT primary_user_id
+            FROM network
+            WHERE secondary_user_id=%s
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        mapping = cursor.fetchone()
+
+        owner_id = (
+            mapping["primary_user_id"]
+            if mapping
+            else user_id
+        )
+
+        cursor.execute(
+            """
+            SELECT secondary_user_id AS user_id,
+                secondary_email AS email
             FROM network
             WHERE primary_user_id=%s
             """,
-            (user_id,),
+            (owner_id,)
         )
+
         users = cursor.fetchall()
 
         return {"success": True, "data": users}
@@ -1735,6 +1811,7 @@ def create_docket(
                 business_id,
                 product_id,
                 persona_id,
+                occasion_id,
                 media_id,
                 media_type_id,
                 media_subtype_id,
@@ -1743,7 +1820,7 @@ def create_docket(
                 execute_description,
                 visual_elements
             )
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 req.title,
@@ -1751,6 +1828,7 @@ def create_docket(
                 business_id,
                 req.product_id,
                 req.persona_id,
+                req.occasion_id,
                 media_id,
                 media_type_id,
                 media_subtype_id,
@@ -1943,11 +2021,25 @@ def get_my_dockets(
 
 
 
+from fastapi import Query
+
 @app.get("/planner/carousel-dockets")
 def get_carousel_dockets(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+
     stage: Optional[str] = None,
+
+    product_id: Optional[int] = None,
+    persona_id: Optional[int] = None,
+
+    occasion_id: Optional[int] = None,
+
+    media_type: Optional[str] = None,
+    subtype_name: Optional[str] = None,
+
+    search: Optional[str] = None,
+
     user_id: int = Depends(get_current_user)
 ):
 
@@ -1956,7 +2048,10 @@ def get_carousel_dockets(
 
     try:
 
-        business_id = require_business(user_id, db)
+        business_id = require_business_for_network_user(
+            user_id,
+            db
+        )
 
         query = """
             SELECT
@@ -1968,7 +2063,10 @@ def get_carousel_dockets(
 
                 dma.uploaded_url,
 
-                ea.stage AS current_stage,
+                COALESCE(ea.stage,'discovery') AS current_stage,
+
+                ea.assigned_to,
+                ea.assigned_by,
 
                 m.media_name,
                 mt.media_type,
@@ -2022,6 +2120,64 @@ def get_carousel_dockets(
         """
 
         params = [business_id]
+
+
+        # Product filter
+        if product_id:
+            query += """
+                AND d.product_id = %s
+            """
+            params.append(product_id)
+
+        # Persona filter
+        if persona_id:
+            query += """
+                AND d.persona_id = %s
+            """
+            params.append(persona_id)
+
+
+
+        
+        # Occasion filter
+        if occasion_id:
+            query += """
+                AND d.occasion_id = %s
+            """
+            params.append(occasion_id)
+
+        # Media Type filter
+        if media_type:
+            query += """
+                AND mt.media_type = %s
+            """
+            params.append(media_type)
+
+        # Media Subtype filter
+        if subtype_name:
+            query += """
+                AND ms.subtype_name = %s
+            """
+            params.append(subtype_name)
+
+        # Search filter
+        if search:
+
+            query += """
+                AND (
+                    d.title LIKE %s
+                    OR p.product_name LIKE %s
+                    OR pe.persona_name LIKE %s
+                )
+            """
+
+            search_like = f"%{search}%"
+
+            params.extend([
+                search_like,
+                search_like,
+                search_like
+            ])
 
         # =====================================
         # DATE FILTER
@@ -2724,6 +2880,38 @@ def delete_occasion(occasion_id: int, user_id: int = Depends(get_current_user)):
         db.close()
 
 
+
+
+
+
+@app.get("/planner/all-occasions")
+def get_all_occasions(user_id: int = Depends(get_current_user)):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        business_id = require_business_for_network_user(
+            user_id,
+            db
+        )
+
+        cursor.execute("""
+            SELECT occasion_id, title, occasion_date
+            FROM occasions
+            WHERE business_id=%s
+            ORDER BY occasion_date DESC
+        """, (business_id,))
+
+        return {
+            "success": True,
+            "data": cursor.fetchall()
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
 # =============================================================================
 #  FILE UPLOADS  —  image / description
 # =============================================================================
@@ -3216,7 +3404,18 @@ def post_to_linkedin_api(docket_id: int, user_id: int = Depends(get_current_user
 def get_stage_counts(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+
     stage: Optional[str] = None,
+
+    product_id: Optional[int] = None,
+    persona_id: Optional[int] = None,
+    occasion_id: Optional[int] = None,
+
+    media_type: Optional[str] = None,
+    subtype_name: Optional[str] = None,
+
+    search: Optional[str] = None,
+
     user_id: int = Depends(get_current_user)
 ):
 
@@ -3225,7 +3424,10 @@ def get_stage_counts(
 
     try:
 
-        business_id = require_business(user_id, db)
+        business_id = require_business_for_network_user(
+            user_id,
+            db
+        )
 
         query = """
             SELECT
@@ -3250,6 +3452,66 @@ def get_stage_counts(
         """
 
         params = [business_id]
+
+        # Product filter
+        if product_id:
+            query += """
+                AND d.product_id = %s
+            """
+            params.append(product_id)
+
+        # Persona filter
+        if persona_id:
+            query += """
+                AND d.persona_id = %s
+            """
+            params.append(persona_id)
+
+
+
+        
+
+        if occasion_id:
+            query += """
+                AND d.occasion_id = %s
+            """
+            params.append(occasion_id)
+
+        # Media Type filter
+        if media_type:
+            query += """
+                AND mt.media_type = %s
+            """
+            params.append(media_type)
+
+        # Media Subtype filter
+        if subtype_name:
+            query += """
+                AND ms.subtype_name = %s
+            """
+            params.append(subtype_name)
+
+        # Search filter
+        if search:
+
+            query += """
+                AND (
+                    d.title LIKE %s
+                    OR p.product_name LIKE %s
+                    OR pe.persona_name LIKE %s
+                )
+            """
+
+            search_like = f"%{search}%"
+
+            params.extend([
+                search_like,
+                search_like,
+                search_like
+            ])
+
+
+
 
         if stage:
 
