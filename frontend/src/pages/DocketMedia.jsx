@@ -2408,7 +2408,7 @@ const formatDate = (date) => {
 
               <div className="form-row">
                 <label className="form-label">
-                  Event:
+                  Topic:
                 </label>
 
                 <select
@@ -2419,7 +2419,7 @@ const formatDate = (date) => {
                   }
                 >
                   <option value="">
-                    Select Event
+                    Select Topic
                   </option>
 
                   {occasionList.map((event) => (
