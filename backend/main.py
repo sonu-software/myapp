@@ -721,6 +721,25 @@ def get_secondary_users(
             else user_id
         )
 
+        # Get owner email
+        cursor.execute(
+            """
+            SELECT email
+            FROM users
+            WHERE user_id=%s
+            """,
+            (owner_id,)
+        )
+
+        owner = cursor.fetchone()
+
+        users = [
+            {
+                "user_id": owner_id,
+                "email": owner["email"]
+            }
+        ]
+
         cursor.execute(
             """
             SELECT secondary_user_id AS user_id,
@@ -731,9 +750,12 @@ def get_secondary_users(
             (owner_id,)
         )
 
-        users = cursor.fetchall()
+        users.extend(cursor.fetchall())
 
-        return {"success": True, "data": users}
+        return {
+            "success": True,
+            "data": users
+        }
 
     finally:
         cursor.close()
@@ -2053,6 +2075,25 @@ def get_carousel_dockets(
             db
         )
 
+
+
+        cursor.execute(
+            """
+            SELECT primary_user_id
+            FROM network
+            WHERE secondary_user_id = %s
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        mapping = cursor.fetchone()
+
+
+
+
+
+
         query = """
             SELECT
                 d.docket_id,
@@ -2067,6 +2108,15 @@ def get_carousel_dockets(
 
                 ea.assigned_to,
                 ea.assigned_by,
+
+
+
+                assigned_to_user.email AS assigned_to_email,
+                assigned_by_user.email AS assigned_by_email,
+
+
+
+
 
                 m.media_name,
                 mt.media_type,
@@ -2116,10 +2166,37 @@ def get_carousel_dockets(
             ) ea
             ON ea.execute_id = d.docket_id
 
+
+
+
+            LEFT JOIN users assigned_to_user
+                ON ea.assigned_to = assigned_to_user.user_id
+
+            LEFT JOIN users assigned_by_user
+                ON ea.assigned_by = assigned_by_user.user_id
+
+
+
+
+
+
+
             WHERE d.business_id = %s
         """
 
         params = [business_id]
+
+
+        if mapping:
+
+            query += """
+                AND ea.assigned_to = %s
+            """
+
+            params.append(user_id)
+
+
+
 
 
         # Product filter
@@ -2685,6 +2762,53 @@ def get_current_stage(docket_id: int):
     finally:
         cursor.close()
         db.close()
+
+
+
+
+
+
+
+
+@app.get("/execute/current-owner/{docket_id}")
+def get_current_owner(
+    docket_id: int,
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT assigned_to
+            FROM execute_assignments
+            WHERE execute_id=%s
+            ORDER BY assignment_id DESC
+            LIMIT 1
+            """,
+            (docket_id,)
+        )
+
+        row = cursor.fetchone()
+
+        return {
+            "success": True,
+            "assigned_to":
+                row["assigned_to"]
+                if row
+                else user_id,
+            "current_user":
+                user_id
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
 
 
 @app.get("/process-stages/{current_stage}")
@@ -3429,6 +3553,24 @@ def get_stage_counts(
             db
         )
 
+
+        cursor.execute(
+            """
+            SELECT primary_user_id
+            FROM network
+            WHERE secondary_user_id = %s
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        mapping = cursor.fetchone()
+
+
+
+
+
+
         query = """
             SELECT
                 d.docket_id,
@@ -3452,6 +3594,14 @@ def get_stage_counts(
         """
 
         params = [business_id]
+
+        if mapping:
+
+            query += """
+                AND ea.assigned_to = %s
+            """
+
+            params.append(user_id)
 
         # Product filter
         if product_id:

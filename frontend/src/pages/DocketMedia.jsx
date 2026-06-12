@@ -582,6 +582,9 @@ const formatDate = (date) => {
   const [networkUsers, setNetworkUsers] = useState([]);
   const [assignedUser, setAssignedUser] = useState('');
 
+
+  const [isCurrentOwner, setIsCurrentOwner] = useState(true);
+
   // ── Stage ─────────────────────────────────────────────────────────────────
   const [currentStage,  setCurrentStage]  = useState('discovery');
   const [selectedStage, setSelectedStage] = useState('');
@@ -742,6 +745,26 @@ const formatDate = (date) => {
         .then(r => r.json()).then(data => {
           if (data.success) { setCurrentStage(data.stage); setSelectedStage(data.stage); }
         }),
+
+
+      fetch(`${API}/execute/current-owner/${docketId}`, {
+        headers
+      })
+      .then(r => r.json())
+      .then(data => {
+
+        if (data.success) {
+
+          setIsCurrentOwner(
+            Number(data.assigned_to) === Number(data.current_user)
+          );
+
+        }
+
+      }),
+
+
+        
 
       fetch(`${API}/network/secondary-users?docket_id=${docketId}`, { headers })
         .then(r => r.json()).then(data => { if (data.success) setNetworkUsers(data.data); }),
@@ -951,7 +974,8 @@ const formatDate = (date) => {
 
         setCurrentStage(data.stage);
 
-        setSelectedStage(data.stage);
+        // REMOVE THIS LINE
+        // setSelectedStage(data.stage);
 
       }
 
@@ -1826,7 +1850,12 @@ const formatDate = (date) => {
 
           {/* Save icon — top-right of left panel */}
           <div className="dm-left-header">
-            <button className="dm-icon-btn" title="Save" onClick={handleFullSave}>
+            <button
+                className="dm-icon-btn"
+                title="Save"
+                onClick={handleFullSave}
+                disabled={!isCurrentOwner}
+              >
               <SaveIcon/>
             </button>
           </div>
@@ -1839,6 +1868,7 @@ const formatDate = (date) => {
                 className="dm-form-input"
                 type="text"
                 placeholder="Enter a catchy title"
+                disabled={!isCurrentOwner}
                 value={docketTitle}
                 maxLength={titleMax}
                 onChange={e => setDocketTitle(e.target.value)}
@@ -1854,6 +1884,7 @@ const formatDate = (date) => {
               <textarea
                 className="dm-form-textarea"
                 placeholder="Describe your visual"
+                disabled={!isCurrentOwner}
                 value={executeDescription}
                 maxLength={descMax}
                 rows={4}
@@ -1870,6 +1901,7 @@ const formatDate = (date) => {
               <textarea
                 className="dm-form-textarea"
                 placeholder="Add key elements to include"
+                disabled={!isCurrentOwner}
                 value={visualElements}
                 maxLength={veMax}
                 rows={4}
@@ -1917,6 +1949,7 @@ const formatDate = (date) => {
                   <input
                     className="dm-chat-input"
                     placeholder="Type your message"
+                    disabled={!isCurrentOwner}
                     value={userMessage}
                     onChange={e => setUserMessage(e.target.value)}
                     onKeyDown={e => {
@@ -1925,14 +1958,31 @@ const formatDate = (date) => {
                       }
                     }}
                   />
-                  <button className="dm-chat-send" onClick={userMessage.trim() ? handleSendMessage : undefined}>
+                  <button
+                    className="dm-chat-send"
+                    disabled={!isCurrentOwner}
+                    onClick={
+                      isCurrentOwner && userMessage.trim()
+                        ? handleSendMessage
+                        : undefined
+                    }
+                  >
                     <SendIcon active={Boolean(userMessage.trim())}/>
                   </button>
                 </div>
                 <button
                   className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
-                  onClick={canGenerate && !isGeneratingImage ? handleGenerate : undefined}
-                  disabled={isGeneratingImage}
+                  onClick={
+                    isCurrentOwner &&
+                    canGenerate &&
+                    !isGeneratingImage
+                      ? handleGenerate
+                      : undefined
+                  }
+                  disabled={
+                    !isCurrentOwner ||
+                    isGeneratingImage
+                  }
                 >
                   <SparkleIcon/>
                   {isGeneratingImage ? 'Generating…' : '✦ Generate'}
