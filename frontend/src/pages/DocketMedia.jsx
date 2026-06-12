@@ -607,6 +607,12 @@ const formatDate = (date) => {
   const [visualMessage,     setVisualMessage]     = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
+
+  const [uploadMessage, setUploadMessage] = useState("");
+
+
+  const fileInputRef = useRef(null);
+
   // ── Feedback ──────────────────────────────────────────────────────────────
   const [adminMediaId,           setAdminMediaId]           = useState(null);
   const [showFeedbackModal,      setShowFeedbackModal]      = useState(false);
@@ -645,6 +651,8 @@ const formatDate = (date) => {
   const [saveToastMessage, setSaveToastMessage] = useState('');
   const [showSubmitToast,  setShowSubmitToast]  = useState(false);
 
+  
+
   // ── Validation ────────────────────────────────────────────────────────────
   const [canGenerate,     setCanGenerate]     = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -680,6 +688,74 @@ const formatDate = (date) => {
 
   // scroll chat to bottom
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversationBubbles]);
+
+  
+  
+  
+  
+  const handleManualImageUpload = async (event) => {
+
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const uploadRes = await fetch(
+        `${API}/upload-image`,
+        {
+          method: "POST",
+          headers: AUTH(),
+          body: formData
+        }
+      );
+
+      const uploadData = await uploadRes.json();
+
+      if (!uploadData.success) {
+        alert("Upload failed");
+        return;
+      }
+
+      const imageUrl = uploadData.url;
+
+      const saveRes = await fetch(
+        `${API}/admin/docket/${docketId}/upload-visual`,
+        {
+          method: "POST",
+          headers: JSON_AUTH(),
+          body: JSON.stringify({
+            uploaded_url: imageUrl,
+            message: visualMessage || ""
+          })
+        }
+      );
+
+      const saveData = await saveRes.json();
+
+      if (saveData.success) {
+
+        setVisualImage(imageUrl);
+
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+
+
+
+
+
 
   // ==========================================================================
   //  DATA FETCHING
@@ -1404,6 +1480,46 @@ const formatDate = (date) => {
     } catch (err) { console.error(err); }
   }, [docketId]);
 
+
+
+
+  const handleSaveVisualMessage = async () => {
+
+    try {
+
+      const res = await fetch(
+        `${API}/admin/docket/${docketId}/message`,
+        {
+          method: "POST",
+          headers: JSON_AUTH(),
+          body: JSON.stringify({
+            message: visualMessage
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+
+        setIsEditMode(false);
+
+      }
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+
+
+
+
+
+
   const submitFeedback = useCallback(async () => {
     if (!feedbackText.trim()) return;
     try {
@@ -2085,9 +2201,14 @@ const formatDate = (date) => {
 
           {/* Expand | Download icons row */}
           <div className="dm-visual-icons-row">
-            <button className="dm-icon-btn" title="Expand fullscreen">
+
+            <button
+              className="dm-icon-btn"
+              title="Expand fullscreen"
+            >
               <ExpandIcon/>
             </button>
+
             <button
               className={`dm-icon-btn${!visualImage ? ' dm-icon-btn--disabled' : ''}`}
               title="Download"
@@ -2096,29 +2217,83 @@ const formatDate = (date) => {
             >
               <DownloadIcon/>
             </button>
+
+            <button
+              className="dm-upload-btn"
+              title="Upload Image"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Upload
+            </button>
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleManualImageUpload}
+            />
+
           </div>
 
           {/* Message section */}
           <div className="dm-message-section">
             <div className="dm-right-section-header">
               <span className="dm-right-section-title">Message</span>
-              <button
-                className="dm-icon-btn"
-                title="Copy message"
-                onClick={() => {
-                  if (visualMessage) {
-                    navigator.clipboard.writeText(visualMessage);
-                    setShowCopyToast(true);
-                    setTimeout(() => setShowCopyToast(false), 3000);
-                  }
-                }}
-              >
-                <CopyIcon/>
-              </button>
+
+
+              {!isEditMode ? (
+
+                <button
+                  className="dm-icon-btn"
+                  title="Edit Message"
+                  onClick={() => setIsEditMode(true)}
+                >
+                  ✏️
+                </button>
+
+              ) : (
+
+                <button
+                  className="dm-icon-btn"
+                  title="Save Message"
+                  onClick={handleSaveVisualMessage}
+                >
+                  💾
+                </button>
+
+              )}
+
+
+
+
             </div>
+
+
             <div className="dm-message-body">
-              {visualMessage || ''}
+
+              {isEditMode ? (
+
+                <textarea
+                  className="dm-message-editor"
+                  value={visualMessage}
+                  onChange={(e) =>
+                    setVisualMessage(e.target.value)
+                  }
+                />
+
+              ) : (
+
+                visualMessage || ''
+
+              )}
+
             </div>
+            
+
+
+
+
           </div>
 
           {/* ── Bottom action buttons: Stages | Names | Submit ── */}

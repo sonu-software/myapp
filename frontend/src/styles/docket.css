@@ -1687,3 +1687,62 @@ textarea, input { font-family: inherit; }
 .dm-filter-field select:focus {
   border-color: #4A90E2;
 }
+
+
+
+
+.dm-message-editor{
+  width:100%;
+  height:100%;
+  border:none;
+  outline:none;
+  resize:none;
+  font-size:11px;
+  line-height:1.6;
+  background:#fff;
+  color:#374151;
+}
+
+
+
+.dm-upload-btn{
+
+  height:34px;
+
+  padding:0 14px;
+
+  border:1px solid #dbe3ee;
+
+  border-radius:8px;
+
+  background:#ffffff;
+
+  color:#172033;
+
+  font-size:12px;
+  font-weight:600;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  gap:6px;
+
+  transition:.2s ease;
+
+  white-space:nowrap;
+}
+
+.dm-upload-btn:hover{
+
+  background:#eef4ff;
+
+  border-color:#4A90E2;
+
+  color:#4A90E2;
+}
+
+.dm-upload-btn:active{
+
+  transform:scale(.98);
+}
