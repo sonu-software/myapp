@@ -1255,21 +1255,28 @@ const formatDate = (date) => {
       const saved = {};
       const newMand = [], newOpt = [];
       data.data.forEach(row => {
-        saved[row.label] = { value: row.value, enabled: row.checkbox_clicked === 1 };
+        const matchedField =
+          [...defMandatory, ...defOptional]
+            .find(f => f.label === row.label);
+
+        const key =
+          matchedField?.variable_name || row.label;
+
+        saved[key] = {
+          value: row.value,
+          enabled: row.checkbox_clicked === 1
+        };
+
+
+
         const exists =
           defMandatory.some(
-            f => f.variable_name === row.label
+            f => f.label === row.label
           ) ||
           defOptional.some(
-            f => f.variable_name === row.label
-          ) ||
-          newMand.some(
-            f => f.variable_name === row.label
-          ) ||
-          newOpt.some(
-            f => f.variable_name === row.label
+            f => f.label === row.label
           );
-        if (!exists) {
+        if (!exists && row.field_source === "custom") {
           const cf = { id: Date.now() + Math.random(), label: row.label, variable_name: row.label, box: row.box, isCustom: true };
           if (row.box === 'mandatory') newMand.push(cf); else newOpt.push(cf);
         }
