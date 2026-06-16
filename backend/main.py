@@ -306,6 +306,7 @@ class ChatRequest(BaseModel):
     execute_title: Optional[str] = ""
     execute_description: Optional[str] = ""
     visual_elements: Optional[str] = ""
+    summary: Optional[str] = ""
 
     fields: Optional[List[str]] = []
 
@@ -362,6 +363,7 @@ class UpdateDocketRequest(BaseModel):
     title: str
     execute_description: str
     visual_elements: str
+    summary: str
 
 
 class UploadVisualRequest(BaseModel):
@@ -1410,6 +1412,8 @@ async def chat_with_ai(
                 "execute_description": req.execute_description,
                 "visual_elements": req.visual_elements,
 
+                "summary": req.summary,
+
                 "fields": fields_for_ai,
                 "previous_values": previous_values
             },
@@ -1454,14 +1458,9 @@ async def chat_with_ai(
             visual_elements=new_visual_elements
         )
 
-        new_execute_description = enhanced_result.get(
-            "execute_description",
-            new_execute_description
-        )
-
-        new_visual_elements = enhanced_result.get(
-            "visual_elements",
-            new_visual_elements
+        new_summary = enhanced_result.get(
+            "summary",
+            req.summary
         )
 
 
@@ -1512,20 +1511,10 @@ async def chat_with_ai(
         cursor.execute("""
             UPDATE docket
             SET
-                normal_execute_description=%s,
-                normal_visual_elements=%s,
-
-                execute_description=%s,
-                visual_elements=%s
-
+                summary=%s
             WHERE docket_id=%s
         """, (
-            normal_execute_description,
-            normal_visual_elements,
-
-            new_execute_description,
-            new_visual_elements,
-
+            new_summary,
             req.docket_id
         ))
 
@@ -1585,8 +1574,7 @@ async def chat_with_ai(
         return {
             "success": True,
             "fields": field_values,
-            "execute_description": new_execute_description,
-            "visual_elements": new_visual_elements
+            "summary": new_summary
         }
 
     except Exception as e:
@@ -1801,11 +1789,6 @@ def generate_default_ai_fields(
 
 
 @app.post("/planner/docket")
-
-
-
-    
-
 def create_docket(
     req: CreateDocketRequest,
     user_id: int = Depends(get_current_user),
@@ -1840,9 +1823,10 @@ def create_docket(
                 planner_date_time,
                 uploaded_date_time,
                 execute_description,
-                visual_elements
+                visual_elements,
+                summary
             )
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 req.title,
@@ -1858,6 +1842,7 @@ def create_docket(
                 req.uploaded_date_time or datetime.utcnow(),
                 req.execute_description,
                 req.visual_elements,
+                req.summary,
             ),
         )
 
@@ -3743,13 +3728,15 @@ def update_docket(
             SET
                 title=%s,
                 execute_description=%s,
-                visual_elements=%s
+                visual_elements=%s,
+                summary=%s
             WHERE docket_id=%s
             """,
             (
                 req.title,
                 req.execute_description,
                 req.visual_elements,
+                req.summary,
                 docket_id
             )
         )
@@ -3766,3 +3753,23 @@ def update_docket(
     finally:
         cursor.close()
         db.close()
+
+
+
+
+
+@app.get("/download-image")
+def download_image(key: str):
+
+    url = s3.generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": BUCKET_NAME,
+            "Key": key,
+            "ResponseContentDisposition":
+                'attachment'
+        },
+        ExpiresIn=300
+    )
+
+    return {"url": url}

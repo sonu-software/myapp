@@ -49,34 +49,170 @@ function buildStructuredPersona(persona) {
 }
 
 async function downloadImage(url, docketId) {
-  const parts    = url.split(/[?#]/)[0].split('/');
-  const rawName  = parts[parts.length - 1] || `visual-output-${docketId}`;
-  const fileName = /\.[a-z]{2,5}$/i.test(rawName) ? rawName : `${rawName}.png`;
-  const trigger  = (href, dl = fileName) => {
-    const a = Object.assign(document.createElement('a'), { href, download: dl, style: 'display:none' });
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+  const parts =
+    url.split(/[?#]/)[0].split("/");
+
+  const rawName =
+    parts[parts.length - 1] ||
+    `execute-${docketId}`;
+
+  const fileName =
+    /\.[a-z]{2,5}$/i.test(rawName)
+      ? rawName
+      : `${rawName}.png`;
+
+  const triggerDownload = (
+    href,
+    download = fileName
+  ) => {
+
+    const a =
+      document.createElement("a");
+
+    a.href = href;
+
+    a.download = download;
+
+    a.style.display = "none";
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
   };
+
   try {
-    const res = await fetch(url, { mode: 'cors' });
-    if (!res.ok) throw new Error();
-    const obj = URL.createObjectURL(await res.blob());
-    trigger(obj); setTimeout(() => URL.revokeObjectURL(obj), 10_000);
-  } catch {
-    try {
-      await new Promise((res, rej) => {
-        const img = new Image(); img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const c = document.createElement('canvas');
-          c.width = img.naturalWidth; c.height = img.naturalHeight;
-          c.getContext('2d').drawImage(img, 0, 0);
-          c.toBlob(blob => { const o = URL.createObjectURL(blob); trigger(o); setTimeout(() => URL.revokeObjectURL(o), 10_000); res(); }, 'image/png');
-        };
-        img.onerror = rej;
-        img.src = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-      });
-    } catch { trigger(url); }
+
+    const res = await fetch(
+      url,
+      {
+        mode: "cors"
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        "fetch failed"
+      );
+    }
+
+    const objectUrl =
+      URL.createObjectURL(
+        await res.blob()
+      );
+
+    triggerDownload(objectUrl);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+    }, 10000);
+
+    return;
+
+  } catch (err) {
+
+    console.error(
+      "Blob download failed",
+      err
+    );
+
   }
+
+  try {
+
+    await new Promise(
+      (resolve, reject) => {
+
+        const img = new Image();
+
+        img.crossOrigin =
+          "anonymous";
+
+        img.onload = () => {
+
+          const canvas =
+            document.createElement(
+              "canvas"
+            );
+
+          canvas.width =
+            img.naturalWidth;
+
+          canvas.height =
+            img.naturalHeight;
+
+          canvas
+            .getContext("2d")
+            .drawImage(
+              img,
+              0,
+              0
+            );
+
+          canvas.toBlob(
+            (blob) => {
+
+              const objectUrl =
+                URL.createObjectURL(
+                  blob
+                );
+
+              triggerDownload(
+                objectUrl
+              );
+
+              setTimeout(() => {
+                URL.revokeObjectURL(
+                  objectUrl
+                );
+              }, 10000);
+
+              resolve();
+
+            },
+            "image/png"
+          );
+
+        };
+
+        img.onerror = reject;
+
+        img.src =
+          `${url}${
+            url.includes("?")
+              ? "&"
+              : "?"
+          }_t=${Date.now()}`;
+
+      }
+    );
+
+    return;
+
+  } catch (err) {
+
+    console.error(
+      "Canvas download failed",
+      err
+    );
+
+  }
+
+  window.open(
+    url,
+    "_blank"
+  );
+
 }
+
+
+
+
+
+
 
 // =============================================================================
 //  ICONS
@@ -173,6 +309,32 @@ const SaveIcon = () => (
     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
     <polyline points="17 21 17 13 7 13 7 21" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
     <polyline points="7 3 7 8 15 8" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+
+
+
+const InfoIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+      stroke="#1a2744"
+      strokeWidth="2"
+    />
+    <path
+      d="M12 10V16"
+      stroke="#1a2744"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+    <circle
+      cx="12"
+      cy="7"
+      r="1"
+      fill="#1a2744"
+    />
   </svg>
 );
 
@@ -299,9 +461,14 @@ const DocketMedia = () => {
   // ── Carousel ──────────────────────────────────────────────────────────────
   const [carouselDockets, setCarouselDockets] = useState([]);
 
+  const [summary, setSummary] = useState('');
+
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+
+
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
 
 
@@ -602,6 +769,12 @@ const formatDate = (date) => {
   const [selectedHistoryPrompt, setSelectedHistoryPrompt] = useState(null);
   const [visualHistoryList,     setVisualHistoryList]     = useState([]);
 
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
+  const [showLabelsModal, setShowLabelsModal] =
+  useState(false);
+
+
   // ── Visual output ─────────────────────────────────────────────────────────
   const [visualImage,       setVisualImage]       = useState(null);
   const [visualMessage,     setVisualMessage]     = useState('');
@@ -773,6 +946,7 @@ const formatDate = (date) => {
           setDocketTitle(d.title);
           setExecuteDescription(d.execute_description || '');
           setVisualElements(d.visual_elements || '');
+          setSummary(d.summary || '');
           setUploadedDateTime(d.uploaded_date_time);
           setMode(d.media_name);
           setMediaType(d.media_type);
@@ -1082,7 +1256,19 @@ const formatDate = (date) => {
       const newMand = [], newOpt = [];
       data.data.forEach(row => {
         saved[row.label] = { value: row.value, enabled: row.checkbox_clicked === 1 };
-        const exists = defMandatory.some(f => f.variable_name === row.label) || defOptional.some(f => f.variable_name === row.label);
+        const exists =
+          defMandatory.some(
+            f => f.variable_name === row.label
+          ) ||
+          defOptional.some(
+            f => f.variable_name === row.label
+          ) ||
+          newMand.some(
+            f => f.variable_name === row.label
+          ) ||
+          newOpt.some(
+            f => f.variable_name === row.label
+          );
         if (!exists) {
           const cf = { id: Date.now() + Math.random(), label: row.label, variable_name: row.label, box: row.box, isCustom: true };
           if (row.box === 'mandatory') newMand.push(cf); else newOpt.push(cf);
@@ -1118,7 +1304,8 @@ const formatDate = (date) => {
         body: JSON.stringify({
           title: docketTitle,
           execute_description: executeDescription,
-          visual_elements: visualElements
+          visual_elements: visualElements,
+          summary: summary
         })
       }
     );
@@ -1147,7 +1334,8 @@ const formatDate = (date) => {
       docketId,
       docketTitle,
       executeDescription,
-      visualElements]);
+      visualElements,
+      summary]);
 
   const handleFieldToggle = useCallback((varName, checked) => {
     setFieldValues(prev => ({ ...prev, [varName]: { ...prev[varName], enabled: checked } }));
@@ -1227,7 +1415,8 @@ const formatDate = (date) => {
             planner_date_time: new Date().toISOString(),
             uploaded_date_time: newUploadedDateTime,
             execute_description: newExecuteDescription,
-            visual_elements: newVisualElements
+            visual_elements: newVisualElements,
+            summary: summary
           })
         }
       );
@@ -1283,6 +1472,7 @@ const formatDate = (date) => {
           execute_title: docketTitle,
           execute_description: executeDescription,
           visual_elements: visualElements,
+          summary: summary,
           fields: fieldNames,
         }),
       });
@@ -1296,12 +1486,8 @@ const formatDate = (date) => {
           return updated;
         });
 
-        setExecuteDescription(
-          data.execute_description || ""
-        );
-
-        setVisualElements(
-          data.visual_elements || ""
+        setSummary(
+          data.summary || ""
         );
 
 
@@ -1964,16 +2150,37 @@ const formatDate = (date) => {
           
           <div className="dm-left-top"></div>
 
+
           {/* Save icon — top-right of left panel */}
           <div className="dm-left-header">
+
             <button
-                className="dm-icon-btn"
-                title="Save"
-                onClick={handleFullSave}
-                disabled={!isCurrentOwner}
-              >
-              <SaveIcon/>
+              className="dm-icon-btn"
+              title="Info"
+              onClick={() => setShowInfoModal(true)}
+            >
+              <InfoIcon />
             </button>
+
+
+
+            <button
+              className="dm-icon-btn"
+              onClick={() => setShowLabelsModal(true)}
+              title="Labels"
+            >
+              Labels
+            </button>
+
+            <button
+              className="dm-icon-btn"
+              title="Save"
+              onClick={handleFullSave}
+              disabled={!isCurrentOwner}
+            >
+              <SaveIcon />
+            </button>
+
           </div>
 
           {/* Title field */}
@@ -2024,6 +2231,23 @@ const formatDate = (date) => {
                 onChange={e => setVisualElements(e.target.value)}
               />
               <span className="dm-char-count">{veLen}/{veMax}</span>
+            </div>
+          </div>
+
+
+
+          <div className="dm-form-row">
+            <label className="dm-form-label">Summary</label>
+
+            <div className="dm-form-field-wrap">
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Enter summary"
+                disabled={!isCurrentOwner}
+                value={summary}
+                rows={4}
+                onChange={e => setSummary(e.target.value)}
+              />
             </div>
           </div>
 
@@ -2205,6 +2429,12 @@ const formatDate = (date) => {
             <button
               className="dm-icon-btn"
               title="Expand fullscreen"
+              disabled={!visualImage}
+              onClick={() => {
+                if (visualImage) {
+                  setShowImagePreview(true);
+                }
+              }}
             >
               <ExpandIcon/>
             </button>
@@ -2745,6 +2975,265 @@ const formatDate = (date) => {
         </div>
       )}
 
+
+
+
+      
+
+      {showInfoModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowInfoModal(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "700px",
+              width: "90%"
+            }}
+          >
+
+            <div className="modal-header">
+
+              <h3>Execute Details</h3>
+
+              <button
+                className="modal-close"
+                onClick={() => setShowInfoModal(false)}
+              >
+                <CloseIcon />
+              </button>
+
+            </div>
+
+            <div className="info-grid">
+
+              <div>
+                <strong>Title</strong>
+                <p>{docketTitle || "-"}</p>
+              </div>
+
+              <div>
+                <strong>Mode</strong>
+                <p>{mode || "-"}</p>
+              </div>
+
+              <div>
+                <strong>Media Type</strong>
+                <p>{mediaType || "-"}</p>
+              </div>
+
+              <div>
+                <strong>Media Subtype</strong>
+                <p>{subType || "-"}</p>
+              </div>
+
+              <div>
+                <strong>Product</strong>
+                <p>
+                  {selectedProductData?.product_name || "-"}
+                </p>
+              </div>
+
+              <div>
+                <strong>Persona</strong>
+                <p>
+                  {selectedPersonaData?.persona_name || "-"}
+                </p>
+              </div>
+
+              <div>
+                <strong>Occasion / Event</strong>
+                <p>-</p>
+              </div>
+
+              <div>
+                <strong>Current Owner</strong>
+                <p>
+                  {assignedUser || "-"}
+                </p>
+              </div>
+
+              <div>
+                <strong>Current Stage</strong>
+                <p>
+                  {selectedStage || "Discovery"}
+                </p>
+              </div>
+
+              <div>
+                <strong>Assigned User</strong>
+                <p>
+                  {assignedUser || "-"}
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
+
+
+
+
+      {showLabelsModal && (
+  <div
+    className="dm-overlay"
+    onClick={() => setShowLabelsModal(false)}
+  >
+    <div
+      className="dm-modal dm-modal--wide"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="dm-modal-header">
+        <h3>Labels</h3>
+
+        <button
+          className="dm-modal-close"
+          onClick={() => setShowLabelsModal(false)}
+        >
+          <CloseIcon />
+        </button>
+      </div>
+
+      <div className="dm-modal-body">
+
+        {/* MANDATORY FIELDS */}
+
+        <section className="docket-mandatory-section">
+          <div className="docket-optionals-header">
+            <h3 className="docket-column-title">
+              MANDATORY FIELDS
+            </h3>
+
+            <button
+              className="docket-add-more-btn"
+              onClick={() => {
+                setModalBoxType("mandatory");
+                setShowModal(true);
+              }}
+            >
+              Add More +
+            </button>
+          </div>
+
+          <div className="docket-scroll-wrapper">
+            <div className="docket-form-section">
+
+              {mandatoryFields.map((field) => (
+
+                <div
+                  key={field.id}
+                  className="docket-field-row"
+                >
+
+                  <div className="docket-field-left">
+
+                    <input
+                      type="checkbox"
+                      className="docket-field-checkbox"
+                      checked={
+                        fieldValues[field.variable_name]
+                          ?.enabled || false
+                      }
+                      onChange={(e) =>
+                        setFieldValues(prev => ({
+                          ...prev,
+                          [field.variable_name]: {
+                            ...prev[field.variable_name],
+                            enabled: e.target.checked
+                          }
+                        }))
+                      }
+                    />
+
+                    <label className="docket-field-label-text">
+                      {field.label}
+                    </label>
+
+                    {field.isCustom && (
+                      <button
+                        className="docket-delete-btn"
+                        onClick={() =>
+                          handleDeleteCustomField(field)
+                        }
+                      >
+                        ×
+                      </button>
+                    )}
+
+                  </div>
+
+                  <textarea
+                    className="docket-field-textarea"
+                    value={
+                      fieldValues[field.variable_name]
+                        ?.value || ""
+                    }
+                    rows={1}
+                    placeholder="Enter info..."
+                    onChange={(e) => {
+                      setFieldValues(prev => ({
+                        ...prev,
+                        [field.variable_name]: {
+                          ...prev[field.variable_name],
+                          value: e.target.value
+                        }
+                      }));
+
+                      const el = e.target;
+
+                      el.style.height = "auto";
+
+                      const lineH = 20;
+                      const pad = 16;
+                      const maxH = lineH * 3 + pad;
+
+                      const newH = Math.min(
+                        el.scrollHeight,
+                        maxH
+                      );
+
+                      el.style.height = `${newH}px`;
+
+                      el.style.overflowY =
+                        el.scrollHeight > maxH
+                          ? "auto"
+                          : "hidden";
+                    }}
+                  />
+
+                </div>
+
+              ))}
+
+            </div>
+          </div>
+        </section>
+
+        <div className="docket-section-divider" />
+
+      </div>
+    </div>
+  </div>
+)}
+
+
+      
+
+
+      
+
+
+
+
+
+
+
       {/* History Modal */}
       {showHistoryModal && (
         <div className="dm-overlay" onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}>
@@ -2883,6 +3372,37 @@ const formatDate = (date) => {
           <CheckIcon/> <span>Submitted successfully!</span>
         </div>
       )}
+
+
+
+      {showImagePreview && visualImage && (
+
+        <div
+          className="dm-image-preview-overlay"
+          onClick={() =>
+            setShowImagePreview(false)
+          }
+        >
+
+          <img
+            src={visualImage}
+            alt="Preview"
+            className="dm-image-preview"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          />
+
+        </div>
+
+      )}
+
+
+
+
+
+
+
 
     </div>
   );

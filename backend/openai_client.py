@@ -177,14 +177,14 @@ def ask_openai(message: str, context: dict) -> dict:
         previous_block = "None"
 
     prompt = f"""
-Your job is to improve and Generate:
 
-1. Dynamic Fields
-2. Execute Description
-3. Visual Elements
-
-based on the user's request.
+CRITICAL: Treat the User Request as the sole source of truth. All outputs must directly satisfy the User Request. Any conflicting context must be ignored.
+based on the user's request
 {message}
+
+Your job is to improve and Generate:
+1. Dynamic Fields
+2. Summary Context Data
 
 Mode: {context.get("mode")}
 Media Type: {context.get("mediaType")}
@@ -212,6 +212,9 @@ Execute Description:
 Visual Elements to Show:
 {context.get("visual_elements")}
 
+Current Summary:
+{context.get("summary")}
+
 User Request:
 {message}
 
@@ -226,8 +229,7 @@ INSTRUCTIONS:
 - Generate NEW and FRESH values
 - DO NOT repeat previous values
 - Update Dynamic Fields
-- Update Execute Description
-- Update Visual Elements
+- Update Summary
 - Use exact field names
 - Return ONLY JSON
 - No explanations
@@ -242,8 +244,7 @@ Return JSON in this exact structure:
   "fields": {{
 {example_fields}
   }},
-  "execute_description": "generated description",
-  "visual_elements": "generated visual elements"
+  "summary": "generated summary"
 }}
 """
 
@@ -318,10 +319,7 @@ You are an expert Creative Director.
 Your task:
 
 Using ONLY the provided field values,
-create a MUCH MORE DETAILED version of:
-
-1. Execute Description
-2. Visual Elements
+create a professional Summary.
 
 Rules:
 
@@ -370,6 +368,8 @@ CURRENT DESCRIPTION:
 CURRENT VISUAL ELEMENTS:
 {visual_elements}
 
+Create a professional summary using the information above.
+
 
 
 Formatting Requirements:
@@ -393,9 +393,10 @@ Preserve all line breaks.
 
 Return ONLY JSON:
 
+Return ONLY JSON:
+
 {{
-    "execute_description":"...",
-    "visual_elements":"..."
+    "summary":"..."
 }}
 """
 
