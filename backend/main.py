@@ -324,6 +324,7 @@ class CreateDocketRequest(BaseModel):
     uploaded_date_time: Optional[datetime] = None
     execute_description: Optional[str] = ""
     visual_elements: Optional[str] = ""
+    summary: str = ""
 
 
 class AssignExecuteRequest(BaseModel):
@@ -361,6 +362,13 @@ class SaveFieldValuesRequest(BaseModel):
 
 class UpdateDocketRequest(BaseModel):
     title: str
+
+    product_id: Optional[int] = None
+    persona_id: Optional[int] = None
+    occasion_id: Optional[int] = None
+
+    uploaded_date_time: Optional[datetime] = None
+
     execute_description: str
     visual_elements: str
     summary: str
@@ -3727,19 +3735,69 @@ def update_docket(
             UPDATE docket
             SET
                 title=%s,
+
+                product_id=%s,
+                persona_id=%s,
+                occasion_id=%s,
+
+                uploaded_date_time=%s,
+
                 execute_description=%s,
-                visual_elements=%s,
-                summary=%s
+                visual_elements=%s
             WHERE docket_id=%s
             """,
             (
                 req.title,
+
+                req.product_id,
+                req.persona_id,
+                req.occasion_id,
+
+                req.uploaded_date_time,
+
                 req.execute_description,
                 req.visual_elements,
-                req.summary,
+
                 docket_id
             )
         )
+
+
+        cursor.execute(
+            """
+            SELECT
+                business_id,
+                product_id,
+                persona_id,
+                occasion_id,
+                media_subtype_id
+            FROM docket
+            WHERE docket_id=%s
+            """,
+            (docket_id,)
+        )
+
+        docket = cursor.fetchone()
+
+
+        cursor.execute(
+            """
+            DELETE FROM media_subtype_field_value
+            WHERE docket_id=%s
+            """,
+            (docket_id,)
+        )
+
+
+
+
+
+
+
+
+
+
+
 
         db.commit()
 
