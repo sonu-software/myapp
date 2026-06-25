@@ -463,6 +463,8 @@ const DocketMedia = () => {
 
   const [summary, setSummary] = useState('');
 
+  const [newSummary, setNewSummary] = useState('');
+
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -777,6 +779,13 @@ const formatDate = (date) => {
 
   // ── Visual output ─────────────────────────────────────────────────────────
   const [visualImage,       setVisualImage]       = useState(null);
+
+  const [selectedLogo, setSelectedLogo] = useState(null);
+
+  const [selectedProductImage, setSelectedProductImage] = useState(null);
+
+
+
   const [visualMessage,     setVisualMessage]     = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
@@ -803,6 +812,23 @@ const formatDate = (date) => {
   const [conversationBubbles, setConversationBubbles] = useState([{
     id: 1, text: 'Use AI to Automatically fill in all Fields Based on your Needs.', type: 'ai', sender: 'ai',
   }]);
+
+
+  useEffect(() => {
+    setConversationBubbles([
+      {
+        id: 1,
+        text: 'Use AI to Automatically fill in all Fields Based on your Needs.',
+        type: 'ai',
+        sender: 'ai',
+      }
+    ]);
+  }, [docketId]);
+
+
+
+
+
   const chatEndRef = useRef(null);
 
   // ── Active tab ────────────────────────────────────────────────────────────
@@ -927,6 +953,101 @@ const formatDate = (date) => {
 
 
 
+  const handleProductImageUpload = async (event) => {
+
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    try {
+
+        const formData = new FormData();
+
+        formData.append(
+            "file",
+            file
+        );
+
+        const res = await fetch(
+
+            `${API}/products/${selectedProductId}/upload-image`,
+
+            {
+
+                method:"POST",
+
+                headers:AUTH(),
+
+                body:formData
+
+            }
+
+        );
+
+        const data =
+            await res.json();
+
+        if(!data.success){
+
+            alert(data.message);
+
+            return;
+
+        }
+
+        const refreshed =
+            await fetch(
+
+                `${API}/products/${selectedProductId}`,
+
+                {
+
+                    headers:AUTH()
+
+                }
+
+            );
+
+        const refreshedData =
+            await refreshed.json();
+
+        if(refreshedData.success){
+
+            setSelectedProductData(
+                refreshedData.data
+            );
+
+            const newestImage =
+
+                refreshedData.data.images[
+                    refreshedData.data.images.length-1
+                ];
+
+            if(newestImage){
+
+                setSelectedProductImage(
+
+                    newestImage.img_url
+
+                );
+
+            }
+
+        }
+
+    }
+
+    catch(err){
+
+        console.error(err);
+
+    }
+
+};
+
+
+
+
 
 
 
@@ -957,10 +1078,36 @@ const formatDate = (date) => {
 
       fetch(`${API}/docket/${docketId}/business`, { headers })
         .then(r => { handleUnauthorized(r); return r.json(); })
-        .then(data => { if (data.success) setBusinessProfile(data.data); }),
+        .then(data => { if (data.success) setBusinessProfile(data.data);
+          if (
+            data.data.logo_url
+          ) {
+
+            setSelectedLogo(
+              data.data.logo_url
+            );
+
+          }
+
+         }),
 
       fetch(`${API}/docket/${docketId}/product`, { headers })
-        .then(r => r.json()).then(data => { if (data.success) setSelectedProductData(data.data); }),
+        .then(r => r.json()).then(data => { if (data.success) setSelectedProductData(data.data);
+
+          if (
+            data.data.images &&
+            data.data.images.length
+          ) {
+
+            setSelectedProductImage(
+              data.data.images[0].img_url
+            );
+
+          }
+
+
+
+         }),
 
       fetch(`${API}/docket/${docketId}/persona`, { headers })
         .then(r => r.json()).then(data => { if (data.success) setSelectedPersonaData(data.data); }),
@@ -1423,7 +1570,7 @@ const formatDate = (date) => {
             uploaded_date_time: newUploadedDateTime,
             execute_description: newExecuteDescription,
             visual_elements: newVisualElements,
-            summary: summary
+            summary: ""
           })
         }
       );
@@ -1432,6 +1579,23 @@ const formatDate = (date) => {
 
 
       if (data.success) {
+
+
+        setNewDocketTitle("");
+        setNewMode("");
+        setNewMediaType("");
+        setNewSubType("");
+
+        setNewProductId("");
+        setNewPersonaId("");
+        setNewOccasionId("");
+
+        setNewExecuteDescription("");
+        setNewVisualElements("");
+        setNewSummary("");
+
+
+
 
         await reloadCarousel();
 
@@ -1576,7 +1740,23 @@ const formatDate = (date) => {
 
       const res  = await fetch(`${API}/planner/docket/${docketId}/media-result`, {
         method: 'POST', headers: JSON_AUTH(),
-        body: JSON.stringify({ visual_text: JSON.stringify(finalOutput), submitted_request: submittedRequest }),
+        body: JSON.stringify({
+
+          visual_text:
+            JSON.stringify(
+              finalOutput
+            ),
+
+          submitted_request:
+            submittedRequest,
+
+          selected_logo:
+            selectedLogo,
+
+          selected_product_image:
+            selectedProductImage
+
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -2404,6 +2584,162 @@ const formatDate = (date) => {
           )}
         </div>
         {/* END LEFT COLUMN */}
+
+
+
+
+        {/* ==========================
+            BRAND & PRODUCT REFERENCES
+        ========================== */}
+
+        <div className="dm-reference-panel">
+
+          <div className="dm-reference-header">
+            Brand & Product
+          </div>
+
+          {/* Logo */}
+          <div className="dm-reference-section">
+
+            <div className="dm-reference-title">
+              Brand Logo
+            </div>
+
+            <div className="dm-logo-container">
+
+              {selectedLogo ? (
+                <img
+                  src={selectedLogo}
+                  alt="Brand Logo"
+                  className="dm-logo-image"
+                />
+              ) : (
+                <div className="dm-reference-empty">
+                  No Logo
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+          {/* Product Images */}
+          <div className="dm-reference-section">
+
+            <div className="dm-reference-title">
+              Product Images
+            </div>
+
+            <div className="dm-product-scroll">
+
+              {
+              selectedProductData?.images?.length ? (
+
+                selectedProductData.images.map((img, index) => (
+
+                  <label
+                    key={index}
+                    className="dm-product-option"
+                  >
+
+                    <input
+                      type="radio"
+                      name="selectedProductImage"
+                      value={img.img_url}
+                      checked={selectedProductImage === img.img_url}
+                      onChange={() =>
+                        setSelectedProductImage(img.img_url)
+                      }
+                      className="dm-product-radio"
+                    />
+
+                    <img
+                      src={img.img_url}
+                      alt={`Product ${index + 1}`}
+                      className={`dm-product-thumb ${
+                        selectedProductImage === img.img_url
+                          ? "dm-product-thumb-selected"
+                          : ""
+                      }`}
+                    />
+
+                  </label>
+
+                ))
+
+              ) : selectedProductImage ? (
+
+                <label
+                  className="dm-product-option"
+                >
+
+                  <input
+                    type="radio"
+                    checked
+                    readOnly
+                    className="dm-product-radio"
+                  />
+
+                  <img
+                    src={selectedProductImage}
+                    alt=""
+                    className="dm-product-thumb dm-product-thumb-selected"
+                  />
+
+                </label>
+
+              ) : (
+
+                <div className="dm-reference-empty">
+                  No Product Images
+                </div>
+
+              )}
+
+
+
+
+              <label
+                  className="dm-upload-product-card"
+              >
+
+                  <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={handleProductImageUpload}
+                  />
+
+                  <div className="dm-upload-plus">
+
+                      +
+
+                  </div>
+
+                  <div
+                      className="dm-upload-text"
+                  >
+
+                      Upload Image
+
+                  </div>
+
+              </label>
+
+            </div>
+
+            
+
+          </div>
+          
+
+        </div>
+
+
+
+
+
+
 
         {/* ────────── RIGHT COLUMN ───────────────────────────────────────── */}
         <div className="dm-right">

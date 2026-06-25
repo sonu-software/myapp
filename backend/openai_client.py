@@ -8,6 +8,9 @@ import threading
 from dotenv import load_dotenv
 from openai import OpenAI
 
+import tempfile
+import requests
+
 load_dotenv()
 
 
@@ -447,13 +450,18 @@ Focus heavily on:
 - brand consistency
 
 IMPORTANT IMAGE HANDLING RULES:
-- If logo_url exists, use it as the official brand logo reference
-- If product images exist, use them as the exact product appearance reference
-- Use the provided image URLs to maintain realistic product consistency
-- Ensure the generated creative visually matches the uploaded products
-- Use uploaded images as visual guidance for product shape, color, material, branding, and presentation
-- Preserve brand identity using the provided reference images
-- Do NOT ignore image URLs inside the DATA
+
+The uploaded reference images supplied with this request are the authoritative visual references.
+
+Rules:
+- Treat the uploaded product image as the exact product to advertise.
+- Preserve the product's shape, proportions, packaging, colors, branding, printed text, materials, and overall appearance.
+- Do not redesign, replace, or invent a different product.
+- Use the uploaded logo as the official brand logo.
+- Place the logo naturally within the advertisement according to professional marketing practices.
+- Create a completely new advertising scene while keeping the referenced product visually consistent.
+- The environment, lighting, composition, camera angle, background, props, and marketing style may change according to the creative brief, but the referenced product and logo must remain recognizable.
+
 
 
 The generated prompt should naturally create:
@@ -589,19 +597,87 @@ s3 = boto3.client(
 S3_BASE_URL = f"https://{BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com"
 
 
-def generate_ai_image(image_prompt: str):
+
+def download_reference_image(url):
+
+    if not url:
+        return None
+
+    response = requests.get(url, timeout=30)
+
+    response.raise_for_status()
+
+    temp_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=os.path.splitext(url)[1] or ".png"
+    )
+
+    temp_file.write(response.content)
+    temp_file.close()
+    print("###############################################################################################################")
+    print(temp_file.name)
+    print("###############################################################################################################")
+
+    return temp_file.name
+
+
+
+
+
+
+def generate_ai_image(
+        image_prompt: str,
+        logo_url=None,
+        product_url=None
+    ):
 
     api_key = key_manager.get_next_key()
 
     client = OpenAI(api_key=api_key)
     print("START IMAGE GENERATION")
     
-    response = client.images.generate(
-        model="gpt-image-2",
-        prompt=image_prompt,
-        size="1024x1024",
-        quality="low"
+    reference_images = []
+
+    logo_file_path = download_reference_image(
+        logo_url
     )
+
+    product_file_path = download_reference_image(
+        product_url
+    )
+
+    if product_file_path:
+        reference_images.append(
+            open(product_file_path, "rb")
+        )
+
+    if logo_file_path:
+        reference_images.append(
+            open(logo_file_path, "rb")
+        )
+
+
+
+
+
+
+    if reference_images:
+
+        response = client.images.edit(
+            model="gpt-image-2",
+            image=reference_images,
+            prompt=image_prompt,
+            size="1024x1024"
+        )
+
+    else:
+
+        response = client.images.generate(
+            model="gpt-image-2",
+            prompt=image_prompt,
+            size="1024x1024",
+            quality="low"
+        )
 
     print("IMAGE GENERATED SUCCESSFULLY")
 

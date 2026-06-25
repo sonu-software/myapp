@@ -291,6 +291,10 @@ class GenerateRequest(BaseModel):
     imageType: str
     imageStyle: str
     dynamicFields: Dict[str, str]
+    
+    selected_logo: str | None = None
+
+    selected_product_image: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -1164,6 +1168,131 @@ def get_product(product_id: int, user_id: int = Depends(get_current_user)):
         return {"success": True, "data": data}
     finally:
         cursor.close()
+        db.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.post(
+    "/products/{product_id}/upload-image"
+)
+def upload_product_image(
+
+    product_id:int,
+
+    file:UploadFile=File(...),
+
+    user_id:int=Depends(get_current_user)
+
+):
+
+    db=get_db()
+
+    cursor=db.cursor()
+
+    try:
+
+        extension=file.filename.split(".")[-1]
+
+        filename=f"{uuid.uuid4()}.{extension}"
+
+        key=f"products/{filename}"
+
+        s3.upload_fileobj(
+
+            file.file,
+
+            BUCKET_NAME,
+
+            key,
+
+            ExtraArgs={
+
+                "ContentType":file.content_type
+
+            }
+
+        )
+
+        image_url=f"{S3_BASE_URL}/{key}"
+
+        cursor.execute(
+
+            """
+
+            INSERT INTO product_images
+
+            (
+
+                product_id,
+
+                img_url,
+
+                img_caption
+
+            )
+
+            VALUES
+
+            (
+
+                %s,
+
+                %s,
+
+                ''
+
+            )
+
+            """,
+
+            (
+
+                product_id,
+
+                image_url
+
+            )
+
+        )
+
+        db.commit()
+
+        return{
+
+            "success":True,
+
+            "url":image_url
+
+        }
+
+    except Exception as e:
+
+        db.rollback()
+
+        return{
+
+            "success":False,
+
+            "message":str(e)
+
+        }
+
+    finally:
+
+        cursor.close()
+
         db.close()
 
 
@@ -2635,7 +2764,11 @@ def save_media_result(
         # GENERATE AI IMAGE
         # ==========================================
 
-        generated_image_url = generate_ai_image(image_prompt)
+        generated_image_url = generate_ai_image(
+            image_prompt=image_prompt,
+            logo_url=req.get("selected_logo"),
+            product_url=req.get("selected_product_image")
+        )
 
     
         # ==========================================
@@ -3735,29 +3868,16 @@ def update_docket(
             UPDATE docket
             SET
                 title=%s,
-
-                product_id=%s,
-                persona_id=%s,
-                occasion_id=%s,
-
-                uploaded_date_time=%s,
-
                 execute_description=%s,
-                visual_elements=%s
+                visual_elements=%s,
+                summary=%s
             WHERE docket_id=%s
             """,
             (
                 req.title,
-
-                req.product_id,
-                req.persona_id,
-                req.occasion_id,
-
-                req.uploaded_date_time,
-
                 req.execute_description,
                 req.visual_elements,
-
+                req.summary,
                 docket_id
             )
         )
