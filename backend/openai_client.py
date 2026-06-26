@@ -450,18 +450,13 @@ Focus heavily on:
 - brand consistency
 
 IMPORTANT IMAGE HANDLING RULES:
-
-The uploaded reference images supplied with this request are the authoritative visual references.
-
-Rules:
-- Treat the uploaded product image as the exact product to advertise.
-- Preserve the product's shape, proportions, packaging, colors, branding, printed text, materials, and overall appearance.
-- Do not redesign, replace, or invent a different product.
-- Use the uploaded logo as the official brand logo.
-- Place the logo naturally within the advertisement according to professional marketing practices.
-- Create a completely new advertising scene while keeping the referenced product visually consistent.
-- The environment, lighting, composition, camera angle, background, props, and marketing style may change according to the creative brief, but the referenced product and logo must remain recognizable.
-
+- If logo_url exists, use it as the official brand logo reference
+- If product images exist, use them as the exact product appearance reference
+- Use the provided image URLs to maintain realistic product consistency
+- Ensure the generated creative visually matches the uploaded products
+- Use uploaded images as visual guidance for product shape, color, material, branding, and presentation
+- Preserve brand identity using the provided reference images
+- Do NOT ignore image URLs inside the DATA
 
 
 The generated prompt should naturally create:
@@ -667,7 +662,8 @@ def generate_ai_image(
             model="gpt-image-2",
             image=reference_images,
             prompt=image_prompt,
-            size="1024x1024"
+            size="1024x1024",
+            quality="low"
         )
 
     else:

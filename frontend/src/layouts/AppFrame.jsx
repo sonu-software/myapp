@@ -1,5 +1,7 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
 
 import {
 Target,
@@ -201,44 +203,47 @@ return ( <div className="app-shell">
           <span>Profile</span>
         </button>
 
-        {menuOpen && (
+        {menuOpen &&
+          createPortal(
 
-          <div
-            className="profile-menu"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          >
-
-            <div className="profile-header">
-
-              <img
-                src="/white_visualgrab_logo.png"
-                alt="VisualGrab"
-                className="profile-logo"
-              />
-
-              <div className="profile-business">
-                {businessName}
-              </div>
-
-              <div className="profile-email">
-                {email}
-              </div>
-
-            </div>
-
-            <div className="profile-divider" />
-
-            <button
-              className="logout-menu-btn"
-              onClick={logout}
+            <div
+              className="profile-menu"
+              onClick={(e) => e.stopPropagation()}
             >
-              Logout
-            </button>
 
-          </div>
-        )}
+              <div className="profile-header">
+
+                <img
+                  src="/white_visualgrab_logo.png"
+                  alt="VisualGrab"
+                  className="profile-logo"
+                />
+
+                <div className="profile-business">
+                  {businessName}
+                </div>
+
+                <div className="profile-email">
+                  {email}
+                </div>
+
+              </div>
+
+              <div className="profile-divider" />
+
+              <button
+                className="logout-menu-btn"
+                onClick={logout}
+              >
+                Logout
+              </button>
+
+            </div>,
+
+            document.body
+
+          )
+        }
 
       </div>
 

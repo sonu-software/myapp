@@ -337,6 +337,36 @@ const InfoIcon = () => (
     />
   </svg>
 );
+const FilterIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M4 6H20M7 12H17M10 18H14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle cx="11" cy="11" r="8" stroke="#9CA3AF" strokeWidth="2"/>
+    <path d="M21 21l-4.35-4.35" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const GridIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="3" width="7" height="7" rx="1" stroke="#1a2744" strokeWidth="2"/>
+    <rect x="14" y="3" width="7" height="7" rx="1" stroke="#1a2744" strokeWidth="2"/>
+    <rect x="3" y="14" width="7" height="7" rx="1" stroke="#1a2744" strokeWidth="2"/>
+    <rect x="14" y="14" width="7" height="7" rx="1" stroke="#1a2744" strokeWidth="2"/>
+  </svg>
+);
+const MenuIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M3 6h18M3 12h18M3 18h18" stroke="#1a2744" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const PlusCircleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="#1a2744" strokeWidth="2"/>
+    <path d="M12 8v8M8 12h8" stroke="#1a2744" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
 
 // ─── Auto-grow Textarea ───────────────────────────────────────────────────────
 const AutoTextarea = ({ value, onChange, placeholder = 'Enter info...' }) => {
@@ -514,6 +544,14 @@ const DocketMedia = () => {
 
   const [createMediaTypes, setCreateMediaTypes] = useState([]);
   const [createSubTypes, setCreateSubTypes] = useState([]);
+
+
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const [businessName, setBusinessName] = useState("My Business");
+
+  const [email, setEmail] = useState("");
 
   
 
@@ -784,6 +822,8 @@ const formatDate = (date) => {
 
   const [selectedProductImage, setSelectedProductImage] = useState(null);
 
+  const [previewProductImage, setPreviewProductImage] = useState(null);
+
 
 
   const [visualMessage,     setVisualMessage]     = useState('');
@@ -884,6 +924,31 @@ const formatDate = (date) => {
     });
     return Object.entries(grouped).map(([mediaId, messages]) => ({ admin_media_id: mediaId, messages }));
   }, [docketFeedbackList]);
+
+  const formattedDateTime = useMemo(() => {
+    if (!uploadedDateTime) return '';
+    const d = new Date(uploadedDateTime);
+    return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+  }, [uploadedDateTime]);
+
+  const activeFilters = useMemo(() => {
+    const pills = [];
+    if (selectedFilterStage) pills.push({ key: 'stage', label: selectedFilterStage, clear: () => setSelectedFilterStage("") });
+    if (selectedFilterProduct) {
+      const p = productList.find(x => String(x.product_id) === String(selectedFilterProduct));
+      pills.push({ key: 'product', label: p?.product_name || 'Product', clear: () => setSelectedFilterProduct("") });
+    }
+    if (selectedFilterPersona) {
+      const p = personaList.find(x => String(x.persona_id) === String(selectedFilterPersona));
+      pills.push({ key: 'persona', label: p?.persona_name || 'Persona', clear: () => setSelectedFilterPersona("") });
+    }
+    if (selectedFilterOccasion) {
+      const o = occasionList.find(x => String(x.occasion_id) === String(selectedFilterOccasion));
+      pills.push({ key: 'occasion', label: o?.title || 'Topic', clear: () => setSelectedFilterOccasion("") });
+    }
+    if (searchText.trim()) pills.push({ key: 'search', label: `"${searchText}"`, clear: () => setSearchText("") });
+    return pills;
+  }, [selectedFilterStage, selectedFilterProduct, selectedFilterPersona, selectedFilterOccasion, searchText, productList, personaList, occasionList]);
 
   // scroll chat to bottom
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversationBubbles]);
@@ -1506,6 +1571,9 @@ const formatDate = (date) => {
     setFieldValues(prev => ({ ...prev, [varNameOrField]: { ...prev[varNameOrField], value: val } }));
   }, []);
 
+  // alias used in labels modal
+  const handleDeleteCustomField = (field) => handleFieldValue(field, null);
+
 
 
 
@@ -1963,41 +2031,177 @@ const formatDate = (date) => {
   // ==========================================================================
 
   return (
-    <div className="dm-page docket-clean-ui">
+    <div className="dm-page">
+
+      {/* ════════ TOP BAR ════════════════════════════════════════════════════ */}
+      <div className="dm-topbar-new">
+        <div className="dm-topbar-left">
+          <button className="dm-topbar-icon-btn"><GridIcon /></button>
+          <button className="dm-topbar-icon-btn"><MenuIcon /></button>
+        </div>
+
+        <div className="dm-topbar-center">
+          <div className="dm-filter-wrapper" ref={filterRef}>
+            <button className="dm-filter-pill-btn" onClick={() => setShowFilterDropdown(v => !v)}>
+              <FilterIcon /> Filter
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 4 }}>
+                <line x1="1" y1="1" x2="13" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="13" y1="1" x2="1" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+
+            {showFilterDropdown && (
+              <div className="dm-filter-dropdown-new">
+                <div className="dm-filter-header">Filter Executes</div>
+
+                <div className="dm-filter-field">
+                  <label>Start Date</label>
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select start date"
+                    className="dm-filter-date-input"
+                  />
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>End Date</label>
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select end date"
+                    className="dm-filter-date-input"
+                  />
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Stage</label>
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterStage}
+                    onChange={(e) => setSelectedFilterStage(e.target.value)}
+                  >
+                    <option value="">All Stages</option>
+                    {FILTER_STAGES.map(stage => (
+                      <option key={stage} value={stage}>
+                        {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Topic</label>
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterOccasion}
+                    onChange={(e) => setSelectedFilterOccasion(e.target.value)}
+                  >
+                    <option value="">All Topics</option>
+                    {occasionList.map((event) => (
+                      <option key={event.occasion_id} value={event.occasion_id}>
+                        {event.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Product</label>
+                  <select
+                    value={selectedFilterProduct}
+                    onChange={(e) => setSelectedFilterProduct(e.target.value)}
+                  >
+                    <option value="">All Products</option>
+                    {productList.map(product => (
+                      <option key={product.product_id} value={product.product_id}>
+                        {product.product_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Persona</label>
+                  <select
+                    value={selectedFilterPersona}
+                    onChange={(e) => setSelectedFilterPersona(e.target.value)}
+                  >
+                    <option value="">All Personas</option>
+                    {personaList.map(persona => (
+                      <option key={persona.persona_id} value={persona.persona_id}>
+                        {persona.persona_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Search</label>
+                  <input
+                    type="text"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder="Search title"
+                  />
+                </div>
+
+                <button
+                  className="dm-filter-clear-btn"
+                  onClick={() => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    setSelectedFilterStage("");
+                    setSelectedFilterProduct("");
+                    setSelectedFilterPersona("");
+                    setSelectedFilterMediaType("");
+                    setSelectedFilterOccasion("");
+                    setSelectedFilterSubType("");
+                    setSearchText("");
+                    setShowFilterDropdown(false);
+                  }}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            )}
+          </div>
+
+          {activeFilters.map(f => (
+            <div key={f.key} className="dm-active-filter-pill">
+              <span>{f.label}</span>
+              <button onClick={f.clear}>✕</button>
+            </div>
+          ))}
+        </div>
+
+        <div className="dm-topbar-right">
+          <div className="dm-search-bar">
+            <SearchIcon />
+            <input type="text" placeholder="Search" value={searchText} onChange={e => setSearchText(e.target.value)}/>
+          </div>
+          <button className="dm-topbar-icon-btn" onClick={() => setShowCreateExecuteModal(true)} title="Create Execute">
+            <PlusCircleIcon />
+
+          </button>
 
 
-      <div className="dm-page-topbar">
-
-        <div className="dm-page-topbar-right">
 
           <div className="dm-filter-wrapper" ref={filterRef}>
 
             <button
-              className="dm-filter-button"
-              onClick={() =>
-                setShowFilterDropdown(v => !v)
-              }
+              className="dm-filter-pill-btn"
+              onClick={() => setShowFilterDropdown(v => !v)}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M4 6H20M7 12H17M10 18H14"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-
+              <FilterIcon />
               <span>Filter</span>
             </button>
 
             {showFilterDropdown && (
 
-              <div className="dm-filter-dropdown">
+              <div className="dm-filter-dropdown-new">
 
                 <div className="dm-filter-header">
                   Filter Executes
@@ -2009,7 +2213,7 @@ const formatDate = (date) => {
 
                   <DatePicker
                     selected={startDate}
-                    onChange={(date) => setStartDate(date)}
+                    onChange={setStartDate}
                     dateFormat="yyyy-MM-dd"
                     placeholderText="Select start date"
                     className="dm-filter-date-input"
@@ -2023,17 +2227,13 @@ const formatDate = (date) => {
 
                   <DatePicker
                     selected={endDate}
-                    onChange={(date) => setEndDate(date)}
+                    onChange={setEndDate}
                     dateFormat="yyyy-MM-dd"
                     placeholderText="Select end date"
                     className="dm-filter-date-input"
                   />
 
                 </div>
-
-
-
-
 
                 <div className="dm-filter-field">
 
@@ -2042,65 +2242,48 @@ const formatDate = (date) => {
                   <select
                     className="dm-filter-stage-select"
                     value={selectedFilterStage}
-                    onChange={(e) =>
-                      setSelectedFilterStage(e.target.value)
-                    }
+                    onChange={(e)=>setSelectedFilterStage(e.target.value)}
                   >
 
                     <option value="">
                       All Stages
                     </option>
 
-                    {FILTER_STAGES.map(stage => (
-
-                      <option
-                        key={stage}
-                        value={stage}
-                      >
-                        {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                    {FILTER_STAGES.map(stage=>(
+                      <option key={stage} value={stage}>
+                        {stage.charAt(0).toUpperCase()+stage.slice(1)}
                       </option>
-
                     ))}
 
                   </select>
 
                 </div>
-
-
-
 
                 <div className="dm-filter-field">
 
                   <label>Topic</label>
 
                   <select
-                    className="dm-filter-stage-select"
                     value={selectedFilterOccasion}
-                    onChange={(e) =>
-                      setSelectedFilterOccasion(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e)=>setSelectedFilterOccasion(e.target.value)}
                   >
+
                     <option value="">
                       All Topics
                     </option>
 
-                    {occasionList.map((event) => (
+                    {occasionList.map(item=>(
                       <option
-                        key={event.occasion_id}
-                        value={event.occasion_id}
+                        key={item.occasion_id}
+                        value={item.occasion_id}
                       >
-                        {event.title}
+                        {item.title}
                       </option>
                     ))}
+
                   </select>
 
                 </div>
-
-
-
-
 
                 <div className="dm-filter-field">
 
@@ -2108,15 +2291,14 @@ const formatDate = (date) => {
 
                   <select
                     value={selectedFilterProduct}
-                    onChange={(e) =>
-                      setSelectedFilterProduct(e.target.value)
-                    }
+                    onChange={(e)=>setSelectedFilterProduct(e.target.value)}
                   >
+
                     <option value="">
                       All Products
                     </option>
 
-                    {productList.map(product => (
+                    {productList.map(product=>(
                       <option
                         key={product.product_id}
                         value={product.product_id}
@@ -2129,22 +2311,20 @@ const formatDate = (date) => {
 
                 </div>
 
-
                 <div className="dm-filter-field">
 
                   <label>Persona</label>
 
                   <select
                     value={selectedFilterPersona}
-                    onChange={(e) =>
-                      setSelectedFilterPersona(e.target.value)
-                    }
+                    onChange={(e)=>setSelectedFilterPersona(e.target.value)}
                   >
+
                     <option value="">
                       All Personas
                     </option>
 
-                    {personaList.map(persona => (
+                    {personaList.map(persona=>(
                       <option
                         key={persona.persona_id}
                         value={persona.persona_id}
@@ -2157,10 +2337,6 @@ const formatDate = (date) => {
 
                 </div>
 
-
-
-
-
                 <div className="dm-filter-field">
 
                   <label>Search</label>
@@ -2168,39 +2344,24 @@ const formatDate = (date) => {
                   <input
                     type="text"
                     value={searchText}
-                    onChange={(e) =>
-                      setSearchText(e.target.value)
-                    }
+                    onChange={(e)=>setSearchText(e.target.value)}
                     placeholder="Search title"
                   />
 
                 </div>
-
-
-                
-
-
-
-
 
                 <button
                   className="dm-filter-clear-btn"
                   onClick={() => {
 
                     setStartDate(null);
-
                     setEndDate(null);
 
                     setSelectedFilterStage("");
-
                     setSelectedFilterProduct("");
-
                     setSelectedFilterPersona("");
-
-                    setSelectedFilterMediaType("");
-
                     setSelectedFilterOccasion("");
-
+                    setSelectedFilterMediaType("");
                     setSelectedFilterSubType("");
 
                     setSearchText("");
@@ -2218,156 +2379,105 @@ const formatDate = (date) => {
 
           </div>
 
+
+
+
+
+          <button className="dm-topbar-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" stroke="#1a2744" strokeWidth="2"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#1a2744" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
         </div>
-
       </div>
-      
 
-      {/* ════════════ CAROUSEL STRIP ════════════════════════════════════════ */}
-      {/* Reference: dark navy bar, left arrow, 4 cards (topic/date/stage + thumb), right arrow + pager pill */}
-      <div className="dm-carousel">
-
-
+      {/* ════════ CAROUSEL ════════════════════════════════════════════════════ */}
+      <div className="dm-carousel-new">
         <button
-          className="create-execute-btn"
-          onClick={() => setShowCreateExecuteModal(true)}
+          className="dm-carousel-nav-btn"
+          onClick={() => document.getElementById("executeCarousel")?.scrollBy({ left: -300, behavior: "smooth" })}
         >
-          +
+          <PrevIcon />
         </button>
 
-  <button
-    className="dm-carousel-nav"
-    onClick={() =>
-      document.getElementById("executeCarousel")
-        ?.scrollBy({ left: -320, behavior: "smooth" })
-    }
-  >
-    <PrevIcon />
-  </button>
+        <div className="dm-carousel-track-new" id="executeCarousel">
+          {carouselDockets.map((item) => {
+            const image =
+              item.visual_url ||
+              item.uploaded_url ||
+              item.generated_image ||
+              item.image_url ||
+              item.media_url ||
+              item.admin_image_url ||
+              item.visual_image ||
+              item.thumbnail ||
+              null;
 
-  <div
-    className="dm-carousel-scroll"
-    id="executeCarousel"
-  >
+            const isActive = Number(item.docket_id) === Number(docketId);
 
-    {carouselDockets.map((item) => {
-
-      const image =
-        item.visual_url ||
-        item.uploaded_url ||
-        item.generated_image ||
-        item.image_url ||
-        item.media_url ||
-        item.admin_image_url ||
-        item.visual_image ||
-        item.thumbnail ||
-        null;
-
-      return (
-        <div
-          key={item.docket_id}
-          className={`dm-execute-card ${
-            Number(item.docket_id) === Number(docketId)
-              ? "dm-execute-card-active"
-              : ""
-          }`}
-          onClick={() =>
-            navigate(`/docket-media/${item.docket_id}`)
-          }
-        >
-
-          <div className="dm-execute-left">
-
-            <div className="dm-execute-title">
-              {item.title || "Untitled Execute"}
-            </div>
-
-            <div className="dm-execute-meta">
-              {item.uploaded_date_time
-                ? new Date(item.uploaded_date_time)
-                    .toLocaleString()
-                : "No Date"}
-            </div>
-
-            <div className="dm-execute-stage">
-              {item.current_stage || item.stage || "discovery"}
-            </div>
-
-          </div>
-
-          <div className="dm-execute-image-wrap">
-
-            {image ? (
-              <img
-                src={image}
-                alt=""
-                className="docket-execute-image"
-              />
-            ) : (
-              <div className="docket-no-image">
-                No Image Generated
+            return (
+              <div
+                key={item.docket_id}
+                className={`dm-carousel-item${isActive ? ' dm-carousel-item--active' : ''}`}
+                onClick={() => navigate(`/docket-media/${item.docket_id}`)}
+              >
+                <div className="dm-carousel-item-info">
+                  <div className="dm-carousel-item-topic">{item.title || "Untitled Execute"}</div>
+                  <div className="dm-carousel-item-date">
+                    {item.uploaded_date_time
+                      ? new Date(item.uploaded_date_time).toLocaleString()
+                      : "No Date"}
+                  </div>
+                  <div className="dm-carousel-item-stage">{item.current_stage || item.stage || "discovery"}</div>
+                </div>
+                <div className="dm-carousel-item-thumb">
+                  {image ? <img src={image} alt=""/> : <div className="dm-carousel-item-thumb-empty"/>}
+                </div>
               </div>
-            )}
-
-          </div>
-
+            );
+          })}
         </div>
-      );
-    })}
 
-  </div>
+        <button
+          className="dm-carousel-nav-btn"
+          onClick={() => document.getElementById("executeCarousel")?.scrollBy({ left: 300, behavior: "smooth" })}
+        >
+          <NextIcon />
+        </button>
 
-  <button
-    className="dm-carousel-nav"
-    onClick={() =>
-      document.getElementById("executeCarousel")
-        ?.scrollBy({ left: 320, behavior: "smooth" })
-    }
-  >
-    <NextIcon />
-  </button>
+        <div className="dm-carousel-pager-pill">
+          {carouselPage}–{Math.min(carouselPage * CAROUSEL_PER_PAGE, carouselTotal || carouselDockets.length)} <ChevronDownIcon />
+        </div>
+      </div>
 
-</div>
+      {/* ════════ MAIN BODY ═══════════════════════════════════════════════════ */}
+      <div className="dm-body">
 
-      {/* ════════════ MAIN CONTENT ══════════════════════════════════════════ */}
-      <div className="dm-content">
+        {/* ── LEFT COLUMN ──────────────────────────────────────────────────── */}
+        <div className="dm-left-col">
 
-        {/* ────────── LEFT COLUMN ────────────────────────────────────────── */}
-        <div className="dm-left">
-          
-          <div className="dm-left-top"></div>
+          {/* ── SCROLLABLE FORM FIELDS (40%) ──────────────────────────────── */}
+          <div className="dm-left-fields-scroll">
 
-
-          {/* Save icon — top-right of left panel */}
-          <div className="dm-left-header">
-
-            <button
-              className="dm-icon-btn"
-              title="Info"
-              onClick={() => setShowInfoModal(true)}
-            >
+          {/* Top row: info icon | datetime + icons */}
+          <div className="dm-left-toprow">
+            <button className="dm-info-btn" title="Info" onClick={() => setShowInfoModal(true)}>
               <InfoIcon />
             </button>
-
-
-
-            <button
-              className="dm-icon-btn"
-              onClick={() => setShowLabelsModal(true)}
-              title="Labels"
-            >
-              Labels
-            </button>
-
-            <button
-              className="dm-icon-btn"
-              title="Save"
-              onClick={handleFullSave}
-              disabled={!isCurrentOwner}
-            >
-              <SaveIcon />
-            </button>
-
+            <div className="dm-left-toprow-right">
+              <span className="dm-datetime-text">{formattedDateTime}</span>
+              <button className="dm-icon-sm" title="Labels" onClick={() => setShowLabelsModal(true)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="5" width="18" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                  <rect x="3" y="11" width="13" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                  <rect x="3" y="17" width="9" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                </svg>
+              </button>
+              <button className="dm-icon-sm" title="Save" onClick={handleFullSave} disabled={!isCurrentOwner}>
+                <SaveIcon />
+              </button>
+            </div>
           </div>
 
           {/* Title field */}
@@ -2397,7 +2507,7 @@ const formatDate = (date) => {
                 disabled={!isCurrentOwner}
                 value={executeDescription}
                 maxLength={descMax}
-                rows={4}
+                rows={3}
                 onChange={e => setExecuteDescription(e.target.value)}
               />
               <span className="dm-char-count">{descTitle}/{descMax}</span>
@@ -2414,63 +2524,51 @@ const formatDate = (date) => {
                 disabled={!isCurrentOwner}
                 value={visualElements}
                 maxLength={veMax}
-                rows={4}
+                rows={3}
                 onChange={e => setVisualElements(e.target.value)}
               />
               <span className="dm-char-count">{veLen}/{veMax}</span>
             </div>
           </div>
 
-
-
+          {/* Summary field */}
           <div className="dm-form-row">
             <label className="dm-form-label">Summary</label>
-
             <div className="dm-form-field-wrap">
               <textarea
                 className="dm-form-textarea"
                 placeholder="Enter summary"
                 disabled={!isCurrentOwner}
                 value={summary}
-                rows={4}
+                rows={3}
                 onChange={e => setSummary(e.target.value)}
               />
             </div>
           </div>
 
-          {/* ── Tabs: AI Assistant | Designer Feedback ── */}
+          </div>{/* /dm-left-fields-scroll */}
+
+          {/* ── AI / FEEDBACK CHAT ZONE (60%) ──────────────────── */}
+          <div className="dm-left-chat-zone">
+
+          {/* Tabs */}
           <div className="dm-tabs">
-            <button
-              className={`dm-tab${activeTab === 'ai' ? ' dm-tab--active' : ''}`}
-              onClick={() => setActiveTab('ai')}
-            >
+            <button className={`dm-tab${activeTab === 'ai' ? ' dm-tab--active' : ''}`} onClick={() => setActiveTab('ai')}>
               <SparkleIcon/> AI Assistant
             </button>
-            <button
-              className={`dm-tab${activeTab === 'designer' ? ' dm-tab--active' : ''}`}
-              onClick={() => setActiveTab('designer')}
-            >
+            <button className={`dm-tab${activeTab === 'designer' ? ' dm-tab--active' : ''}`} onClick={() => setActiveTab('designer')}>
               <PencilIcon/> Designer Feedback
             </button>
           </div>
 
-          {/* ── AI Assistant Panel ── */}
+          {/* AI Panel */}
           {activeTab === 'ai' && (
-
             <div className="dm-chat-panel">
-
-              {/* "Chat with AI" label */}
-              <div className="dm-chat-label">
-                <SparkleIcon/> Chat with AI
-              </div>
-
-              {/* Bubble area */}
+              <div className="dm-chat-label"><SparkleIcon/> Chat with AI</div>
               <div className="dm-chat-bubbles">
                 {conversationBubbles.map(b => <Bubble key={b.id} bubble={b}/>)}
                 <div ref={chatEndRef}/>
               </div>
-
-              {/* Footer: input row + Generate button */}
               <div className="dm-chat-footer">
                 <div className="dm-chat-input-row">
                   <input
@@ -2488,28 +2586,15 @@ const formatDate = (date) => {
                   <button
                     className="dm-chat-send"
                     disabled={!isCurrentOwner}
-                    onClick={
-                      isCurrentOwner && userMessage.trim()
-                        ? handleSendMessage
-                        : undefined
-                    }
+                    onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
                   >
                     <SendIcon active={Boolean(userMessage.trim())}/>
                   </button>
                 </div>
                 <button
                   className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
-                  onClick={
-                    isCurrentOwner &&
-                    canGenerate &&
-                    !isGeneratingImage
-                      ? handleGenerate
-                      : undefined
-                  }
-                  disabled={
-                    !isCurrentOwner ||
-                    isGeneratingImage
-                  }
+                  onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
+                  disabled={!isCurrentOwner || isGeneratingImage}
                 >
                   <SparkleIcon/>
                   {isGeneratingImage ? 'Generating…' : '✦ Generate'}
@@ -2517,7 +2602,7 @@ const formatDate = (date) => {
                     <div className="dm-tooltip">
                       <div className="dm-tooltip-title">Please fill:</div>
                       <ul>
-                        {!mode             && <li>Prompt Type</li>}
+                        {!mode && <li>Prompt Type</li>}
                         {mode && !mediaType && <li>Media Type</li>}
                         {mediaType && !subType && <li>Sub Type</li>}
                       </ul>
@@ -2528,11 +2613,10 @@ const formatDate = (date) => {
             </div>
           )}
 
-          {/* ── Designer Feedback Panel ── */}
+          {/* Designer Feedback Panel */}
           {activeTab === 'designer' && (
             <div className="dm-chat-panel">
               <div className="dm-chat-label"><PencilIcon/> Designer Feedback</div>
-
               <div className="dm-chat-bubbles">
                 {groupedFeedback.length > 0 ? groupedFeedback.map((group, idx) => (
                   <div key={group.admin_media_id}>
@@ -2557,11 +2641,8 @@ const formatDate = (date) => {
                       </div>
                     ))}
                   </div>
-                )) : (
-                  <div className="dm-chat-empty">No feedback yet.</div>
-                )}
+                )) : <div className="dm-chat-empty">No feedback yet.</div>}
               </div>
-
               <div className="dm-chat-footer">
                 <div className="dm-chat-input-row">
                   <input
@@ -2582,177 +2663,57 @@ const formatDate = (date) => {
               </div>
             </div>
           )}
+          </div>{/* /dm-left-chat-zone */}
         </div>
-        {/* END LEFT COLUMN */}
 
-
-
-
-        {/* ==========================
-            BRAND & PRODUCT REFERENCES
-        ========================== */}
-
-        <div className="dm-reference-panel">
-
-          <div className="dm-reference-header">
-            Brand & Product
+        {/* ── MIDDLE THUMBNAIL STRIP ───────────────────────────────────────── */}
+        <div className="dm-thumb-strip">
+          <div className="dm-thumb-logo">
+            {selectedLogo
+              ? <img src={selectedLogo} alt="logo"/>
+              : <div className="dm-thumb-empty-logo"/>
+            }
           </div>
 
-          {/* Logo */}
-          <div className="dm-reference-section">
-
-            <div className="dm-reference-title">
-              Brand Logo
-            </div>
-
-            <div className="dm-logo-container">
-
-              {selectedLogo ? (
-                <img
-                  src={selectedLogo}
-                  alt="Brand Logo"
-                  className="dm-logo-image"
-                />
-              ) : (
-                <div className="dm-reference-empty">
-                  No Logo
-                </div>
-              )}
-
-            </div>
-
-          </div>
-
-          {/* Product Images */}
-          <div className="dm-reference-section">
-
-            <div className="dm-reference-title">
-              Product Images
-            </div>
-
-            <div className="dm-product-scroll">
-
-              {
-              selectedProductData?.images?.length ? (
-
-                selectedProductData.images.map((img, index) => (
-
-                  <label
-                    key={index}
-                    className="dm-product-option"
-                  >
-
-                    <input
-                      type="radio"
-                      name="selectedProductImage"
-                      value={img.img_url}
-                      checked={selectedProductImage === img.img_url}
-                      onChange={() =>
-                        setSelectedProductImage(img.img_url)
-                      }
-                      className="dm-product-radio"
-                    />
-
-                    <img
-                      src={img.img_url}
-                      alt={`Product ${index + 1}`}
-                      className={`dm-product-thumb ${
-                        selectedProductImage === img.img_url
-                          ? "dm-product-thumb-selected"
-                          : ""
-                      }`}
-                    />
-
-                  </label>
-
-                ))
-
-              ) : selectedProductImage ? (
-
-                <label
-                  className="dm-product-option"
-                >
-
-                  <input
-                    type="radio"
-                    checked
-                    readOnly
-                    className="dm-product-radio"
-                  />
-
-                  <img
-                    src={selectedProductImage}
-                    alt=""
-                    className="dm-product-thumb dm-product-thumb-selected"
-                  />
-
-                </label>
-
-              ) : (
-
-                <div className="dm-reference-empty">
-                  No Product Images
-                </div>
-
-              )}
-
-
-
-
-              <label
-                  className="dm-upload-product-card"
+          {selectedProductData?.images?.length ? (
+            selectedProductData.images.map((img, index) => (
+              <div
+                key={index}
+                className={`dm-thumb-img${selectedProductImage === img.img_url ? ' dm-thumb-img--active' : ''}`}
+                onClick={() => setSelectedProductImage(img.img_url)}
+                onMouseEnter={() => setPreviewProductImage(img.img_url)}
+                onMouseLeave={() => setPreviewProductImage(null)}
               >
-
-                  <input
-                      type="file"
-                      accept="image/*"
-                      hidden
-                      onChange={handleProductImageUpload}
-                  />
-
-                  <div className="dm-upload-plus">
-
-                      +
-
+                <img src={img.img_url} alt={`Product ${index + 1}`}/>
+                {selectedProductImage === img.img_url && <div className="dm-thumb-selected-dot"/>}
+                {previewProductImage === img.img_url && (
+                  <div className="dm-thumb-preview-popup">
+                    <img src={img.img_url} alt="preview"/>
                   </div>
-
-                  <div
-                      className="dm-upload-text"
-                  >
-
-                      Upload Image
-
-                  </div>
-
-              </label>
-
+                )}
+              </div>
+            ))
+          ) : selectedProductImage ? (
+            <div className="dm-thumb-img dm-thumb-img--active">
+              <img src={selectedProductImage} alt="Product"/>
+              <div className="dm-thumb-selected-dot"/>
             </div>
+          ) : null}
 
-            
-
-          </div>
-          
-
+          <label className="dm-thumb-upload">
+            <input type="file" accept="image/*" hidden onChange={handleProductImageUpload}/>
+            <span>+</span>
+          </label>
         </div>
 
+        {/* ── RIGHT COLUMN ─────────────────────────────────────────────────── */}
+        <div className="dm-right-col">
 
-
-
-
-
-
-        {/* ────────── RIGHT COLUMN ───────────────────────────────────────── */}
-        <div className="dm-right">
-
-          {/* "Generated Visual" header + history clock icon */}
-          <div className="dm-right-section-header">
-            <span className="dm-right-section-title">Generated Visual</span>
-            <button className="dm-icon-btn" onClick={handleOpenVisualHistory} title="Visual history">
-              <ClockIcon/>
-            </button>
+          <div className="dm-section-header">
+            <span className="dm-section-title">Generated Visual</span>
+            <button className="dm-icon-sm" onClick={handleOpenVisualHistory} title="Visual history"><ClockIcon/></button>
           </div>
 
-          {/* Visual canvas — large empty/image area */}
           <div className="dm-visual-canvas">
             {isGeneratingImage ? (
               <div className="dm-visual-loading">
@@ -2766,39 +2727,24 @@ const formatDate = (date) => {
             )}
           </div>
 
-          {/* Expand | Download icons row */}
-          <div className="dm-visual-icons-row">
-
+          <div className="dm-visual-actions">
             <button
-              className="dm-icon-btn"
-              title="Expand fullscreen"
+              className="dm-icon-sm"
+              title="Expand"
               disabled={!visualImage}
-              onClick={() => {
-                if (visualImage) {
-                  setShowImagePreview(true);
-                }
-              }}
+              onClick={() => visualImage && setShowImagePreview(true)}
             >
               <ExpandIcon/>
             </button>
-
             <button
-              className={`dm-icon-btn${!visualImage ? ' dm-icon-btn--disabled' : ''}`}
+              className="dm-icon-sm"
               title="Download"
               disabled={!visualImage}
               onClick={() => visualImage && downloadImage(visualImage, docketId)}
             >
               <DownloadIcon/>
             </button>
-
-            <button
-              className="dm-upload-btn"
-              title="Upload Image"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Upload
-            </button>
-
+            <button className="dm-upload-btn" onClick={() => fileInputRef.current?.click()}>Upload</button>
             <input
               type="file"
               accept="image/*"
@@ -2806,73 +2752,37 @@ const formatDate = (date) => {
               style={{ display: "none" }}
               onChange={handleManualImageUpload}
             />
-
           </div>
 
-          {/* Message section */}
           <div className="dm-message-section">
-            <div className="dm-right-section-header">
-              <span className="dm-right-section-title">Message</span>
-
-
-              {!isEditMode ? (
-
-                <button
-                  className="dm-icon-btn"
-                  title="Edit Message"
-                  onClick={() => setIsEditMode(true)}
-                >
-                  ✏️
-                </button>
-
-              ) : (
-
-                <button
-                  className="dm-icon-btn"
-                  title="Save Message"
-                  onClick={handleSaveVisualMessage}
-                >
-                  💾
-                </button>
-
-              )}
-
-
-
-
+            <div className="dm-section-header">
+              <span className="dm-section-title">Message</span>
+              <button
+                className="dm-icon-sm"
+                title="Copy message"
+                onClick={() => {
+                  navigator.clipboard.writeText(visualMessage || '');
+                  setShowCopyToast(true);
+                  setTimeout(() => setShowCopyToast(false), 2000);
+                }}
+              >
+                <CopyIcon/>
+              </button>
             </div>
-
-
             <div className="dm-message-body">
-
-              {isEditMode ? (
-
-                <textarea
-                  className="dm-message-editor"
-                  value={visualMessage}
-                  onChange={(e) =>
-                    setVisualMessage(e.target.value)
-                  }
-                />
-
-              ) : (
-
-                visualMessage || ''
-
-              )}
-
+              {isEditMode
+                ? <textarea className="dm-message-editor" value={visualMessage} onChange={e => setVisualMessage(e.target.value)}/>
+                : (visualMessage || '')}
             </div>
-            
-
-
-
-
+            <div className="dm-message-edit-row">
+              {isEditMode
+                ? <button className="dm-msg-save-btn" onClick={handleSaveVisualMessage}>Save</button>
+                : <button className="dm-msg-edit-btn" onClick={() => setIsEditMode(true)}>✏️ Edit</button>
+              }
+            </div>
           </div>
 
-          {/* ── Bottom action buttons: Stages | Names | Submit ── */}
           <div className="dm-bottom-actions">
-
-            {/* Stages */}
             <div className="dm-action-wrap">
               <button
                 className="dm-action-btn"
@@ -2883,9 +2793,7 @@ const formatDate = (date) => {
               {showStageDropdown && (
                 <div className="dm-dropdown">
                   <div className="dm-dropdown-title">Select Stage</div>
-                  <option value={currentStage} disabled className="dm-dropdown-current">
-                    {currentStage} (current)
-                  </option>
+                  <div className="dm-dropdown-current">{currentStage} (current)</div>
                   {nextStages.map(stage => (
                     <div
                       key={stage}
@@ -2902,7 +2810,6 @@ const formatDate = (date) => {
               )}
             </div>
 
-            {/* Names */}
             <div className="dm-action-wrap">
               <button
                 className="dm-action-btn"
@@ -2928,346 +2835,17 @@ const formatDate = (date) => {
               )}
             </div>
 
-            {/* Submit */}
             <div className="dm-action-wrap">
               <button className="dm-action-btn dm-action-btn--submit" onClick={handleSubmit}>
                 <SubmitIcon/> Submit
               </button>
             </div>
-
           </div>
         </div>
-        {/* END RIGHT COLUMN */}
-
       </div>
-      {/* END MAIN CONTENT */}
+      {/* END MAIN BODY */}
 
-
-
-      {/* CREATE EXECUTE MODAL */}
-      {showCreateExecuteModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowCreateExecuteModal(false)}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close"
-              onClick={() => setShowCreateExecuteModal(false)}
-            >
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                <line
-                  x1="1"
-                  y1="1"
-                  x2="13"
-                  y2="13"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <line
-                  x1="13"
-                  y1="1"
-                  x2="1"
-                  y2="13"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-
-            <div className="modal-tabs">
-              <label className="tab-button active">
-                <span>Media</span>
-                <input
-                  type="radio"
-                  checked={true}
-                  readOnly
-                  className="tab-radio"
-                />
-              </label>
-            </div>
-
-            <div className="modal-body">
-
-              <div className="schedule-row">
-
-                <div className="schedule-title-field">
-                  <label className="form-label">
-                    Execute Title:
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={newDocketTitle}
-                    onChange={(e) =>
-                      setNewDocketTitle(e.target.value)
-                    }
-                  />
-                </div>
-
-                <div className="schedule-picker-field">
-                  <label className="form-label">
-                    Upload Schedule:
-                  </label>
-
-                  <DatePicker
-                    selected={newUploadedDateTime}
-                    popperPlacement="bottom-end"
-                    onChange={(date) =>
-                      setNewUploadedDateTime(date)
-                    }
-                    showTimeSelect
-                    dateFormat="MMM d, yyyy h:mm aa"
-                    timeFormat="hh:mm aa"
-                    timeIntervals={15}
-                    className="planner-datepicker"
-                    placeholderText="Select upload time"
-                  />
-                </div>
-
-              </div>
-
-              <div className="docket-form-group">
-                <label>Execute Description</label>
-
-                <textarea
-                  value={newExecuteDescription}
-                  onChange={(e) =>
-                    setNewExecuteDescription(e.target.value)
-                  }
-                  placeholder="Enter execute description..."
-                />
-              </div>
-
-              <div className="docket-form-group">
-                <label>Visual Elements</label>
-
-                <textarea
-                  value={newVisualElements}
-                  onChange={(e) =>
-                    setNewVisualElements(e.target.value)
-                  }
-                  placeholder="Enter visual elements..."
-                />
-              </div>
-
-              <div className="form-row">
-                <label className="form-label">
-                  Prompt Type:
-                </label>
-
-                <select
-                  className="form-input"
-                  value={newMode}
-                  onChange={(e) => {
-                    setNewMode(e.target.value);
-                    setNewMediaType("");
-                    setNewSubType("");
-                  }}
-                >
-                  <option value="">
-                    Select Prompt Type
-                  </option>
-
-                  <option value="message">
-                    Message
-                  </option>
-
-                  <option value="visuals">
-                    Visuals
-                  </option>
-                </select>
-              </div>
-
-              {newMode && (
-                <div className="form-row">
-                  <label className="form-label">
-                    {newMode === "message"
-                      ? "Message Type:"
-                      : "Visual Type:"}
-                  </label>
-
-                  <select
-                    className="form-input"
-                    value={newMediaType}
-                    onChange={(e) => {
-                      setNewMediaType(e.target.value);
-                      setNewSubType("");
-                    }}
-                  >
-                    <option value="">
-                      Select Type
-                    </option>
-
-                    {createMediaTypes.map((t) => (
-                      <option
-                        key={t.media_type}
-                        value={t.media_type}
-                      >
-                        {t.media_type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {newMediaType && (
-                <div className="form-row">
-                  <label className="form-label">
-                    {newMode === "message"
-                      ? "Message Sub Type:"
-                      : "Visual Sub Type:"}
-                  </label>
-
-                  <select
-                    className="form-input"
-                    value={newSubType}
-                    onChange={(e) =>
-                      setNewSubType(e.target.value)
-                    }
-                  >
-                    <option value="">
-                      Select Sub Type
-                    </option>
-
-                    {createSubTypes.map((s) => (
-                      <option
-                        key={s.subtype_name}
-                        value={s.subtype_name}
-                      >
-                        {s.subtype_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="form-row">
-                <label className="form-label">
-                  Product:
-                </label>
-
-                <select
-                  className="form-input"
-                  value={newProductId}
-                  onChange={(e) =>
-                    setNewProductId(e.target.value)
-                  }
-                >
-                  <option value="">
-                    Select Product
-                  </option>
-
-                  {productList.map((p) => (
-                    <option
-                      key={p.product_id}
-                      value={p.product_id}
-                    >
-                      {p.product_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-row">
-                <label className="form-label">
-                  Persona:
-                </label>
-
-                <select
-                  className="form-input"
-                  value={newPersonaId}
-                  onChange={(e) =>
-                    setNewPersonaId(e.target.value)
-                  }
-                >
-                  <option value="">
-                    Select Persona
-                  </option>
-
-                  {personaList.map((p) => (
-                    <option
-                      key={p.persona_id}
-                      value={p.persona_id}
-                    >
-                      {p.persona_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-
-
-              <div className="form-row">
-                <label className="form-label">
-                  Topic:
-                </label>
-
-                <select
-                  className="form-input"
-                  value={newOccasionId}
-                  onChange={(e) =>
-                    setNewOccasionId(e.target.value)
-                  }
-                >
-                  <option value="">
-                    Select Topic
-                  </option>
-
-                  {occasionList.map((event) => (
-                    <option
-                      key={event.occasion_id}
-                      value={event.occasion_id}
-                    >
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-
-
-
-
-
-
-
-            </div>
-
-            <div className="modal-actions">
-
-              <button
-                className="modal-cancel-btn"
-                onClick={() =>
-                  setShowCreateExecuteModal(false)
-                }
-              >
-                CANCEL
-              </button>
-
-              <button
-                className="modal-save-btn"
-                onClick={handleCreateExecute}
-              >
-                CREATE EXECUTE
-              </button>
-
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      
-
-      {/* ════════════ BOTTOM STAGE STATUS BAR ══════════════════════════════ */}
-      {/* Reference: 🔍 Discovery 30  ✏️ Draft 15  ✨ Generate 23  📋 Review 34  ✅ Approve 56  📤 Publish 13  🔒 Closed 9  ❌ Rejected 11  ↻ */}
+      {/* ════════ STAGE BAR ═══════════════════════════════════════════════════ */}
       <div className="dm-stagebar">
         {STAGE_BAR.map(s => (
           <div key={s.key} className="dm-stagebar-item">
@@ -3277,7 +2855,7 @@ const formatDate = (date) => {
           </div>
         ))}
         <button
-          className="dm-icon-btn dm-stagebar-refresh"
+          className="dm-icon-sm dm-stagebar-refresh"
           title="Refresh counts"
           onClick={() => {
             fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
@@ -3289,295 +2867,249 @@ const formatDate = (date) => {
         </button>
       </div>
 
-
-      {/* ════════════ MODALS ════════════════════════════════════════════════ */}
-
-      {/* Add Custom Field */}
-      {showModal && (
-        <div className="dm-overlay" onClick={() => setShowModal(false)}>
+      {/* ════════ CREATE EXECUTE MODAL ════════════════════════════════════════ */}
+      {showCreateExecuteModal && (
+        <div className="dm-overlay" onClick={() => setShowCreateExecuteModal(false)}>
           <div className="dm-modal" onClick={e => e.stopPropagation()}>
             <div className="dm-modal-header">
-              <h3>Add Custom Field</h3>
-              <button className="dm-modal-close" onClick={() => setShowModal(false)}><CloseIcon/></button>
+              <h3>Create Execute</h3>
+              <button className="dm-modal-close" onClick={() => setShowCreateExecuteModal(false)}><CloseIcon/></button>
             </div>
             <div className="dm-modal-body">
               <div className="dm-modal-group">
-                <label>Field Name</label>
-                <input type="text" autoFocus value={newFieldLabel} onChange={e => setNewFieldLabel(e.target.value)} placeholder="e.g. Special Instructions"/>
+                <label>Execute Title</label>
+                <input type="text" value={newDocketTitle} onChange={e => setNewDocketTitle(e.target.value)}/>
               </div>
               <div className="dm-modal-group">
-                <label>Field Value (Optional)</label>
-                <input type="text" value={newFieldValue} onChange={e => setNewFieldValue(e.target.value)} placeholder="e.g. Handle with care"/>
+                <label>Upload Schedule</label>
+                <DatePicker
+                  selected={newUploadedDateTime}
+                  popperPlacement="bottom-end"
+                  onChange={(date) => setNewUploadedDateTime(date)}
+                  showTimeSelect
+                  dateFormat="MMM d, yyyy h:mm aa"
+                  timeFormat="hh:mm aa"
+                  timeIntervals={15}
+                  className="planner-datepicker"
+                  placeholderText="Select upload time"
+                />
+              </div>
+              <div className="dm-modal-group">
+                <label>Execute Description</label>
+                <textarea value={newExecuteDescription} onChange={e => setNewExecuteDescription(e.target.value)} placeholder="Enter execute description..."/>
+              </div>
+              <div className="dm-modal-group">
+                <label>Visual Elements</label>
+                <textarea value={newVisualElements} onChange={e => setNewVisualElements(e.target.value)} placeholder="Enter visual elements..."/>
+              </div>
+              <div className="dm-modal-group">
+                <label>Prompt Type</label>
+                <select
+                  value={newMode}
+                  onChange={(e) => { setNewMode(e.target.value); setNewMediaType(""); setNewSubType(""); }}
+                >
+                  <option value="">Select Prompt Type</option>
+                  <option value="message">Message</option>
+                  <option value="visuals">Visuals</option>
+                </select>
+              </div>
+              {newMode && (
+                <div className="dm-modal-group">
+                  <label>{newMode === "message" ? "Message Type" : "Visual Type"}</label>
+                  <select
+                    value={newMediaType}
+                    onChange={(e) => { setNewMediaType(e.target.value); setNewSubType(""); }}
+                  >
+                    <option value="">Select Type</option>
+                    {createMediaTypes.map((t) => (
+                      <option key={t.media_type} value={t.media_type}>{t.media_type}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {newMediaType && (
+                <div className="dm-modal-group">
+                  <label>{newMode === "message" ? "Message Sub Type" : "Visual Sub Type"}</label>
+                  <select value={newSubType} onChange={(e) => setNewSubType(e.target.value)}>
+                    <option value="">Select Sub Type</option>
+                    {createSubTypes.map((s) => (
+                      <option key={s.subtype_name} value={s.subtype_name}>{s.subtype_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="dm-modal-group">
+                <label>Product</label>
+                <select value={newProductId} onChange={(e) => setNewProductId(e.target.value)}>
+                  <option value="">Select Product</option>
+                  {productList.map((p) => (
+                    <option key={p.product_id} value={p.product_id}>{p.product_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="dm-modal-group">
+                <label>Persona</label>
+                <select value={newPersonaId} onChange={(e) => setNewPersonaId(e.target.value)}>
+                  <option value="">Select Persona</option>
+                  {personaList.map((p) => (
+                    <option key={p.persona_id} value={p.persona_id}>{p.persona_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="dm-modal-group">
+                <label>Topic</label>
+                <select value={newOccasionId} onChange={(e) => setNewOccasionId(e.target.value)}>
+                  <option value="">Select Topic</option>
+                  {occasionList.map((event) => (
+                    <option key={event.occasion_id} value={event.occasion_id}>{event.title}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="dm-modal-footer">
-              <button className="dm-modal-btn dm-modal-btn--cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="dm-modal-btn dm-modal-btn--save" onClick={handleModalSave} disabled={!newFieldLabel.trim()}>Save Field</button>
+              <button className="dm-modal-btn dm-modal-btn--cancel" onClick={() => setShowCreateExecuteModal(false)}>Cancel</button>
+              <button className="dm-modal-btn dm-modal-btn--save" onClick={handleCreateExecute}>Create Execute</button>
             </div>
           </div>
         </div>
       )}
 
-
-
-
-      
-
+      {/* ════════ INFO MODAL ═══════════════════════════════════════════════════ */}
       {showInfoModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowInfoModal(false)}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "700px",
-              width: "90%"
-            }}
-          >
-
-            <div className="modal-header">
-
+        <div className="dm-overlay" onClick={() => setShowInfoModal(false)}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
               <h3>Execute Details</h3>
-
-              <button
-                className="modal-close"
-                onClick={() => setShowInfoModal(false)}
-              >
-                <CloseIcon />
-              </button>
-
+              <button className="dm-modal-close" onClick={() => setShowInfoModal(false)}><CloseIcon/></button>
             </div>
-
-            <div className="info-grid">
-
-              <div>
-                <strong>Title</strong>
-                <p>{docketTitle || "-"}</p>
+            <div className="dm-modal-body">
+              <div className="info-grid">
+                <div><strong>Title</strong><p>{docketTitle || "-"}</p></div>
+                <div><strong>Mode</strong><p>{mode || "-"}</p></div>
+                <div><strong>Media Type</strong><p>{mediaType || "-"}</p></div>
+                <div><strong>Media Subtype</strong><p>{subType || "-"}</p></div>
+                <div><strong>Product</strong><p>{selectedProductData?.product_name || "-"}</p></div>
+                <div><strong>Persona</strong><p>{selectedPersonaData?.persona_name || "-"}</p></div>
+                <div><strong>Occasion / Event</strong><p>-</p></div>
+                <div><strong>Current Owner</strong><p>{assignedUser || "-"}</p></div>
+                <div><strong>Current Stage</strong><p>{selectedStage || "Discovery"}</p></div>
+                <div><strong>Assigned User</strong><p>{assignedUser || "-"}</p></div>
               </div>
-
-              <div>
-                <strong>Mode</strong>
-                <p>{mode || "-"}</p>
-              </div>
-
-              <div>
-                <strong>Media Type</strong>
-                <p>{mediaType || "-"}</p>
-              </div>
-
-              <div>
-                <strong>Media Subtype</strong>
-                <p>{subType || "-"}</p>
-              </div>
-
-              <div>
-                <strong>Product</strong>
-                <p>
-                  {selectedProductData?.product_name || "-"}
-                </p>
-              </div>
-
-              <div>
-                <strong>Persona</strong>
-                <p>
-                  {selectedPersonaData?.persona_name || "-"}
-                </p>
-              </div>
-
-              <div>
-                <strong>Occasion / Event</strong>
-                <p>-</p>
-              </div>
-
-              <div>
-                <strong>Current Owner</strong>
-                <p>
-                  {assignedUser || "-"}
-                </p>
-              </div>
-
-              <div>
-                <strong>Current Stage</strong>
-                <p>
-                  {selectedStage || "Discovery"}
-                </p>
-              </div>
-
-              <div>
-                <strong>Assigned User</strong>
-                <p>
-                  {assignedUser || "-"}
-                </p>
-              </div>
-
             </div>
-
           </div>
         </div>
       )}
 
-
-
-
-
-
+      {/* ════════ LABELS MODAL ═════════════════════════════════════════════════ */}
       {showLabelsModal && (
-  <div
-    className="dm-overlay"
-    onClick={() => setShowLabelsModal(false)}
-  >
-    <div
-      className="dm-modal dm-modal--wide"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="dm-modal-header">
-        <h3>Labels</h3>
-
-        <button
-          className="dm-modal-close"
-          onClick={() => setShowLabelsModal(false)}
-        >
-          <CloseIcon />
-        </button>
-      </div>
-
-      <div className="dm-modal-body">
-
-        {/* MANDATORY FIELDS */}
-
-        <section className="docket-mandatory-section">
-          <div className="docket-optionals-header">
-            <h3 className="docket-column-title">
-              MANDATORY FIELDS
-            </h3>
-
-            <button
-              className="docket-add-more-btn"
-              onClick={() => {
-                setModalBoxType("mandatory");
-                setShowModal(true);
-              }}
-            >
-              Add More +
-            </button>
-          </div>
-
-          <div className="docket-scroll-wrapper">
-            <div className="docket-form-section">
-
-              {mandatoryFields.map((field) => (
-
-                <div
-                  key={field.id}
-                  className="docket-field-row"
-                >
-
-                  <div className="docket-field-left">
-
-                    <input
-                      type="checkbox"
-                      className="docket-field-checkbox"
-                      checked={
-                        fieldValues[field.variable_name]
-                          ?.enabled || false
-                      }
-                      onChange={(e) =>
-                        setFieldValues(prev => ({
-                          ...prev,
-                          [field.variable_name]: {
-                            ...prev[field.variable_name],
-                            enabled: e.target.checked
-                          }
-                        }))
-                      }
-                    />
-
-                    <label className="docket-field-label-text">
-                      {field.label}
-                    </label>
-
-                    {field.isCustom && (
-                      <button
-                        className="docket-delete-btn"
-                        onClick={() =>
-                          handleDeleteCustomField(field)
-                        }
-                      >
-                        ×
-                      </button>
-                    )}
-
-                  </div>
-
-                  <textarea
-                    className="docket-field-textarea"
-                    value={
-                      fieldValues[field.variable_name]
-                        ?.value || ""
-                    }
-                    rows={1}
-                    placeholder="Enter info..."
-                    onChange={(e) => {
-                      setFieldValues(prev => ({
-                        ...prev,
-                        [field.variable_name]: {
-                          ...prev[field.variable_name],
-                          value: e.target.value
-                        }
-                      }));
-
-                      const el = e.target;
-
-                      el.style.height = "auto";
-
-                      const lineH = 20;
-                      const pad = 16;
-                      const maxH = lineH * 3 + pad;
-
-                      const newH = Math.min(
-                        el.scrollHeight,
-                        maxH
-                      );
-
-                      el.style.height = `${newH}px`;
-
-                      el.style.overflowY =
-                        el.scrollHeight > maxH
-                          ? "auto"
-                          : "hidden";
-                    }}
-                  />
-
+        <div className="dm-overlay" onClick={() => setShowLabelsModal(false)}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>Labels</h3>
+              <button className="dm-modal-close" onClick={() => setShowLabelsModal(false)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              <section className="docket-mandatory-section">
+                <div className="docket-optionals-header">
+                  <h3 className="docket-column-title">MANDATORY FIELDS</h3>
+                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("mandatory"); setShowModal(true); }}>Add More +</button>
                 </div>
+                <div className="docket-form-section">
+                  {mandatoryFields.map((field) => (
+                    <div key={field.id} className="docket-field-row">
+                      <div className="docket-field-left">
+                        <input
+                          type="checkbox"
+                          className="docket-field-checkbox"
+                          checked={fieldValues[field.variable_name]?.enabled || false}
+                          onChange={(e) =>
+                            setFieldValues(prev => ({
+                              ...prev,
+                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
+                            }))
+                          }
+                        />
+                        <label className="docket-field-label-text">{field.label}</label>
+                        {field.isCustom && (
+                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
+                        )}
+                      </div>
+                      <textarea
+                        className="docket-field-textarea"
+                        value={fieldValues[field.variable_name]?.value || ""}
+                        rows={1}
+                        placeholder="Enter info..."
+                        onChange={(e) => {
+                          setFieldValues(prev => ({
+                            ...prev,
+                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
+                          }));
+                          const el = e.target;
+                          el.style.height = "auto";
+                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
+                          const newH = Math.min(el.scrollHeight, maxH);
+                          el.style.height = `${newH}px`;
+                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-              ))}
-
+              <section className="docket-mandatory-section">
+                <div className="docket-optionals-header">
+                  <h3 className="docket-column-title">OPTIONAL FIELDS</h3>
+                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("optional"); setShowModal(true); }}>Add More +</button>
+                </div>
+                <div className="docket-form-section">
+                  {optionalFields.map((field) => (
+                    <div key={field.id} className="docket-field-row">
+                      <div className="docket-field-left">
+                        <input
+                          type="checkbox"
+                          className="docket-field-checkbox"
+                          checked={fieldValues[field.variable_name]?.enabled || false}
+                          onChange={(e) =>
+                            setFieldValues(prev => ({
+                              ...prev,
+                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
+                            }))
+                          }
+                        />
+                        <label className="docket-field-label-text">{field.label}</label>
+                        {field.isCustom && (
+                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
+                        )}
+                      </div>
+                      <textarea
+                        className="docket-field-textarea"
+                        value={fieldValues[field.variable_name]?.value || ""}
+                        rows={1}
+                        placeholder="Enter info..."
+                        onChange={(e) => {
+                          setFieldValues(prev => ({
+                            ...prev,
+                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
+                          }));
+                          const el = e.target;
+                          el.style.height = "auto";
+                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
+                          const newH = Math.min(el.scrollHeight, maxH);
+                          el.style.height = `${newH}px`;
+                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
-        </section>
+        </div>
+      )}
 
-        <div className="docket-section-divider" />
-
-      </div>
-    </div>
-  </div>
-)}
-
-
-      
-
-
-      
-
-
-
-
-
-
-
-      {/* History Modal */}
+      {/* ════════ HISTORY MODAL ════════════════════════════════════════════════ */}
       {showHistoryModal && (
         <div className="dm-overlay" onClick={() => { setShowHistoryModal(false); setSelectedHistoryPrompt(null); }}>
           <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
@@ -3605,8 +3137,11 @@ const formatDate = (date) => {
                 ))
               ) : !selectedHistoryPrompt ? (
                 historyList.map((item, idx) => (
-                  <div key={item.docket_result_id} className="dm-history-item dm-history-item--btn"
-                    onClick={() => setSelectedHistoryPrompt({ text: item.visual_text, version: historyList.length - idx, createdAt: item.created_at })}>
+                  <div
+                    key={item.docket_result_id}
+                    className="dm-history-item dm-history-item--btn"
+                    onClick={() => setSelectedHistoryPrompt({ text: item.visual_text, version: historyList.length - idx, createdAt: item.created_at })}
+                  >
                     <strong>Version {historyList.length - idx}</strong>
                     <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
                   </div>
@@ -3619,7 +3154,33 @@ const formatDate = (date) => {
         </div>
       )}
 
-      {/* Feedback Modal */}
+      {/* ════════ ADD CUSTOM FIELD MODAL ═══════════════════════════════════════ */}
+      {showModal && (
+        <div className="dm-overlay" onClick={() => setShowModal(false)}>
+          <div className="dm-modal" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>Add Custom Field</h3>
+              <button className="dm-modal-close" onClick={() => setShowModal(false)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              <div className="dm-modal-group">
+                <label>Field Name</label>
+                <input type="text" autoFocus value={newFieldLabel} onChange={e => setNewFieldLabel(e.target.value)} placeholder="e.g. Special Instructions"/>
+              </div>
+              <div className="dm-modal-group">
+                <label>Field Value (Optional)</label>
+                <input type="text" value={newFieldValue} onChange={e => setNewFieldValue(e.target.value)} placeholder="e.g. Handle with care"/>
+              </div>
+            </div>
+            <div className="dm-modal-footer">
+              <button className="dm-modal-btn dm-modal-btn--cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="dm-modal-btn dm-modal-btn--save" onClick={handleModalSave} disabled={!newFieldLabel.trim()}>Save Field</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ FEEDBACK MODAL ═══════════════════════════════════════════════ */}
       {showFeedbackModal && (
         <div className="dm-overlay" onClick={() => setShowFeedbackModal(false)}>
           <div className="dm-modal dm-modal--feedback" onClick={e => e.stopPropagation()}>
@@ -3642,7 +3203,11 @@ const formatDate = (date) => {
               <div ref={feedbackBottomRef}/>
             </div>
             <div className="dm-modal-footer">
-              <textarea className="dm-feedback-input" placeholder="Write feedback..." value={feedbackText} rows={3}
+              <textarea
+                className="dm-feedback-input"
+                placeholder="Write feedback..."
+                value={feedbackText}
+                rows={3}
                 onChange={e => setFeedbackText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && feedbackText.trim()) { e.preventDefault(); submitFeedback(); } }}
               />
@@ -3658,7 +3223,7 @@ const formatDate = (date) => {
         </div>
       )}
 
-      {/* Assignment History Modal */}
+      {/* ════════ ASSIGNMENT HISTORY MODAL ═════════════════════════════════════ */}
       {showAssignHistoryModal && (
         <div className="dm-overlay" onClick={() => setShowAssignHistoryModal(false)}>
           <div className="dm-modal" onClick={e => e.stopPropagation()}>
@@ -3690,15 +3255,13 @@ const formatDate = (date) => {
           </div>
         </div>
       )}
-      
 
       {/* Dropdown backdrop */}
       {(showStageDropdown || showNamesDropdown) && (
         <div className="dm-dropdown-backdrop" onClick={() => { setShowStageDropdown(false); setShowNamesDropdown(false); }}/>
       )}
 
-
-      {/* ════════════ TOASTS ════════════════════════════════════════════════ */}
+      {/* ════════ TOASTS ════════════════════════════════════════════════════ */}
       {showCopyToast && (
         <div className="dm-toast dm-toast--success">
           <CheckIcon/> <span>Copied to clipboard!</span>
@@ -3716,36 +3279,11 @@ const formatDate = (date) => {
         </div>
       )}
 
-
-
       {showImagePreview && visualImage && (
-
-        <div
-          className="dm-image-preview-overlay"
-          onClick={() =>
-            setShowImagePreview(false)
-          }
-        >
-
-          <img
-            src={visualImage}
-            alt="Preview"
-            className="dm-image-preview"
-            onClick={(e) =>
-              e.stopPropagation()
-            }
-          />
-
+        <div className="dm-image-preview-overlay" onClick={() => setShowImagePreview(false)}>
+          <img src={visualImage} alt="Preview" className="dm-image-preview" onClick={(e) => e.stopPropagation()}/>
         </div>
-
       )}
-
-
-
-
-
-
-
 
     </div>
   );
