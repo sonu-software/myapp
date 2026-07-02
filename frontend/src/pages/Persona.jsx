@@ -83,24 +83,6 @@ function PlusIcon({ size = 14 }) {
     </svg>
   );
 }
-function CopyIcon({ size = 14 }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-    </svg>
-  );
-}
-function XIcon({ size = 14 }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-    </svg>
-  );
-}
-
 /* ═══════════════════════════════
    LABEL TOOLTIP
 ═══════════════════════════════ */
@@ -164,6 +146,9 @@ function HashtagInput({ hashtags, onChange }) {
 
   return (
     <div className="pn-hashtag-section">
+      <span className="pn-hashtag-label">
+            Add key hashtags (optional)
+        </span>
       <div
         className={`pn-hashtag-field${atLimit ? " pn-hashtag-field--limit" : ""}`}
         onClick={() => inputRef.current?.focus()}
@@ -335,13 +320,12 @@ function SegmentCard({
           <h3 title={section.title}>{section.title}</h3>
           <span className="pn-card-subtitle">{section.subtitle}</span>
         </div>
-        {isExpanded && (
-          <div className="pn-card-actions">
-            <button className="icon-action-btn"
-              onClick={e => { e.stopPropagation(); onAddCustomField(section.key); }}
-              title="Add custom field"><PlusIcon /></button>
-          </div>
-        )}
+        {/* Always rendered — visible in both hovered and non-hovered / expanded and collapsed states */}
+        <div className="pn-card-actions">
+          <button className="icon-action-btn"
+            onClick={e => { e.stopPropagation(); if (!isExpanded) onCardClick(); onAddCustomField(section.key); }}
+            title="Add custom field"><PlusIcon /></button>
+        </div>
       </div>
 
       <div className="pn-card-body">
@@ -544,6 +528,26 @@ export default function Persona() {
     });
   };
 
+  /* ── Clear all fields ── */
+  const handleClearAll = () => {
+    setConfirmModal({
+      show: true,
+      variant: "warning",
+      icon: "🧹",
+      title: "Clear All Fields?",
+      message: "All entered data on this persona will be cleared. This cannot be undone.",
+      confirmLabel: "Clear All",
+      cancelLabel: "Cancel",
+      confirmClass: "ai-popup-confirm-btn--warning",
+      onConfirm: () => {
+        setPersonaName("");
+        setHashtags([]);
+        setSegmentsData(buildInitialState());
+        setConfirmModal({ show: false });
+      },
+    });
+  };
+
   function buildPayload() {
     const segments = [];
     Object.entries(segmentsData).forEach(([secType, fields]) => {
@@ -604,13 +608,20 @@ export default function Persona() {
 
         {/* Top-right action buttons */}
         <div className="product-header-right">
-          <button className="pn-header-btn pn-header-btn--duplicate" onClick={handleDuplicate} title="Duplicate this persona">
-            <CopyIcon size={13} />
-            <span>Duplicate</span>
+          <button className="product-action-btn product-duplicate-btn" onClick={handleDuplicate} title="Duplicate this persona">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Duplicate
           </button>
-          <button className="pn-header-btn pn-header-btn--exit" onClick={handleExit} title="Exit without saving">
-            <XIcon size={13} />
-            <span>Exit</span>
+          <button className="product-action-btn product-exit-btn" onClick={handleExit} title="Exit without saving">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Exit
           </button>
         </div>
       </div>
@@ -634,11 +645,11 @@ export default function Persona() {
       <div className="save-wrapper">
         <HashtagInput hashtags={hashtags} onChange={setHashtags} />
         <div className="save-wrapper-btns">
-          <button className="ai-btn ai-btn-done" onClick={() => handleSave(false)} disabled={saving}>
-            {saving ? "Saving…" : "Done"}
+          <button className="ai-btn ai-btn-clearall" onClick={handleClearAll} disabled={saving}>
+            Clear all
           </button>
-          <button className="ai-btn ai-btn-sticky" onClick={() => handleSave(true)} disabled={saving}>
-            {saving ? "Saving…" : "Save & Next"}
+          <button className="ai-btn ai-btn-sticky" onClick={() => handleSave(false)} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

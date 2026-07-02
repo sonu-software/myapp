@@ -488,6 +488,8 @@ const DocketMedia = () => {
   const [carouselTotal,   setCarouselTotal]   = useState(0);
   const CAROUSEL_PER_PAGE = 10;
 
+
+
   // ── Carousel ──────────────────────────────────────────────────────────────
   const [carouselDockets, setCarouselDockets] = useState([]);
 
@@ -809,10 +811,9 @@ const formatDate = (date) => {
   const [selectedHistoryPrompt, setSelectedHistoryPrompt] = useState(null);
   const [visualHistoryList,     setVisualHistoryList]     = useState([]);
 
-  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [leftPanel, setLeftPanel] = useState(null);
 
-  const [showLabelsModal, setShowLabelsModal] =
-  useState(false);
+
 
 
   // ── Visual output ─────────────────────────────────────────────────────────
@@ -1157,22 +1158,27 @@ const formatDate = (date) => {
          }),
 
       fetch(`${API}/docket/${docketId}/product`, { headers })
-        .then(r => r.json()).then(data => { if (data.success) setSelectedProductData(data.data);
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) return;
 
-          if (
-            data.data.images &&
-            data.data.images.length
-          ) {
+          setSelectedProductData(data.data);
 
-            setSelectedProductImage(
-              data.data.images[0].img_url
-            );
+          setSelectedProductImage(prev => {
 
-          }
+            // Keep user's current selection
+            if (
+              prev &&
+              data.data.images?.some(img => img.img_url === prev)
+            ) {
+              return prev;
+            }
 
+            // Only initialize once
+            return data.data.images?.[0]?.img_url || null;
 
-
-         }),
+          });
+        }),
 
       fetch(`${API}/docket/${docketId}/persona`, { headers })
         .then(r => r.json()).then(data => { if (data.success) setSelectedPersonaData(data.data); }),
@@ -1845,7 +1851,19 @@ const formatDate = (date) => {
       }
     } catch (err) { setIsGeneratingImage(false); console.error(err); }
     setIsEditMode(false);
-  }, [mode, mediaType, subType, businessProfile, finalPersonaData, selectedProductData, fieldValues, docketId, mandatoryFields, optionalFields]);
+  }, [mode,
+    mediaType,
+    subType,
+    businessProfile,
+    finalPersonaData,
+    selectedProductData,
+    selectedProductImage,
+    selectedLogo,
+    fieldValues,
+    docketId,
+    mandatoryFields,
+    optionalFields,
+    assignedUser]);
 
 
   // ==========================================================================
@@ -2044,7 +2062,7 @@ const formatDate = (date) => {
           <div className="dm-filter-wrapper" ref={filterRef}>
             <button className="dm-filter-pill-btn" onClick={() => setShowFilterDropdown(v => !v)}>
               <FilterIcon /> Filter
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 4 }}>
+              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 5 }}>
                 <line x1="1" y1="1" x2="13" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                 <line x1="13" y1="1" x2="1" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               </svg>
@@ -2167,6 +2185,9 @@ const formatDate = (date) => {
                 </button>
               </div>
             )}
+
+
+            
           </div>
 
           {activeFilters.map(f => (
@@ -2452,22 +2473,418 @@ const formatDate = (date) => {
       </div>
 
       {/* ════════ MAIN BODY ═══════════════════════════════════════════════════ */}
-      <div className="dm-body">
+      <div className={`dm-body ${leftPanel ? "dm-body-info-open" : ""}`}>
 
-        {/* ── LEFT COLUMN ──────────────────────────────────────────────────── */}
-        <div className="dm-left-col">
+          {/* ───────────────── INFO PANEL ───────────────── */}
+
+          {leftPanel === "info" && (
+
+          <div className="dm-info-panel">
+
+              <div className="dm-info-card-new">
+
+                  <div className="dm-info-header">
+
+                      <h3>Execute Information</h3>
+
+                  </div>
+
+                  <div className="dm-info-body">
+
+                      <div className="dm-info-grid">
+
+                          <label>Topic</label>
+
+                          <input
+                              type="text"
+                              value={selectedFilterOccasion || ""}
+                              readOnly
+                          />
+
+                          <label>Date</label>
+
+                          <input
+                              type="text"
+                              value={formattedDateTime}
+                              readOnly
+                          />
+
+                          <label>Stage</label>
+
+                          <input
+                              type="text"
+                              value={currentStage}
+                              readOnly
+                          />
+
+                          <label>Media</label>
+
+                          <input
+                              type="text"
+                              value={mediaType}
+                              readOnly
+                          />
+
+                          <label>Sub Type</label>
+
+                          <input
+                              type="text"
+                              value={subType}
+                              readOnly
+                          />
+
+                          <label>Product</label>
+
+                          <input
+                              type="text"
+                              value={selectedProductData?.product_name || ""}
+                              readOnly
+                          />
+
+                          <label>Persona</label>
+
+                          <input
+                              type="text"
+                              value={selectedPersonaData?.persona_name || ""}
+                              readOnly
+                          />
+
+                      </div>
+
+                  </div>
+
+                  <div className="dm-info-footer">
+
+                      <button
+                          className="dm-info-save-btn"
+                          onClick={handleFullSave}
+                          disabled={!isCurrentOwner}
+                      >
+                          Save
+                      </button>
+
+                  </div>
+
+              </div>
+
+          </div>
+
+          )}
+
+
+
+    {/* ════════ LABELS MODAL ═════════════════════════════════════════════════ */}
+      {leftPanel === "labels" && (
+
+        <div className="dm-info-panel">
+
+            <div className="dm-label-card">
+
+                <div className="dm-info-header">
+
+                    <h3>Labels</h3>
+
+                    <button
+                        className="dm-info-close"
+                        onClick={() => setLeftPanel(null)}
+                    >
+                        <CloseIcon />
+                    </button>
+
+                </div>
+
+                <div className="dm-label-body">
+                  <div className="dm-label-sidebar">
+
+                    {/* ===================== MANDATORY ===================== */}
+
+                    <section className="docket-mandatory-section">
+
+                        <div className="docket-optionals-header">
+
+                            <h3 className="docket-column-title">
+                                MANDATORY FIELDS
+                            </h3>
+
+                            <button
+                                className="docket-add-more-btn"
+                                onClick={() => {
+                                    setModalBoxType("mandatory");
+                                    setShowModal(true);
+                                }}
+                            >
+                                Add More +
+                            </button>
+
+                        </div>
+
+                        <div className="docket-form-section">
+
+                            {mandatoryFields.map((field) => (
+
+                                <div
+                                    key={field.id}
+                                    className="docket-field-row"
+                                >
+
+                                    <div className="docket-field-left">
+
+                                        <input
+                                            type="checkbox"
+                                            className="docket-field-checkbox"
+                                            checked={
+                                                fieldValues[field.variable_name]?.enabled ||
+                                                false
+                                            }
+                                            onChange={(e) =>
+                                                setFieldValues(prev => ({
+                                                    ...prev,
+                                                    [field.variable_name]: {
+                                                        ...prev[field.variable_name],
+                                                        enabled: e.target.checked
+                                                    }
+                                                }))
+                                            }
+                                        />
+
+                                        <label className="docket-field-label-text">
+                                            {field.label}
+                                        </label>
+
+                                        {field.isCustom && (
+
+                                            <button
+                                                className="docket-delete-btn"
+                                                onClick={() => handleDeleteCustomField(field)}
+                                            >
+                                                ×
+                                            </button>
+
+                                        )}
+
+                                    </div>
+
+                                    <textarea
+                                        className="docket-field-textarea"
+                                        value={
+                                            fieldValues[field.variable_name]?.value || ""
+                                        }
+                                        rows={1}
+                                        placeholder="Enter info..."
+                                        onChange={(e) => {
+
+                                            setFieldValues(prev => ({
+                                                ...prev,
+                                                [field.variable_name]: {
+                                                    ...prev[field.variable_name],
+                                                    value: e.target.value
+                                                }
+                                            }));
+
+                                            const el = e.target;
+
+                                            el.style.height = "auto";
+
+                                            const lineH = 20;
+
+                                            const pad = 16;
+
+                                            const maxH = lineH * 3 + pad;
+
+                                            const newH =
+                                                Math.min(el.scrollHeight, maxH);
+
+                                            el.style.height = `${newH}px`;
+
+                                            el.style.overflowY =
+                                                el.scrollHeight > maxH
+                                                    ? "auto"
+                                                    : "hidden";
+
+                                        }}
+                                    />
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                    {/* ===================== OPTIONAL ===================== */}
+
+                    <section className="docket-mandatory-section">
+
+                        <div className="docket-optionals-header">
+
+                            <h3 className="docket-column-title">
+                                OPTIONAL FIELDS
+                            </h3>
+
+                            <button
+                                className="docket-add-more-btn"
+                                onClick={() => {
+                                    setModalBoxType("optional");
+                                    setShowModal(true);
+                                }}
+                            >
+                                Add More +
+                            </button>
+
+                        </div>
+
+                        <div className="docket-form-section">
+
+                            {optionalFields.map((field) => (
+
+                                <div
+                                    key={field.id}
+                                    className="docket-field-row"
+                                >
+
+                                    <div className="docket-field-left">
+
+                                        <input
+                                            type="checkbox"
+                                            className="docket-field-checkbox"
+                                            checked={
+                                                fieldValues[field.variable_name]?.enabled ||
+                                                false
+                                            }
+                                            onChange={(e) =>
+                                                setFieldValues(prev => ({
+                                                    ...prev,
+                                                    [field.variable_name]: {
+                                                        ...prev[field.variable_name],
+                                                        enabled: e.target.checked
+                                                    }
+                                                }))
+                                            }
+                                        />
+
+                                        <label className="docket-field-label-text">
+                                            {field.label}
+                                        </label>
+
+                                        {field.isCustom && (
+
+                                            <button
+                                                className="docket-delete-btn"
+                                                onClick={() => handleDeleteCustomField(field)}
+                                            >
+                                                ×
+                                            </button>
+
+                                        )}
+
+                                    </div>
+
+                                    <textarea
+                                        className="docket-field-textarea"
+                                        value={
+                                            fieldValues[field.variable_name]?.value || ""
+                                        }
+                                        rows={1}
+                                        placeholder="Enter info..."
+                                        onChange={(e) => {
+
+                                            setFieldValues(prev => ({
+                                                ...prev,
+                                                [field.variable_name]: {
+                                                    ...prev[field.variable_name],
+                                                    value: e.target.value
+                                                }
+                                            }));
+
+                                            const el = e.target;
+
+                                            el.style.height = "auto";
+
+                                            const lineH = 20;
+
+                                            const pad = 16;
+
+                                            const maxH = lineH * 3 + pad;
+
+                                            const newH =
+                                                Math.min(el.scrollHeight, maxH);
+
+                                            el.style.height = `${newH}px`;
+
+                                            el.style.overflowY =
+                                                el.scrollHeight > maxH
+                                                    ? "auto"
+                                                    : "hidden";
+
+                                        }}
+                                    />
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    </section>
+
+                </div>
+                </div>
+
+                <div className="dm-label-footer">
+
+                    <button
+                        className="dm-info-save-btn"
+                        onClick={handleFullSave}
+                    >
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </div>
+          
+
+        </div>
+
+    )}
+
+
+
+
+
+
+
+
+    {/* ───────────────── LEFT COLUMN ───────────────── */}
+
+    <div className="dm-left-col">
+
+          <div className="dm-left-content"></div>
 
           {/* ── SCROLLABLE FORM FIELDS (40%) ──────────────────────────────── */}
           <div className="dm-left-fields-scroll">
 
           {/* Top row: info icon | datetime + icons */}
           <div className="dm-left-toprow">
-            <button className="dm-info-btn" title="Info" onClick={() => setShowInfoModal(true)}>
+            <button className="dm-info-btn" title="Info" onClick={() =>
+                setLeftPanel(
+                    leftPanel === "info"
+                        ? null
+                        : "info"
+                )
+            }>
               <InfoIcon />
             </button>
             <div className="dm-left-toprow-right">
               <span className="dm-datetime-text">{formattedDateTime}</span>
-              <button className="dm-icon-sm" title="Labels" onClick={() => setShowLabelsModal(true)}>
+              <button className="dm-icon-sm" title="Labels" onClick={() =>
+                  setLeftPanel(
+                      leftPanel === "labels"
+                          ? null
+                          : "labels"
+                  )
+              }>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="5" width="18" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
                   <rect x="3" y="11" width="13" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
@@ -2975,139 +3392,9 @@ const formatDate = (date) => {
       )}
 
       {/* ════════ INFO MODAL ═══════════════════════════════════════════════════ */}
-      {showInfoModal && (
-        <div className="dm-overlay" onClick={() => setShowInfoModal(false)}>
-          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
-            <div className="dm-modal-header">
-              <h3>Execute Details</h3>
-              <button className="dm-modal-close" onClick={() => setShowInfoModal(false)}><CloseIcon/></button>
-            </div>
-            <div className="dm-modal-body">
-              <div className="info-grid">
-                <div><strong>Title</strong><p>{docketTitle || "-"}</p></div>
-                <div><strong>Mode</strong><p>{mode || "-"}</p></div>
-                <div><strong>Media Type</strong><p>{mediaType || "-"}</p></div>
-                <div><strong>Media Subtype</strong><p>{subType || "-"}</p></div>
-                <div><strong>Product</strong><p>{selectedProductData?.product_name || "-"}</p></div>
-                <div><strong>Persona</strong><p>{selectedPersonaData?.persona_name || "-"}</p></div>
-                <div><strong>Occasion / Event</strong><p>-</p></div>
-                <div><strong>Current Owner</strong><p>{assignedUser || "-"}</p></div>
-                <div><strong>Current Stage</strong><p>{selectedStage || "Discovery"}</p></div>
-                <div><strong>Assigned User</strong><p>{assignedUser || "-"}</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
-      {/* ════════ LABELS MODAL ═════════════════════════════════════════════════ */}
-      {showLabelsModal && (
-        <div className="dm-overlay" onClick={() => setShowLabelsModal(false)}>
-          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
-            <div className="dm-modal-header">
-              <h3>Labels</h3>
-              <button className="dm-modal-close" onClick={() => setShowLabelsModal(false)}><CloseIcon/></button>
-            </div>
-            <div className="dm-modal-body">
-              <section className="docket-mandatory-section">
-                <div className="docket-optionals-header">
-                  <h3 className="docket-column-title">MANDATORY FIELDS</h3>
-                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("mandatory"); setShowModal(true); }}>Add More +</button>
-                </div>
-                <div className="docket-form-section">
-                  {mandatoryFields.map((field) => (
-                    <div key={field.id} className="docket-field-row">
-                      <div className="docket-field-left">
-                        <input
-                          type="checkbox"
-                          className="docket-field-checkbox"
-                          checked={fieldValues[field.variable_name]?.enabled || false}
-                          onChange={(e) =>
-                            setFieldValues(prev => ({
-                              ...prev,
-                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
-                            }))
-                          }
-                        />
-                        <label className="docket-field-label-text">{field.label}</label>
-                        {field.isCustom && (
-                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
-                        )}
-                      </div>
-                      <textarea
-                        className="docket-field-textarea"
-                        value={fieldValues[field.variable_name]?.value || ""}
-                        rows={1}
-                        placeholder="Enter info..."
-                        onChange={(e) => {
-                          setFieldValues(prev => ({
-                            ...prev,
-                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
-                          }));
-                          const el = e.target;
-                          el.style.height = "auto";
-                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
-                          const newH = Math.min(el.scrollHeight, maxH);
-                          el.style.height = `${newH}px`;
-                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="docket-mandatory-section">
-                <div className="docket-optionals-header">
-                  <h3 className="docket-column-title">OPTIONAL FIELDS</h3>
-                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("optional"); setShowModal(true); }}>Add More +</button>
-                </div>
-                <div className="docket-form-section">
-                  {optionalFields.map((field) => (
-                    <div key={field.id} className="docket-field-row">
-                      <div className="docket-field-left">
-                        <input
-                          type="checkbox"
-                          className="docket-field-checkbox"
-                          checked={fieldValues[field.variable_name]?.enabled || false}
-                          onChange={(e) =>
-                            setFieldValues(prev => ({
-                              ...prev,
-                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
-                            }))
-                          }
-                        />
-                        <label className="docket-field-label-text">{field.label}</label>
-                        {field.isCustom && (
-                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
-                        )}
-                      </div>
-                      <textarea
-                        className="docket-field-textarea"
-                        value={fieldValues[field.variable_name]?.value || ""}
-                        rows={1}
-                        placeholder="Enter info..."
-                        onChange={(e) => {
-                          setFieldValues(prev => ({
-                            ...prev,
-                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
-                          }));
-                          const el = e.target;
-                          el.style.height = "auto";
-                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
-                          const newH = Math.min(el.scrollHeight, maxH);
-                          el.style.height = `${newH}px`;
-                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* ════════ HISTORY MODAL ════════════════════════════════════════════════ */}
       {showHistoryModal && (

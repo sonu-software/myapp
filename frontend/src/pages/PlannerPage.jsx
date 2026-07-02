@@ -14,6 +14,120 @@ export default function PlannerPage() {
   const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [uploadedDateTime, setUploadedDateTime] = useState(new Date());
 
+  const plannerFilterRef = useRef(null);
+
+  const FILTER_STAGES = [
+    "discovery",
+    "draft",
+    "generate",
+    "review",
+    "approve",
+    "publish",
+    "closed",
+    "rejected"
+  ];
+
+
+
+
+  const [plannerFilters, setPlannerFilters] = useState({
+
+      startDate: null,
+
+      endDate: null,
+
+      stage: "",
+
+      product: "",
+
+      persona: "",
+
+      occasion: "",
+
+      mediaType: "",
+
+      subType: "",
+
+      search: ""
+
+  });
+
+
+
+
+
+
+  const [showPlannerFilter, setShowPlannerFilter] = useState(false);
+
+
+
+
+
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+
+  const [selectedFilterStage, setSelectedFilterStage] = useState("");
+  const [selectedFilterProduct, setSelectedFilterProduct] = useState("");
+  const [selectedFilterPersona, setSelectedFilterPersona] = useState("");
+  const [selectedFilterOccasion, setSelectedFilterOccasion] = useState("");
+
+  const [selectedFilterMediaType, setSelectedFilterMediaType] = useState("");
+  const [selectedFilterSubType, setSelectedFilterSubType] = useState("");
+
+  const [searchText, setSearchText] = useState("");
+
+  
+
+
+
+  useEffect(() => {
+
+      setPlannerFilters({
+
+          startDate,
+
+          endDate,
+
+          stage: selectedFilterStage,
+
+          product: selectedFilterProduct,
+
+          persona: selectedFilterPersona,
+
+          occasion: selectedFilterOccasion,
+
+          mediaType: selectedFilterMediaType,
+
+          subType: selectedFilterSubType,
+
+          search: searchText
+
+      });
+
+  }, [
+
+      startDate,
+
+      endDate,
+
+      selectedFilterStage,
+
+      selectedFilterProduct,
+
+      selectedFilterPersona,
+
+      selectedFilterOccasion,
+
+      selectedFilterMediaType,
+
+      selectedFilterSubType,
+
+      searchText
+
+  ]);
+
+
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showYearDropdown, setShowYearDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -149,35 +263,152 @@ export default function PlannerPage() {
     fetchOccasions();
   }, [selectedYear, selectedMonth]);
 
+
+
+
+
+
+  const loadPlannerExecutes = async (filters) => {
+
+    try {
+
+      const params = new URLSearchParams();
+
+      if (filters.startDate) {
+          params.append(
+              "start_date",
+              filters.startDate
+          );
+      }
+
+      if (filters.endDate) {
+          params.append(
+              "end_date",
+              filters.endDate
+          );
+      }
+
+      if (filters.stage) {
+          params.append(
+              "stage",
+              filters.stage
+          );
+      }
+
+      if (filters.product) {
+          params.append(
+              "product_id",
+              filters.product
+          );
+      }
+
+      if (filters.persona) {
+          params.append(
+              "persona_id",
+              filters.persona
+          );
+      }
+
+      if (filters.occasion) {
+          params.append(
+              "occasion_id",
+              filters.occasion
+          );
+      }
+
+      if (filters.mediaType) {
+          params.append(
+              "media_type",
+              filters.mediaType
+          );
+      }
+
+      if (filters.subType) {
+          params.append(
+              "subtype_name",
+              filters.subType
+          );
+      }
+
+      if (filters.search) {
+          params.append(
+              "search",
+              filters.search
+          );
+      }
+
+      const res = await fetch(
+        `${API}/planner/carousel-dockets?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        }
+      );
+
+      const data = await res.json();
+
+      if (handleApiError(data)) {
+        return [];
+      }
+
+      if (data.success) {
+        return data.data || [];
+      }
+
+      return [];
+
+    } catch (err) {
+
+      console.error(err);
+
+      return [];
+
+    }
+
+  };
+
+
+
+
+
+
+  const [allMonthDockets, setAllMonthDockets] = useState([]);
+
+
   // ========== FETCH DOCKETS FOR SELECTED DATE (right panel) ==========
   const [dockets, setDockets] = useState([]);
-  useEffect(() => {
-    const fetchDocketsForDate = async () => {
-      const formattedDate = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
-      try {
-        const res = await fetch(
-          `${API}/planner/dockets?selected_date=${formattedDate}`,
-          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-        );
-        const data = await res.json();
 
-        if (handleApiError(data)) return;
+useEffect(() => {
 
-        if (data.success) setDockets(data.data);
-        else setDockets([]);
+    const selectedDate =
+        `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`;
 
-        if (data.success) setDockets(data.data);
-        else setDockets([]);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setDockets([]);
-      }
-    };
-    fetchDocketsForDate();
-  }, [selectedYear, selectedMonth, selectedDay]);
+    const filteredDockets = allMonthDockets.filter((docket) => {
+
+        const dateField =
+            docket.uploaded_date_time ||
+            docket.planner_date_time ||
+            docket.planner_date ||
+            docket.date ||
+            docket.created_at ||
+            "";
+
+        return String(dateField).startsWith(selectedDate);
+
+    });
+
+    setDockets(filteredDockets);
+
+}, [
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    allMonthDockets
+]);
 
   // ========== FETCH ALL MONTH DOCKETS (for calendar chip display) ==========
-  const [allMonthDockets, setAllMonthDockets] = useState([]);
+  
 
   const getDaysInMonth = (m, y) => {
     const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -188,25 +419,39 @@ export default function PlannerPage() {
 
   useEffect(() => {
     const fetchMonthDockets = async () => {
-      const pad = n => String(n).padStart(2, '0');
-      const totalDays = getDaysInMonth(selectedMonth, selectedYear);
-      const token = localStorage.getItem("token");
+      const pad = (n) => String(n).padStart(2, "0");
 
-      const requests = Array.from({ length: totalDays }, (_, i) => {
-        const dateStr = `${selectedYear}-${pad(selectedMonth + 1)}-${pad(i + 1)}`;
-        return fetch(`${API}/planner/dockets?selected_date=${dateStr}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(r => r.json())
-          .then(d => (d.success ? d.data : []))
-          .catch(() => []);
+      const totalDays = getDaysInMonth(
+        selectedMonth,
+        selectedYear
+      );
+
+      const firstDate =
+        `${selectedYear}-${pad(selectedMonth + 1)}-01`;
+
+      const lastDate =
+        `${selectedYear}-${pad(selectedMonth + 1)}-${pad(totalDays)}`;
+
+      const data = await loadPlannerExecutes({
+
+          startDate: firstDate,
+
+          endDate: lastDate,
+
+          ...plannerFilters
+
       });
 
-      const results = await Promise.all(requests);
-      setAllMonthDockets(results.flat());
+      setAllMonthDockets(data);
     };
+
+
     fetchMonthDockets();
-  }, [selectedYear, selectedMonth]);
+      }, [
+      selectedYear,
+      selectedMonth,
+      plannerFilters
+    ]);
 
   // ========== FETCH PRODUCTS & PERSONAS ==========
   useEffect(() => {
@@ -274,6 +519,16 @@ export default function PlannerPage() {
         setShowUserMenu(false);
       if (showYearDropdown && !event.target.closest('.year-selector'))
         setShowYearDropdown(false);
+
+
+      if (
+          showPlannerFilter &&
+          plannerFilterRef.current &&
+          !plannerFilterRef.current.contains(event.target)
+      ) {
+          setShowPlannerFilter(false);
+      }
+
       if (contextMenu.visible && !event.target.closest('.context-menu'))
         setContextMenu(prev => ({ ...prev, visible: false }));
       if (overflowPopup.visible && !event.target.closest('.overflow-popup'))
@@ -281,7 +536,11 @@ export default function PlannerPage() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showUserMenu, showYearDropdown, contextMenu.visible, overflowPopup.visible]);
+  }, [showUserMenu,
+    showYearDropdown,
+    showPlannerFilter,
+    contextMenu.visible,
+    overflowPopup.visible]);
 
   // ========== CONSTANTS ==========
   const weekDays   = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -464,6 +723,64 @@ export default function PlannerPage() {
   const [filterEvents, setFilterEvents] = useState(true);
   const [filterTasks,  setFilterTasks]  = useState(true);
 
+  const filterChips = [
+    {
+        show: selectedFilterStage,
+        label: `Stage: ${selectedFilterStage}`,
+        clear: () => setSelectedFilterStage("")
+    },
+    {
+        show: selectedFilterProduct,
+        label: `Product: ${
+            productList.find(
+                p => p.product_id == selectedFilterProduct
+            )?.product_name
+        }`,
+        clear: () => setSelectedFilterProduct("")
+    },
+    {
+        show: selectedFilterPersona,
+        label: `Persona: ${
+            personaList.find(
+                p => p.persona_id == selectedFilterPersona
+            )?.persona_name
+        }`,
+        clear: () => setSelectedFilterPersona("")
+    },
+    {
+        show: selectedFilterOccasion,
+        label: `Topic: ${
+            occasions.find(
+                o => o.occasion_id == selectedFilterOccasion
+            )?.title
+        }`,
+        clear: () => setSelectedFilterOccasion("")
+    },
+    {
+        show: searchText,
+        label: `"${searchText}"`,
+        clear: () => setSearchText("")
+    },
+    {
+        show: startDate,
+        label: `From: ${startDate?.toLocaleDateString()}`,
+        clear: () => setStartDate(null)
+    },
+    {
+        show: endDate,
+        label: `To: ${endDate?.toLocaleDateString()}`,
+        clear: () => setEndDate(null)
+    }
+].filter(chip => chip.show);
+
+
+  
+
+
+
+
+
+
   // ========== RENDER ==========
   return (
     <div className="planner-page">
@@ -523,14 +840,183 @@ export default function PlannerPage() {
               <span className="current-month">{monthNames[selectedMonth]}</span>
               <span className="year-display">{selectedYear}</span>
             </div>
+
             <div className="filter-buttons">
-              <button className={`filter-btn ${filterEvents ? 'active' : ''}`} onClick={() => setFilterEvents(!filterEvents)}>
-                <span className="filter-indicator events"></span>Events
-              </button>
-              <button className={`filter-btn ${filterTasks ? 'active' : ''}`} onClick={() => setFilterTasks(!filterTasks)}>
-                <span className="filter-indicator tasks"></span>Execute
-              </button>
+
+              <div
+                  className="dm-filter-wrapper"
+                  ref={plannerFilterRef}
+              >
+
+                  <button
+                      className="filter-btn"
+                      onClick={() =>
+                          setShowPlannerFilter(v => !v)
+                      }
+                      aria-label="Filter"
+                      title="Filter"
+                  >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 4.5h18L14 13v6.5l-4 2.2V13L3 4.5z" fill="currentColor"/>
+                      </svg>
+                  </button>
+
+
+                  {showPlannerFilter && (
+                    <div className="dm-filter-dropdown-new">
+                      <div className="dm-filter-header">Filter Executes</div>
+
+
+                      <div className="dm-filter-date-row">
+
+                      <div className="dm-filter-field">
+                        <label>Start Date</label>
+                        <DatePicker
+                          selected={startDate}
+                          onChange={(date) => setStartDate(date)}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="Select start date"
+                          className="dm-filter-date-input"
+                        />
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>End Date</label>
+                        <DatePicker
+                          selected={endDate}
+                          onChange={(date) => setEndDate(date)}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="Select end date"
+                          className="dm-filter-date-input"
+                        />
+                      </div>
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>Stage</label>
+                        <select
+                          className="dm-filter-stage-select"
+                          value={selectedFilterStage}
+                          onChange={(e) => setSelectedFilterStage(e.target.value)}
+                        >
+                          <option value="">All Stages</option>
+                          {FILTER_STAGES.map(stage => (
+                            <option key={stage} value={stage}>
+                              {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>Topic</label>
+                        <select
+                          className="dm-filter-stage-select"
+                          value={selectedFilterOccasion}
+                          onChange={(e) => setSelectedFilterOccasion(e.target.value)}
+                        >
+                          <option value="">All Topics</option>
+                          {occasions.map((event) => (
+                            <option key={event.occasion_id} value={event.occasion_id}>
+                              {event.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>Product</label>
+                        <select
+                          value={selectedFilterProduct}
+                          onChange={(e) => setSelectedFilterProduct(e.target.value)}
+                        >
+                          <option value="">All Products</option>
+                          {productList.map(product => (
+                            <option key={product.product_id} value={product.product_id}>
+                              {product.product_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>Persona</label>
+                        <select
+                          value={selectedFilterPersona}
+                          onChange={(e) => setSelectedFilterPersona(e.target.value)}
+                        >
+                          <option value="">All Personas</option>
+                          {personaList.map(persona => (
+                            <option key={persona.persona_id} value={persona.persona_id}>
+                              {persona.persona_name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="dm-filter-field">
+                        <label>Search</label>
+                        <input
+                          type="text"
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Search title"
+                        />
+                      </div>
+
+                      <button
+                        className="dm-filter-clear-btn"
+                        onClick={() => {
+                          setStartDate(null);
+                          setEndDate(null);
+                          setSelectedFilterStage("");
+                          setSelectedFilterProduct("");
+                          setSelectedFilterPersona("");
+                          setSelectedFilterMediaType("");
+                          setSelectedFilterOccasion("");
+                          setSelectedFilterSubType("");
+                          setSearchText("");
+                          setShowPlannerFilter(false)
+                        }}
+                      >
+                        Clear Filter
+                      </button>
+                    </div>
+                  )}
+
+                  </div>
+                  
+                  
+
+
+              <div className="planner-filter-chip-box">
+              <div className="planner-filter-chips">
+
+                  {filterChips.map((chip, index) => (
+                      <div
+                          key={index}
+                          className="planner-filter-chip"
+                      >
+                          <span>{chip.label}</span>
+
+                          <button
+                              className="planner-filter-chip-remove"
+                              onClick={chip.clear}
+                          >
+                              ✕
+                          </button>
+                      </div>
+                  ))}
+
+              </div>
+          </div>
+
+
+
+
+
             </div>
+
           </div>
 
           <div className="calendar-weekdays">
@@ -728,7 +1214,7 @@ export default function PlannerPage() {
                       else navigate(`/docket/${item.docket_id}`);
                     }}
                   >
-                    <span className="overflow-popup-dot" style={{ backgroundColor: '#3498db' }} />
+                    <span className="overflow-popup-dot" style={{ backgroundColor: '#4B479E' }} />
                     <span className="overflow-popup-title">{item.title}</span>
                     <span className="overflow-popup-desc">Execute</span>
                   </div>
@@ -977,7 +1463,7 @@ export default function PlannerPage() {
               <button className="modal-cancel-btn" onClick={() => { setOccasionModalOpen(false); setEditingOccasion(null); }}>
                 Cancel
               </button>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ display: "flex", gap: "8px" }}>
                 {editingOccasion && (
                   <button
                     className="modal-save-btn modal-danger-btn"
@@ -1002,7 +1488,6 @@ export default function PlannerPage() {
           </div>
         </div>
       )}
-
 
 
       {popup.show && (

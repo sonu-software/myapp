@@ -746,7 +746,7 @@ Context:
             }
         ],
         temperature=0.4,
-        max_completion_tokens=800
+        max_completion_tokens=2500
     )
 
     return response.choices[0].message.content.strip()

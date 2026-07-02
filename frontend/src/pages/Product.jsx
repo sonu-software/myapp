@@ -117,6 +117,25 @@ export default function Product() {
     }
   };
 
+  const handleClearAll = () => {
+    setPopup({
+      show: true, type: "warning", title: "Clear All Fields",
+      message: "This will clear all entered data on this page. Are you sure?",
+      confirmLabel: "Clear", cancelLabel: "Cancel",
+      onConfirm: () => {
+        setProductName("");
+        setDescription("");
+        setFeatures([]);
+        setUsps([]);
+        setValues([]);
+        setImages([]);
+        setHashtags([]);
+        setSelectedProductId("");
+        setExpandedCard(null);
+      }
+    });
+  };
+
   const handleDuplicate = () => {
     if (!selectedProductId) {
       setPopup({
@@ -231,8 +250,8 @@ export default function Product() {
       <div className="save-wrapper">
         <HashtagBar hashtags={hashtags} onChange={setHashtags} />
         <div className="save-buttons">
-          <button className="ai-btn ai-btn-done" onClick={() => handleSave(false)}>Done</button>
-          <button className="ai-btn ai-btn-sticky" onClick={() => handleSave(true)}>Save &amp; Next</button>
+          <button className="ai-btn ai-btn-clear" onClick={handleClearAll}>Clear all</button>
+          <button className="ai-btn ai-btn-save" onClick={() => handleSave(false)}>Save</button>
         </div>
       </div>
 
@@ -277,10 +296,10 @@ function PlusIcon() {
 function ImageIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-      fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <polyline points="21 15 16 10 5 21"/>
+      fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 18a4.5 4.5 0 0 1-1.5-8.74 5 5 0 0 1 9.71-2.04A4 4 0 0 1 17 15.5" />
+      <path d="M12 12v8" />
+      <path d="m8.5 15.5 3.5-3.5 3.5 3.5" />
     </svg>
   );
 }
@@ -319,6 +338,7 @@ function HashtagBar({ hashtags, onChange }) {
 
   return (
     <div className="ht-bar-wrapper">
+      <span className="ht-bar-label">Add key hashtags (optional)</span>
       {/* The pill+input row */}
       <div className="ht-bar" onClick={() => inputRef.current?.focus()}>
         {/* Leading # icon */}
@@ -427,18 +447,19 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
             <h3>{title}</h3>
             {subtitle && <span className="pn-card-subtitle">{subtitle}</span>}
           </div>
-          {isExpanded && (
-            <div className="pn-card-actions">
-              <button
-                className="icon-action-btn"
-                onClick={handleAddRow}
-                disabled={rows.length >= MAX_ROWS}
-                title="Add row"
-              >
-                <PlusIcon />
-              </button>
-            </div>
-          )}
+          <div className="pn-card-actions">
+            <button
+              className="icon-action-btn"
+              onClick={(e) => {
+                if (!isExpanded) { e.stopPropagation(); onCardClick(); return; }
+                handleAddRow(e);
+              }}
+              disabled={isExpanded && rows.length >= MAX_ROWS}
+              title="Add row"
+            >
+              <PlusIcon />
+            </button>
+          </div>
         </div>
 
         <div
@@ -557,13 +578,19 @@ function ImageCard({ onSave, initialData = [], isExpanded, onCardClick }) {
           <h3>Images</h3>
           <span className="pn-card-subtitle">Product visuals</span>
         </div>
-        {isExpanded && (
-          <div className="pn-card-actions">
-            <button className="icon-action-btn" onClick={handleAddImage} disabled={images.length >= MAX_IMAGES} title="Add image">
-              <PlusIcon />
-            </button>
-          </div>
-        )}
+        <div className="pn-card-actions">
+          <button
+            className="icon-action-btn"
+            onClick={(e) => {
+              if (!isExpanded) { e.stopPropagation(); onCardClick(); return; }
+              handleAddImage(e);
+            }}
+            disabled={isExpanded && images.length >= MAX_IMAGES}
+            title="Add image"
+          >
+            <PlusIcon />
+          </button>
+        </div>
       </div>
 
       <div
@@ -635,6 +662,15 @@ function DescriptionCard({ onSave, initialData = "", isExpanded, onCardClick }) 
         <div className="pn-card-header-text">
           <h3>Description</h3>
           <span className="pn-card-subtitle">Product overview</span>
+        </div>
+        <div className="pn-card-actions">
+          <button
+            className="icon-action-btn"
+            onClick={(e) => { e.stopPropagation(); if (!isExpanded) onCardClick(); }}
+            title="Edit description"
+          >
+            <PlusIcon />
+          </button>
         </div>
       </div>
 

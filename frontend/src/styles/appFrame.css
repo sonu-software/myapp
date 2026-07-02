@@ -30,6 +30,8 @@ display:flex;
 overflow:hidden;
 
 background:#f6f7fb;
+
+border-radius:0 !important;
 }
 
 /* =========================================================
@@ -37,15 +39,17 @@ SIDEBAR
 ========================================================= */
 
 .sidebar{
-width:76px;
-min-width:76px;
-max-width:76px;
+width:79.8px;
+min-width:79.8px;
+max-width:79.8px;
 
 height:100vh;
 
-background:#102755;
+background:linear-gradient(160deg,#000A2D 0%,#4D49A8 100%);
 
 border-right:1px solid rgba(255,255,255,.05);
+
+border-radius:0 !important;
 
 display:flex;
 flex-direction:column;
@@ -60,7 +64,7 @@ LOGO
 ========================================================= */
 
 .sidebar-logo{
-height:28px;
+height:29.4px;
 
 display:flex;
 align-items:center;
@@ -68,13 +72,13 @@ justify-content:center;
 
 cursor:pointer;
 
-margin-top:2px;
+margin-top:2.1px;
 
 flex-shrink:0;
 }
 
 .sidebar-logo img{
-width:78px;
+width:81.9px;
 height:auto;
 
 object-fit:contain;
@@ -113,9 +117,9 @@ flex-direction:column;
 
 align-items:center;
 
-gap:2px;
+gap:2.1px;
 
-padding-bottom:8px;
+padding-bottom:8.4px;
 }
 
 /* =========================================================
@@ -123,8 +127,8 @@ NAVIGATION ITEM
 ========================================================= */
 
 .sidebar-item{
-width:56px;
-height:40px;
+width:58.8px;
+height:42px;
 
 border:none;
 outline:none;
@@ -139,11 +143,11 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 
-gap:1px;
+gap:1.05px;
 
 cursor:pointer;
 
-border-radius:6px;
+border-radius:0;
 
 position:relative;
 
@@ -170,14 +174,14 @@ content:"";
 
 position:absolute;
 
-left:-10px;
+left:-10.5px;
 
-top:7px;
-bottom:7px;
+top:7.35px;
+bottom:7.35px;
 
-width:3px;
+width:3.15px;
 
-border-radius:30px;
+border-radius:0;
 
 background:white;
 }
@@ -193,8 +197,8 @@ justify-content:center;
 }
 
 .sidebar-icon svg{
-width:14px;
-height:14px;
+width:14.7px;
+height:14.7px;
 }
 
 /* =========================================================
@@ -202,7 +206,7 @@ LABEL
 ========================================================= */
 
 .sidebar-item span{
-font-size:7px;
+font-size:7.35px;
 
 line-height:1;
 
@@ -226,8 +230,8 @@ justify-content:center;
 
 .account-button{
 
-width:56px;
-height:40px;
+width:58.8px;
+height:42px;
 
 border:none;
 
@@ -241,11 +245,11 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 
-gap:1px;
+gap:1.05px;
 
 cursor:pointer;
 
-border-radius:6px;
+border-radius:0;
 
 transition:.15s ease;
 }
@@ -255,7 +259,36 @@ background:rgba(255,255,255,.06);
 }
 
 .account-button span{
-font-size:7px;
+font-size:7.35px;
+}
+
+/* =========================================================
+ACCOUNT AVATAR
+========================================================= */
+
+.account-avatar{
+
+width:19.8px;
+height:19.8px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+background:linear-gradient(160deg,#000A2D 0%,#4D49A8 100%);
+
+border:1px solid rgba(255,255,255,.28);
+
+border-radius:0;
+
+color:#ffffff;
+
+font-size:9.5px;
+font-weight:700;
+
+line-height:1;
+
+letter-spacing:.2px;
 }
 
 /* =========================================================
@@ -266,16 +299,16 @@ PROFILE MENU
 
 position:fixed;
 
-left:84px;
-bottom:10px;
+left:88.2px;
+bottom:10.5px;
 
-width:190px;
+width:199.5px;
 
 background:#111827;
 
 border:1px solid rgba(255,255,255,.06);
 
-border-radius:10px;
+border-radius:0;
 
 overflow:hidden;
 
@@ -306,7 +339,7 @@ PROFILE HEADER
 
 .profile-header{
 
-padding:10px;
+padding:10.5px;
 
 background:
 rgba(99,179,237,.05);
@@ -316,7 +349,7 @@ text-align:center;
 
 .profile-logo{
 
-width:40px;
+width:42px;
 height:auto;
 
 object-fit:contain;
@@ -324,9 +357,9 @@ object-fit:contain;
 
 .profile-business{
 
-margin-top:5px;
+margin-top:5.25px;
 
-font-size:10px;
+font-size:10.5px;
 font-weight:600;
 
 color:white;
@@ -336,9 +369,9 @@ line-height:1.2;
 
 .profile-email{
 
-margin-top:2px;
+margin-top:2.1px;
 
-font-size:8px;
+font-size:8.4px;
 
 color:#94a3b8;
 
@@ -377,9 +410,9 @@ cursor:pointer;
 
 color:#cbd5e1;
 
-font-size:10px;
+font-size:10.5px;
 
-padding:8px 10px;
+padding:8.4px 10.5px;
 
 transition:.15s ease;
 }
@@ -418,7 +451,7 @@ height:100%;
 overflow-y:auto;
 overflow-x:auto;
 
-padding:4px;
+padding:4.2px;
 
 background:white;
 }
@@ -428,13 +461,13 @@ SCROLLBAR
 ========================================================= */
 
 .app-content::-webkit-scrollbar{
-width:6px;
-height:6px;
+width:6.3px;
+height:6.3px;
 }
 
 .app-content::-webkit-scrollbar-thumb{
 background:rgba(0,0,0,.15);
-border-radius:50px;
+border-radius:0;
 }
 
 /* =========================================================
@@ -444,18 +477,18 @@ RESPONSIVE
 @media (max-width:1366px){
 
 .sidebar{
-width:72px;
-min-width:72px;
-max-width:72px;
+width:75.6px;
+min-width:75.6px;
+max-width:75.6px;
 }
 
 .sidebar-item,
 .account-button{
-width:52px;
-height:38px;
+width:54.6px;
+height:39.9px;
 }
 
 .profile-menu{
-left:78px;
+left:81.9px;
 }
 }

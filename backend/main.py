@@ -378,6 +378,7 @@ class UpdateDocketRequest(BaseModel):
     summary: str
 
 
+
 class UploadVisualRequest(BaseModel):
     uploaded_url: str
     message: Optional[str] = None
@@ -2167,6 +2168,155 @@ def get_my_dockets(
 
 from fastapi import Query
 
+
+
+
+def apply_execute_filters(
+    query,
+    params,
+
+    mapping,
+    user_id,
+
+    product_id,
+    persona_id,
+    occasion_id,
+
+    media_type,
+    subtype_name,
+
+    search,
+
+    start_date,
+    end_date,
+
+    stage
+):
+
+    if mapping:
+
+        query += """
+            AND ea.assigned_to = %s
+        """
+
+        params.append(user_id)
+
+    if product_id:
+
+        query += """
+            AND d.product_id=%s
+        """
+
+        params.append(product_id)
+
+    if persona_id:
+
+        query += """
+            AND d.persona_id=%s
+        """
+
+        params.append(persona_id)
+
+    if occasion_id:
+
+        query += """
+            AND d.occasion_id=%s
+        """
+
+        params.append(occasion_id)
+
+    if media_type:
+
+        query += """
+            AND mt.media_type=%s
+        """
+
+        params.append(media_type)
+
+    if subtype_name:
+
+        query += """
+            AND ms.subtype_name=%s
+        """
+
+        params.append(subtype_name)
+
+    if search:
+
+        query += """
+            AND
+            (
+                d.title LIKE %s
+                OR
+                p.product_name LIKE %s
+                OR
+                pe.persona_name LIKE %s
+            )
+        """
+
+        search_like = f"%{search}%"
+
+        params.extend([
+            search_like,
+            search_like,
+            search_like
+        ])
+
+    if start_date and end_date:
+
+        query += """
+            AND DATE(d.uploaded_date_time)
+            BETWEEN %s AND %s
+        """
+
+        params.extend([
+            start_date,
+            end_date
+        ])
+
+    elif start_date:
+
+        query += """
+            AND DATE(d.uploaded_date_time)>= %s
+        """
+
+        params.append(start_date)
+
+    elif end_date:
+
+        query += """
+            AND DATE(d.uploaded_date_time)<= %s
+        """
+
+        params.append(end_date)
+
+    if stage:
+
+        if stage.lower() == "discovery":
+
+            query += """
+                AND
+                (
+                    ea.stage IS NULL
+                    OR ea.stage='discovery'
+                )
+            """
+
+        else:
+
+            query += """
+                AND ea.stage=%s
+            """
+
+            params.append(stage)
+
+    return query, params
+
+
+
+
+
+
 @app.get("/planner/carousel-dockets")
 def get_carousel_dockets(
     start_date: Optional[str] = None,
@@ -2183,6 +2333,9 @@ def get_carousel_dockets(
     subtype_name: Optional[str] = None,
 
     search: Optional[str] = None,
+
+    page: int = 1,
+    page_size: int = 10,
 
     user_id: int = Depends(get_current_user)
 ):
@@ -2298,118 +2451,44 @@ def get_carousel_dockets(
                 ON ea.assigned_by = assigned_by_user.user_id
 
 
-
-
-
-
-
             WHERE d.business_id = %s
         """
 
         params = [business_id]
 
 
-        if mapping:
-
-            query += """
-                AND ea.assigned_to = %s
-            """
-
-            params.append(user_id)
-
-
-
-
-
-        # Product filter
-        if product_id:
-            query += """
-                AND d.product_id = %s
-            """
-            params.append(product_id)
-
-        # Persona filter
-        if persona_id:
-            query += """
-                AND d.persona_id = %s
-            """
-            params.append(persona_id)
+        offset = (page - 1) * page_size
 
 
 
         
-        # Occasion filter
-        if occasion_id:
-            query += """
-                AND d.occasion_id = %s
-            """
-            params.append(occasion_id)
 
-        # Media Type filter
-        if media_type:
-            query += """
-                AND mt.media_type = %s
-            """
-            params.append(media_type)
 
-        # Media Subtype filter
-        if subtype_name:
-            query += """
-                AND ms.subtype_name = %s
-            """
-            params.append(subtype_name)
 
-        # Search filter
-        if search:
+        query, params = apply_execute_filters(
 
-            query += """
-                AND (
-                    d.title LIKE %s
-                    OR p.product_name LIKE %s
-                    OR pe.persona_name LIKE %s
-                )
-            """
+            query=query,
+            params=params,
 
-            search_like = f"%{search}%"
+            mapping=mapping,
+            user_id=user_id,
 
-            params.extend([
-                search_like,
-                search_like,
-                search_like
-            ])
+            product_id=product_id,
+            persona_id=persona_id,
+            occasion_id=occasion_id,
 
-        # =====================================
-        # DATE FILTER
-        # =====================================
+            media_type=media_type,
+            subtype_name=subtype_name,
 
-        if start_date and end_date:
+            search=search,
 
-            query += """
-                AND DATE(d.uploaded_date_time)
-                BETWEEN %s AND %s
-            """
+            start_date=start_date,
+            end_date=end_date,
 
-            params.extend([start_date, end_date])
+            stage=stage
 
-        
-        if stage:
+        )
 
-            if stage == "discovery":
-
-                query += """
-                    AND (
-                        ea.stage IS NULL
-                        OR ea.stage = 'discovery'
-                    )
-                """
-
-            else:
-
-                query += """
-                    AND ea.stage = %s
-                """
-
-                params.append(stage)
 
         query += """
             ORDER BY d.uploaded_date_time DESC
@@ -2428,6 +2507,145 @@ def get_carousel_dockets(
         cursor.close()
         db.close()
 
+
+
+
+
+
+
+
+
+
+@app.get("/execute/default")
+def get_default_execute(
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        business_id = require_business_for_network_user(
+            user_id,
+            db
+        )
+
+        cursor.execute(
+            """
+            SELECT primary_user_id
+            FROM network
+            WHERE secondary_user_id=%s
+            LIMIT 1
+            """,
+            (user_id,)
+        )
+
+        mapping = cursor.fetchone()
+
+        base_query = """
+            SELECT
+                d.docket_id,
+                d.planner_date_time
+
+            FROM docket d
+
+            LEFT JOIN (
+                SELECT ea1.*
+                FROM execute_assignments ea1
+                WHERE ea1.assignment_id = (
+                    SELECT ea2.assignment_id
+                    FROM execute_assignments ea2
+                    WHERE ea2.execute_id = ea1.execute_id
+                    ORDER BY ea2.created_at DESC
+                    LIMIT 1
+                )
+            ) ea
+            ON ea.execute_id = d.docket_id
+
+            WHERE d.business_id=%s
+        """
+
+        params = [business_id]
+
+        # Secondary users should only see executes assigned to them
+        if mapping:
+            base_query += """
+                AND ea.assigned_to=%s
+            """
+            params.append(user_id)
+
+        # =====================================================
+        # 1. TODAY'S EXECUTE
+        # =====================================================
+        today_query = base_query + """
+            AND DATE(d.planner_date_time)=CURDATE()
+            ORDER BY d.planner_date_time ASC
+            LIMIT 1
+        """
+
+        cursor.execute(today_query, tuple(params))
+        row = cursor.fetchone()
+
+        if row:
+            return {
+                "success": True,
+                "type": "today",
+                "docket_id": row["docket_id"]
+            }
+
+        # =====================================================
+        # 2. UPCOMING EXECUTE
+        # =====================================================
+        upcoming_query = base_query + """
+            AND DATE(d.planner_date_time)>CURDATE()
+            ORDER BY d.planner_date_time ASC
+            LIMIT 1
+        """
+
+        cursor.execute(upcoming_query, tuple(params))
+        row = cursor.fetchone()
+
+        if row:
+            return {
+                "success": True,
+                "type": "upcoming",
+                "docket_id": row["docket_id"]
+            }
+
+        # =====================================================
+        # 3. PREVIOUS EXECUTE
+        # =====================================================
+        previous_query = base_query + """
+            AND DATE(d.planner_date_time)<CURDATE()
+            ORDER BY d.planner_date_time DESC
+            LIMIT 1
+        """
+
+        cursor.execute(previous_query, tuple(params))
+        row = cursor.fetchone()
+
+        if row:
+            return {
+                "success": True,
+                "type": "previous",
+                "docket_id": row["docket_id"]
+            }
+
+        # =====================================================
+        # 4. NOTHING FOUND
+        # =====================================================
+        return {
+            "success": False,
+            "message": "No execute found"
+        }
+
+    finally:
+
+        cursor.close()
+        db.close()
+
+
+        
 
 # =============================================================================
 #  DOCKET  —  business / product / persona info helpers
@@ -3703,6 +3921,21 @@ def get_stage_counts(
                 COALESCE(ea.stage, 'discovery') AS current_stage
             FROM docket d
 
+            LEFT JOIN media m
+                ON d.media_id = m.media_id
+
+            LEFT JOIN media_type mt
+                ON d.media_type_id = mt.media_type_id
+
+            LEFT JOIN media_subtype ms
+                ON d.media_subtype_id = ms.media_subtype_id
+
+            LEFT JOIN products p
+                ON d.product_id = p.product_id
+
+            LEFT JOIN personas pe
+                ON d.persona_id = pe.persona_id
+
             LEFT JOIN (
                 SELECT ea1.*
                 FROM execute_assignments ea1
@@ -3721,99 +3954,29 @@ def get_stage_counts(
 
         params = [business_id]
 
-        if mapping:
+        query, params = apply_execute_filters(
 
-            query += """
-                AND ea.assigned_to = %s
-            """
+            query=query,
+            params=params,
 
-            params.append(user_id)
+            mapping=mapping,
+            user_id=user_id,
 
-        # Product filter
-        if product_id:
-            query += """
-                AND d.product_id = %s
-            """
-            params.append(product_id)
+            product_id=product_id,
+            persona_id=persona_id,
+            occasion_id=occasion_id,
 
-        # Persona filter
-        if persona_id:
-            query += """
-                AND d.persona_id = %s
-            """
-            params.append(persona_id)
+            media_type=media_type,
+            subtype_name=subtype_name,
 
+            search=search,
 
+            start_date=start_date,
+            end_date=end_date,
 
-        
+            stage=stage
 
-        if occasion_id:
-            query += """
-                AND d.occasion_id = %s
-            """
-            params.append(occasion_id)
-
-        # Media Type filter
-        if media_type:
-            query += """
-                AND mt.media_type = %s
-            """
-            params.append(media_type)
-
-        # Media Subtype filter
-        if subtype_name:
-            query += """
-                AND ms.subtype_name = %s
-            """
-            params.append(subtype_name)
-
-        # Search filter
-        if search:
-
-            query += """
-                AND (
-                    d.title LIKE %s
-                    OR p.product_name LIKE %s
-                    OR pe.persona_name LIKE %s
-                )
-            """
-
-            search_like = f"%{search}%"
-
-            params.extend([
-                search_like,
-                search_like,
-                search_like
-            ])
-
-
-
-
-        if stage:
-
-            if stage == "discovery":
-
-                query += """
-                    AND (
-                        ea.stage IS NULL
-                        OR ea.stage = 'discovery'
-                    )
-                """
-
-            else:
-
-                query += """
-                    AND ea.stage = %s
-                """
-
-                params.append(stage)
-
-        if start_date and end_date:
-            query += """
-                AND DATE(d.uploaded_date_time)
-                BETWEEN %s AND %s
-            """
-            params.extend([start_date, end_date])
+        )
 
         cursor.execute(query, tuple(params))
 

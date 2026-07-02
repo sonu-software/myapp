@@ -237,7 +237,7 @@ button:disabled {
 
 
 /* ===============================
-   GLOBAL AI PRIMARY BUTTON – ALIVE
+   GLOBAL AI PRIMARY BUTTON – FLAT
 ================================ */
 
 .ai-btn {
@@ -246,99 +246,37 @@ button:disabled {
   align-items: center;
   justify-content: center;
 
-  height: 60px;
-  padding: 0 40px;
+  height: 38px;
+  padding: 0 22px;
 
-  background: linear-gradient(
-  135deg,
-  var(--primary-color),
-  var(--primary-light)
-);
-
-
-
-
-
+  background: var(--indigo, var(--primary-color));
 
   border: none;
-  border-radius: 15px;
+  border-radius: 10px;
 
   color: white;
-  font-family: 'Orbitron', monospace;
-  font-size: 16px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 2px;
+  letter-spacing: 0.2px;
 
   cursor: pointer;
   overflow: hidden;
 
-  transition: all 0.3s ease;
-
-  /* AI breathing effect */
-  animation: aiButtonBreath 3s infinite ease-in-out;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* Hover lift */
+/* Hover */
 .ai-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow:
-  0 12px 35px var(--primary-glow),
-  0 0 60px var(--primary-glow);
-}
-
-/* Light sweep effect */
-.ai-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,0.4),
-    transparent
-  );
-  transform: translateX(-100%);
-  animation: aiButtonSweep 4s infinite linear;
-}
-
-/* Inner glow layer */
-.ai-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow:
-    inset 0 0 20px rgba(255,255,255,0.15),
-    0 0 30px var(--primary-glow);
-  pointer-events: none;
+  background: var(--indigo-dark, var(--primary-light));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91, 79, 233, 0.25);
 }
 
 /* Disabled */
 .ai-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  animation: none;
-}
-
-@keyframes aiButtonBreath {
-  0%, 100% {
-    box-shadow:
-      0 0 20px rgba(32,72,109,0.4);
-  }
-  50% {
-    box-shadow:
-      0 0 35px rgba(32,72,109,0.8);
-  }
-}
-
-
-@keyframes aiButtonSweep {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
 }
 
 

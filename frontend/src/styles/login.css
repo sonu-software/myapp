@@ -15,7 +15,7 @@ body:has(.lp-page) {
   align-items: center;
   justify-content: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  padding: 28px;
+  padding: 20px;
   box-sizing: border-box;
   position: relative;
 }
@@ -40,7 +40,7 @@ body:has(.lp-page) {
 .lp-page::after {
   background: #eef1f6;
   /* Clip to right ~50%, starting from where the left ends */
-  clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 44% 100%);
+  clip-path: polygon(58% 0%, 100% 0%, 100% 100%, 52% 100%);
 }
 
 /* Card must sit above the pseudo bg layers */
@@ -49,15 +49,15 @@ body:has(.lp-page) {
   z-index: 1;
   display: flex;
   width: 100%;
-  max-width: 1000px;
-  height: calc(100vh - 56px);
-  max-height: 680px;
-  border-radius: 24px;
+  max-width: 700px;
+  height: calc(100vh - 39px);
+  max-height: 476px;
+  border-radius: 17px;
   overflow: hidden;
   /* Left half transparent, right half white — matches the two panels */
   background: linear-gradient(to right, transparent 50%, #ffffff 50%);
   box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.45),
+    0 22px 56px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
@@ -68,11 +68,11 @@ body:has(.lp-page) {
   flex: 0 0 50%;
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  margin: 0 10px;
+  border-radius: 14px;
+  margin: 0 7px;
   background: transparent;
-  outline: 15px solid #ffffff;
-  outline-offset: -10px;
+  outline: 11px solid #ffffff;
+  outline-offset: -7px;
 }
 
 .lp-img {
@@ -92,20 +92,20 @@ body:has(.lp-page) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 48px 52px;
+  padding: 34px 36px;
   overflow-y: auto;
 }
 
 /* ── LOGO ── */
 .lp-logo-row {
-  margin-bottom: 2px;
+  margin-bottom: 1px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
 .lp-logo {
-  height: 100px;
+  height: 70px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -113,10 +113,10 @@ body:has(.lp-page) {
 
 /* ── TAGLINE under logo ── */
 .lp-tagline {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: #1e4a7a;
-  margin: 6px 0 24px 0;
+  margin: 4px 0 17px 0;
   letter-spacing: 0.1px;
 }
 
@@ -125,10 +125,10 @@ body:has(.lp-page) {
   all: unset;
   display: flex;
   background: #f0f1f3;
-  border-radius: 10px;
-  padding: 4px;
-  gap: 4px;
-  margin-bottom: 24px;
+  border-radius: 7px;
+  padding: 3px;
+  gap: 3px;
+  margin-bottom: 17px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -137,9 +137,9 @@ body:has(.lp-page) {
   all: unset;
   flex: 1;
   text-align: center;
-  padding: 10px 0;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 7px 0;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 600;
   color: #9ca3af;
   cursor: pointer;
@@ -153,7 +153,7 @@ body:has(.lp-page) {
 .lp-tab--active {
   background: #ffffff;
   color: #1e4a7a;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 /* ────────────────────────────────────────────────
@@ -164,25 +164,25 @@ body:has(.lp-page) {
 }
 
 @keyframes lpSlideIn {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
 
 /* ── HEADING ── */
 .lp-heading {
-  font-size: 26px;
+  font-size: 18px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 22px 0;
+  margin: 0 0 15px 0;
   line-height: 1.25;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
 }
 
 /* ── FORM ── */
 .lp-form {
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  gap: 9px;
 }
 
 /* ── FIELD ROW ── */
@@ -194,7 +194,7 @@ body:has(.lp-page) {
 
 .lp-field-icon {
   position: absolute;
-  left: 14px;
+  left: 10px;
   color: #9ca3af;
   display: flex;
   align-items: center;
@@ -208,11 +208,11 @@ body:has(.lp-page) {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 16px 14px 44px;
+  padding: 10px 11px 10px 31px;
   background: #ffffff;
-  border: 1.5px solid #d1d5db;
-  border-radius: 10px;
-  font-size: 14.5px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 10px;
   color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: border-color 0.2s, background 0.2s;
@@ -228,30 +228,30 @@ body:has(.lp-page) {
 }
 
 .lp-field:has(.lp-eye) .lp-input {
-  padding-right: 44px;
+  padding-right: 31px;
 }
 
 /* ── EYE BUTTON ── */
 .lp-eye {
   all: unset;
   position: absolute;
-  right: 14px;
+  right: 10px;
   display: flex;
   align-items: center;
   color: #9ca3af;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 3px;
+  border-radius: 3px;
   transition: color 0.2s;
 }
 .lp-eye:hover { color: #555; }
 
 /* ── MESSAGES ── */
 .lp-msg {
-  font-size: 13px;
+  font-size: 9px;
   text-align: center;
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
   margin: 0;
   line-height: 1.4;
 }
@@ -264,24 +264,24 @@ body:has(.lp-page) {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  padding: 15px;
+  padding: 11px;
   background: #1e4a7a;
   color: #ffffff;
   text-align: center;
-  font-size: 15px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1px;
-  border-radius: 10px;
+  letter-spacing: 0.7px;
+  border-radius: 7px;
   cursor: pointer;
-  margin-top: 6px;
+  margin-top: 4px;
   transition: background 0.22s, transform 0.18s, box-shadow 0.18s;
-  box-shadow: 0 4px 14px rgba(30, 74, 122, 0.4);
+  box-shadow: 0 3px 10px rgba(30, 74, 122, 0.4);
   line-height: 1.4;
 }
 .lp-submit:hover:not(:disabled) {
   background: #163a61;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(30, 74, 122, 0.5);
+  box-shadow: 0 4px 14px rgba(30, 74, 122, 0.5);
 }
 .lp-submit:active:not(:disabled) { transform: translateY(0); }
 .lp-submit:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -294,19 +294,19 @@ body:has(.lp-page) {
   .lp-page::after { display: none; }
   body:has(.lp-page) { background: #eef1f6 !important; }
   .lp-img-box { display: none; }
-  .lp-form-box { padding: 40px 36px; }
-  .lp-card-wrapper { max-height: none; height: auto; min-height: calc(100vh - 56px); }
+  .lp-form-box { padding: 28px 25px; }
+  .lp-card-wrapper { max-height: none; height: auto; min-height: calc(100vh - 39px); }
 }
 
 @media (max-width: 480px) {
-  .lp-page { padding: 16px; }
-  .lp-form-box { padding: 32px 24px; }
-  .lp-heading { font-size: 22px; }
+  .lp-page { padding: 11px; }
+  .lp-form-box { padding: 22px 17px; }
+  .lp-heading { font-size: 15px; }
 }
 
 /* ── CUSTOM SCROLLBAR ── */
 .lp-form-box::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 .lp-form-box::-webkit-scrollbar-track {
   background: transparent;
@@ -339,10 +339,10 @@ body:has(.lp-page) {
 }
 
 .lp-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #ffffff;
-  border-top: 2px solid transparent;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #ffffff;
+  border-top: 1.5px solid transparent;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -355,16 +355,16 @@ body:has(.lp-page) {
 /* ── FORGOT PASSWORD POSITION ── */
 .lp-forgot-row {
   display: flex;
-  padding-left: 230px;
-  margin-top: -20px;              /* 🔥 pulls it closer to password */
-  margin-bottom: -15px;
+  padding-left: 161px;
+  margin-top: -14px;              /* 🔥 pulls it closer to password */
+  margin-bottom: -11px;
 }
 
 .lp-forgot-btn {
   background: none;
   border: none;
   color: #1e4a7a;
-  font-size: 13px;
+  font-size: 9px;
   cursor: pointer;
   padding: 0;
   transition: color 0.2s;

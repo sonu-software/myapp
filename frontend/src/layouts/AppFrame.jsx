@@ -9,8 +9,7 @@ Lightbulb,
 Users,
 CalendarDays,
 Sparkles,
-LayoutDashboard,
-UserCircle2
+LayoutDashboard
 } from "lucide-react";
 
 import "../styles/appFrame.css";
@@ -106,31 +105,41 @@ navigate("/");
 
 }
 
+function getAvatarInitial(name) {
+
+const trimmed = (name || "").trim();
+
+return trimmed
+  ? trimmed.charAt(0).toUpperCase()
+  : "U";
+
+}
+
 const navItems = [
 {
 label: "Purpose",
 route: "/setup-business",
-icon: <Target size={14} />
+icon: <Target size={14.7} />
 },
 {
 label: "Solution",
 route: "/product",
-icon: <Lightbulb size={14} />
+icon: <Lightbulb size={14.7} />
 },
 {
 label: "Audience",
 route: "/persona",
-icon: <Users size={14} />
+icon: <Users size={14.7} />
 },
 {
 label: "Planner",
 route: "/planner",
-icon: <CalendarDays size={14} />
+icon: <CalendarDays size={14.7} />
 },
 {
 label: "Execute",
-route: "/Planner",
-icon: <Sparkles size={14} />
+route: "execute",
+icon: <Sparkles size={14.7} />
 }
 ];
 
@@ -169,9 +178,55 @@ return ( <div className="app-shell">
             className={`sidebar-item ${
               active ? "active" : ""
             }`}
-            onClick={() =>
-              navigate(item.route)
+
+
+
+            onClick={async () => {
+
+            if (item.route !== "execute") {
+                navigate(item.route);
+                return;
             }
+
+            try {
+
+                const res = await fetch(
+                    `${API}/execute/default`,
+                    {
+                        headers: {
+                            Authorization:
+                                `Bearer ${localStorage.getItem("token")}`
+                        }
+                    }
+                );
+
+                const data = await res.json();
+
+                if (
+                    data.success &&
+                    data.docket_id
+                ) {
+                    navigate(
+                        `/docket-media/${data.docket_id}`
+                    );
+                }
+                else {
+                    alert(data.message || "No execute found");
+                }
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                navigate("/planner");
+
+            }
+
+        }}
+
+
+
           >
             <div className="sidebar-icon">
               {item.icon}
@@ -199,7 +254,10 @@ return ( <div className="app-shell">
             setMenuOpen(!menuOpen);
           }}
         >
-          <UserCircle2 size={18} />
+          <div className="account-avatar">
+            {getAvatarInitial(businessName)}
+          </div>
+
           <span>Profile</span>
         </button>
 
