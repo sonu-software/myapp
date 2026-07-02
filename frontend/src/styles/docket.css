@@ -7,6 +7,29 @@
    for the unstyled .dm-info-close button (Labels/Info panel "x").
 ============================================================================= */
 
+:root{
+
+    --primary:#5C52C9;
+    --primary-hover:#4F46B5;
+
+    --background:#F6F7FB;
+    --surface:#FFFFFF;
+
+    --text:#2F3A56;
+    --text-light:#7A8499;
+
+    --border:#D8DDE8;
+    --border-light:#ECEFF5;
+
+    --placeholder:#AAB3C5;
+
+    --shadow:
+    0 8px 20px rgba(40,55,90,.08);
+
+    --radius:14px;
+
+}
+
 /* ── Scoped box-sizing ──────────────────────────────────────────────────────── */
 .dm-page *, .dm-page *::before, .dm-page *::after {
   box-sizing: border-box;
@@ -20,7 +43,7 @@
 
 .dm-page textarea,
 .dm-page input {
-  font-family: inherit;
+  font-family: \inherit;
 }
 
 /* =============================================================================
@@ -31,7 +54,7 @@
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background: #f4f4f4;
+  background:var(--background);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 9px;
   color: #1a2744;
@@ -47,8 +70,8 @@
   align-items: center;
   height: 36px;
   min-height: 36px;
-  background: #ffffff;
-  border-bottom: 1px solid #e8eaed;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
   flex-shrink: 0;
   padding: 0 9px;
   gap: 6px;
@@ -91,7 +114,7 @@
   min-height: 24px !important;
   border-radius: 5px !important;
   border: 1px solid #d1d5db !important;
-  background: #ffffff !important;
+  background:var(--surface);
   color: #1a2744 !important;
   padding: 0 !important;
   margin: 0 !important;
@@ -99,8 +122,8 @@
   transition: background 0.15s, border-color 0.15s !important;
 }
 .dm-page .dm-topbar-icon-btn:hover {
-  background: #eef4fc !important;
-  border-color: #4A90E2 !important;
+  background:#F3F1FF !important;
+  border:1px solid var(--border) !important;
 }
 .dm-page .dm-topbar-icon-btn svg {
   display: block !important;
@@ -118,7 +141,7 @@
   height: 24px !important;
   min-width: 24px !important;
   border-radius: 50% !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   background: #f3f4f6 !important;
   color: #1a2744 !important;
   padding: 0 !important;
@@ -136,7 +159,7 @@
   gap: 5px !important;
   height: 24px !important;
   padding: 0 9px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   border-radius: 12px !important;
   background: #f9fafb !important;
   min-width: 120px !important;
@@ -175,7 +198,7 @@
   height: 21px !important;
   padding: 0 9px !important;
   border-radius: 10px !important;
-  background: #1a2744 !important;
+  background:var(--primary);
   color: #fff !important;
   border: none !important;
   font-size: 9px !important;
@@ -184,7 +207,10 @@
   white-space: nowrap !important;
   transition: opacity 0.15s !important;
 }
-.dm-page .dm-filter-pill-btn:hover { opacity: 0.88 !important; }
+.dm-page .dm-filter-pill-btn:hover {
+    background: var(--primary-hover) !important;
+    opacity: 1 !important;
+}
 .dm-page .dm-filter-pill-btn svg { display: block; flex-shrink: 0; }
 
 /* ── Active filter pills ───────────────────────────────────────────────────── */
@@ -307,7 +333,9 @@
   align-items: center;
   height: 54px;
   min-height: 54px;
-  background: #fff;
+  background:var(--surface);
+  border-radius:14px;
+  box-shadow:var(--shadow);
   border-bottom: 1px solid #dfe3ea;
   flex-shrink: 0;
   width: 100%;
@@ -363,8 +391,8 @@
 }
 .dm-carousel-item:hover { background: #f8faff; }
 .dm-carousel-item--active {
-  background: #eef4ff;
-  border-bottom: 2px solid #4A90E2;
+  background:#F2F0FF;
+  border-bottom:3px solid var(--primary);
 }
 .dm-carousel-item-info {
   display: flex;
@@ -454,7 +482,9 @@
   width: 38%;
   min-width: 195px;
   flex-shrink: 0;
-  background: #fff;
+  background:var(--surface);
+  border-radius:14px;
+  box-shadow:var(--shadow);
   border-right: 1px solid #e8eaed;
   overflow: hidden;
 }
@@ -535,7 +565,7 @@
   min-width: 21px !important;
   min-height: 21px !important;
   border-radius: 5px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   background: #ffffff !important;
   color: #1a2744 !important;
   padding: 0 !important;
@@ -578,26 +608,30 @@
 .dm-page .dm-form-input {
   width: 100% !important;
   padding: 2px 6px !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 4px !important;
+  border:1px solid var(--border) !important;
+  border-radius:8px !important;
   font-size: 9px !important;
-  color: #1a2744 !important;
+  color:var(--text) !important;
   background: #fff !important;
   outline: none !important;
   line-height: 1.4 !important;
   transition: border-color 0.15s;
 }
-.dm-page .dm-form-input:focus { border-color: #4A90E2 !important; }
+.dm-page .dm-form-input:focus{
+border-color:var(--primary);
+box-shadow:
+0 0 0 3px rgba(92,82,201,.08);
+}
 .dm-page .dm-form-input:disabled { background: #f9fafb !important; color: #9ca3af !important; }
 .dm-page .dm-form-input::placeholder { color: #9ca3af; }
 
 .dm-page .dm-form-textarea {
   width: 100% !important;
   padding: 4px 6px !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 4px !important;
+  border:1px solid var(--border) !important;
+  border-radius:8px !important;
   font-size: 9px !important;
-  color: #1a2744 !important;
+  color:var(--text) !important;
   background: #fff !important;
   outline: none !important;
   resize: none !important;
@@ -639,10 +673,14 @@
   cursor: pointer !important;
 }
 .dm-page .dm-tab:hover { color: #1a2744 !important; }
-.dm-page .dm-tab--active {
-  color: #4A90E2 !important;
-  border-bottom-color: #4A90E2 !important;
-  font-weight: 600 !important;
+.dm-page .dm-tab--active{
+
+color:var(--primary);
+
+border-bottom:2px solid var(--primary);
+
+font-weight:600;
+
 }
 
 /* Chat panel */
@@ -651,7 +689,9 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: #fff;
+  background:var(--surface);
+  border-radius:14px;
+  box-shadow:var(--shadow);
   overflow: hidden;
 }
 .dm-chat-label {
@@ -761,11 +801,11 @@
   flex: 1 !important;
   height: 29px !important;
   padding: 0 12px !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 14px !important;
+  border:1px solid var(--border) !important;
+  border-radius: 18px !important;
   font-size: 9px !important;
   color: #1a2744 !important;
-  background: #f9fafb !important;
+  background:#F8F9FD !important;
   outline: none !important;
   line-height: 29px !important;
   width: 100% !important;
@@ -828,8 +868,8 @@
   letter-spacing: 1px !important;
 }
 .dm-page .dm-generate-btn--on {
-  background: linear-gradient(135deg, #4A90E2 0%, #7B5EA7 100%) !important;
-  box-shadow: 0 2px 8px rgba(74,144,226,0.35) !important;
+  background:var(--primary) !important;
+  box-shadow:var(--shadow) !important;
   cursor: pointer !important;
 }
 .dm-page .dm-generate-btn--on:hover:not(:disabled) { filter: brightness(1.07) !important; }
@@ -1055,7 +1095,7 @@
   justify-content: center !important;
   height: 21px !important;
   padding: 0 10px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   border-radius: 5px !important;
   background: #ffffff !important;
   color: #1a2744 !important;
@@ -1121,7 +1161,7 @@
   transition: background 0.15s !important;
 }
 .dm-page .dm-msg-edit-btn {
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   background: #fff !important;
   color: #374151 !important;
 }
@@ -1167,7 +1207,7 @@
 .dm-action-wrap:last-child .dm-action-btn { border-right: none !important; }
 .dm-page .dm-action-btn:hover { background: #f9fafb !important; }
 .dm-page .dm-action-btn--submit {
-  background: #1a2744 !important;
+  background:var(--primary) !important;
   color: #fff !important;
 }
 .dm-page .dm-action-btn--submit:hover { background: #253261 !important; }
@@ -1392,7 +1432,7 @@
 .dm-page .dm-modal-group textarea {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   color: #1a2744 !important;
@@ -1418,7 +1458,7 @@
   cursor: pointer !important;
 }
 .dm-page .dm-modal-btn--cancel {
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   background: #fff !important;
   color: #374151 !important;
 }
@@ -1526,7 +1566,7 @@
 .dm-page .docket-field-textarea {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   font-family: inherit !important;
@@ -1569,7 +1609,7 @@
   flex: 1;
   resize: none;
   padding: 5px 6px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 9px;
   font-family: inherit;
@@ -1631,7 +1671,7 @@
 .dm-page .planner-datepicker {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border) !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   color: #1a2744 !important;
