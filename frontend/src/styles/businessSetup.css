@@ -8,6 +8,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 /* ================================================
@@ -46,7 +47,7 @@ body {
   align-items: center;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: var(--text-primary);
-  zoom: 0.75; /* overall UI scaled to 75% (25% smaller) */
+  zoom: 0.75; /* overall UI scaled to 75% (25% smaller) — desktop/tablet only, see below */
 }
 
 @supports not (zoom: 1) {
@@ -56,6 +57,29 @@ body {
     width: 133.333%;
     height: 133.333%;
   }
+}
+
+/* On phones the 75% zoom shrinks text and tap targets below a usable size,
+   so the page renders at native scale (1:1) starting at the mobile
+   breakpoint; the explicit font-size / height rules in the responsive
+   breakpoints below already provide the right sizing at this scale. */
+@media (max-width: 768px) {
+  .bs-wrapper {
+    zoom: 1;
+  }
+  @supports not (zoom: 1) {
+    .bs-wrapper {
+      transform: none;
+      width: 100%;
+      height: auto;
+    }
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 /* ── LOADING ── */
@@ -152,6 +176,15 @@ body {
 }
 
 .bs-section--full { grid-column: 1 / -1; }
+
+/* ── HIDDEN UTILITY ──
+   Used to hide sections/elements without touching component logic,
+   state, or the data they still submit (e.g. Financial Preferences,
+   Preferences, and the LinkedIn connect button). */
+.bs-hidden-section,
+.bs-linkedin-hidden {
+  display: none !important;
+}
 
 /* ── SECTION TITLE ── */
 .bs-section-title {
@@ -333,7 +366,7 @@ select.bs-input:disabled {
 .bs-textarea-wrap { width: 100%; }
 
 .bs-textarea {
-  width: 100%; min-height: 110px; font-size: 12.5px;
+  width: 100%; min-height: 190px; font-size: 12.5px;
   padding: 10px 12px;
   border-radius: var(--radius-input);
   border: 1.5px solid var(--border);
@@ -1057,13 +1090,21 @@ select.bs-input:disabled {
   .bs-hashtag-wrap { max-height: 80px; }
 }
 
+@media (max-width: 900px) and (min-width: 769px) {
+  .bs-form { grid-template-columns: 1fr 1fr; width: 95%; gap: 10px; }
+  .bs-section { padding: 14px 12px; }
+  .bs-row { gap: 8px; }
+  .bs-label { font-size: 12px; }
+  .bs-team-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
 @media (max-width: 768px) {
   .bs-form { grid-template-columns: 1fr; width: 96%; gap: 12px; padding-bottom: 90px; }
   .bs-section--full { grid-column: 1; }
   .bs-row  { grid-template-columns: 1fr; gap: 4px; margin-bottom: 10px; }
   .bs-label { font-size: 12.5px; }
   .bs-input { height: 38px; font-size: 13px; padding: 0 10px; }
-  .bs-textarea { font-size: 13px; min-height: 100px; }
+  .bs-textarea { font-size: 13px; min-height: 160px; }
   .bs-section { padding: 16px 14px; border-radius: 14px; }
   .bs-section-title { font-size: 13px; margin-bottom: 12px; }
   .bs-actions { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 16px; grid-column: unset; }
@@ -1081,7 +1122,7 @@ select.bs-input:disabled {
   .bs-section { padding: 14px 12px; }
   .bs-section-title { font-size: 12.5px; letter-spacing: 0.2px; }
   .bs-input { height: 40px; font-size: 13px; }
-  .bs-textarea { font-size: 13px; min-height: 90px; }
+  .bs-textarea { font-size: 13px; min-height: 150px; }
   .bs-logo-preview { width: 64px; height: 64px; }
   .bs-upload-btn { font-size: 11px; padding: 5px 10px; }
   .bs-agreement-tab { padding: 10px 12px; }
@@ -1103,7 +1144,7 @@ select.bs-input:disabled {
   .bs-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
   .bs-input { height: 42px; font-size: 13px; padding: 0 10px; border-radius: var(--radius-input); }
   select.bs-input { height: 42px; font-size: 13px; padding-right: 34px; }
-  .bs-textarea { font-size: 13px; padding: 10px; min-height: 90px; border-radius: var(--radius-input); }
+  .bs-textarea { font-size: 13px; padding: 10px; min-height: 150px; border-radius: var(--radius-input); }
   .bs-textarea::placeholder { font-size: 12px; }
   .bs-desc-meta span { font-size: 11px; }
   .bs-logo-header { flex-wrap: wrap; gap: 8px; }
@@ -1124,6 +1165,13 @@ select.bs-input:disabled {
   .bs-hashtag-chip { font-size: 11px; padding: 3px 7px 3px 6px; }
   .bs-hashtag-input { font-size: 13px; min-width: 80px; }
   .bs-hashtag-tip { font-size: 10px; }
+}
+
+@media (max-width: 480px) {
+  .bs-popup { padding: 28px 22px; border-radius: 16px; }
+  .bs-popup-title { font-size: 15.5px; }
+  .bs-popup-msg { font-size: 13px; }
+  .bs-popup-btn { width: 100%; padding: 11px 0; }
 }
 
 @media (max-width: 360px) {

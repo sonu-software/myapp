@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "../styles/plannerpage.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -9,56 +9,19 @@ export default function PlannerPage() {
   const today = new Date();
   const API = import.meta.env.VITE_BACKEND_URL;
 
+  // ── AppFrame filter bridge ──────────────────────────────────────────────
+  // AppFrame owns the header "Filter" dropdown and the footer stage counts.
+  // It passes its live filter values down through <Outlet context={...} />.
+  // We read them here (read-only) and use them, when present, as the source
+  // of truth for the planner query below — no local filter state, UI, or
+  // any other function in this file is modified.
+  const outletContext = useOutletContext();
+  const appFrameFilters = outletContext?.filters ?? null;
+
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
   const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [uploadedDateTime, setUploadedDateTime] = useState(new Date());
-
-  const plannerFilterRef = useRef(null);
-
-  const FILTER_STAGES = [
-    "discovery",
-    "draft",
-    "generate",
-    "review",
-    "approve",
-    "publish",
-    "closed",
-    "rejected"
-  ];
-
-
-
-
-  const [plannerFilters, setPlannerFilters] = useState({
-
-      startDate: null,
-
-      endDate: null,
-
-      stage: "",
-
-      product: "",
-
-      persona: "",
-
-      occasion: "",
-
-      mediaType: "",
-
-      subType: "",
-
-      search: ""
-
-  });
-
-
-
-
-
-
-  const [showPlannerFilter, setShowPlannerFilter] = useState(false);
-
 
 
 
@@ -76,54 +39,52 @@ export default function PlannerPage() {
 
   const [searchText, setSearchText] = useState("");
 
-  
 
 
-
-  useEffect(() => {
-
-      setPlannerFilters({
-
-          startDate,
-
-          endDate,
-
-          stage: selectedFilterStage,
-
-          product: selectedFilterProduct,
-
-          persona: selectedFilterPersona,
-
-          occasion: selectedFilterOccasion,
-
-          mediaType: selectedFilterMediaType,
-
-          subType: selectedFilterSubType,
-
-          search: searchText
-
-      });
-
-  }, [
-
-      startDate,
-
-      endDate,
-
-      selectedFilterStage,
-
-      selectedFilterProduct,
-
-      selectedFilterPersona,
-
-      selectedFilterOccasion,
-
-      selectedFilterMediaType,
-
-      selectedFilterSubType,
-
-      searchText
-
+  // ── Single source of truth for "what filters are active" ───────────────
+  // Prefer the filters coming from AppFrame's header filter dropdown (shared
+  // across every page it wraps, via Outlet context). Fall back to this
+  // page's own local filter state so nothing breaks if PlannerPage is ever
+  // rendered without an AppFrame ancestor. This is the ONLY place that
+  // decides which filter values are "effective" — every fetch that loads
+  // planner executes must go through it.
+  //
+  // Computed with useMemo (not state + effect) on purpose: deriving this via
+  // setState in a useEffect meant that on first mount (and on every filter
+  // change) there was one extra render where effectiveFilters still held its
+  // stale/default value, which the dockets-fetch effect below would pick up
+  // and fire an unfiltered request before self-correcting a moment later.
+  // useMemo recomputes synchronously during render, so downstream effects
+  // never see a stale value.
+  const effectiveFilters = useMemo(() => ({
+    startDate: appFrameFilters ? appFrameFilters.startDate : startDate,
+    endDate:   appFrameFilters ? appFrameFilters.endDate   : endDate,
+    stage:     appFrameFilters ? appFrameFilters.stage     : selectedFilterStage,
+    product:   appFrameFilters ? appFrameFilters.productId : selectedFilterProduct,
+    persona:   appFrameFilters ? appFrameFilters.personaId : selectedFilterPersona,
+    occasion:  appFrameFilters ? appFrameFilters.occasionId : selectedFilterOccasion,
+    mediaType: selectedFilterMediaType,
+    subType:   selectedFilterSubType,
+    search:    (appFrameFilters ? appFrameFilters.search : searchText) || "",
+  }), [
+    // AppFrame-provided filters (read as primitives, not the context
+    // object itself, so this doesn't recompute on every parent render)
+    appFrameFilters?.startDate,
+    appFrameFilters?.endDate,
+    appFrameFilters?.stage,
+    appFrameFilters?.productId,
+    appFrameFilters?.personaId,
+    appFrameFilters?.occasionId,
+    appFrameFilters?.search,
+    startDate,
+    endDate,
+    selectedFilterStage,
+    selectedFilterProduct,
+    selectedFilterPersona,
+    selectedFilterOccasion,
+    selectedFilterMediaType,
+    selectedFilterSubType,
+    searchText,
   ]);
 
 
@@ -268,6 +229,11 @@ export default function PlannerPage() {
 
 
 
+  // Single fetch path for loading planner executes. Every place in this file
+  // that needs docket data for the calendar calls this with `effectiveFilters`
+  // (see fetchMonthDockets below) — no other function should hit
+  // /planner/carousel-dockets directly, so the AppFrame filter stays the one
+  // source of truth for what's shown.
   const loadPlannerExecutes = async (filters) => {
 
     try {
@@ -432,14 +398,15 @@ useEffect(() => {
       const lastDate =
         `${selectedYear}-${pad(selectedMonth + 1)}-${pad(totalDays)}`;
 
+      // If the user has set an explicit start/end date filter via AppFrame,
+      // that wins (it's the more specific ask). Otherwise, scope the request
+      // to the calendar month currently being viewed. Every other filter
+      // (stage/product/persona/occasion/mediaType/subType/search) always
+      // comes from effectiveFilters — the single source of truth.
       const data = await loadPlannerExecutes({
-
-          startDate: firstDate,
-
-          endDate: lastDate,
-
-          ...plannerFilters
-
+        ...effectiveFilters,
+        startDate: effectiveFilters.startDate || firstDate,
+        endDate:   effectiveFilters.endDate   || lastDate,
       });
 
       setAllMonthDockets(data);
@@ -450,7 +417,7 @@ useEffect(() => {
       }, [
       selectedYear,
       selectedMonth,
-      plannerFilters
+      effectiveFilters
     ]);
 
   // ========== FETCH PRODUCTS & PERSONAS ==========
@@ -520,15 +487,6 @@ useEffect(() => {
       if (showYearDropdown && !event.target.closest('.year-selector'))
         setShowYearDropdown(false);
 
-
-      if (
-          showPlannerFilter &&
-          plannerFilterRef.current &&
-          !plannerFilterRef.current.contains(event.target)
-      ) {
-          setShowPlannerFilter(false);
-      }
-
       if (contextMenu.visible && !event.target.closest('.context-menu'))
         setContextMenu(prev => ({ ...prev, visible: false }));
       if (overflowPopup.visible && !event.target.closest('.overflow-popup'))
@@ -538,7 +496,6 @@ useEffect(() => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showUserMenu,
     showYearDropdown,
-    showPlannerFilter,
     contextMenu.visible,
     overflowPopup.visible]);
 
@@ -723,56 +680,6 @@ useEffect(() => {
   const [filterEvents, setFilterEvents] = useState(true);
   const [filterTasks,  setFilterTasks]  = useState(true);
 
-  const filterChips = [
-    {
-        show: selectedFilterStage,
-        label: `Stage: ${selectedFilterStage}`,
-        clear: () => setSelectedFilterStage("")
-    },
-    {
-        show: selectedFilterProduct,
-        label: `Product: ${
-            productList.find(
-                p => p.product_id == selectedFilterProduct
-            )?.product_name
-        }`,
-        clear: () => setSelectedFilterProduct("")
-    },
-    {
-        show: selectedFilterPersona,
-        label: `Persona: ${
-            personaList.find(
-                p => p.persona_id == selectedFilterPersona
-            )?.persona_name
-        }`,
-        clear: () => setSelectedFilterPersona("")
-    },
-    {
-        show: selectedFilterOccasion,
-        label: `Topic: ${
-            occasions.find(
-                o => o.occasion_id == selectedFilterOccasion
-            )?.title
-        }`,
-        clear: () => setSelectedFilterOccasion("")
-    },
-    {
-        show: searchText,
-        label: `"${searchText}"`,
-        clear: () => setSearchText("")
-    },
-    {
-        show: startDate,
-        label: `From: ${startDate?.toLocaleDateString()}`,
-        clear: () => setStartDate(null)
-    },
-    {
-        show: endDate,
-        label: `To: ${endDate?.toLocaleDateString()}`,
-        clear: () => setEndDate(null)
-    }
-].filter(chip => chip.show);
-
 
   
 
@@ -841,181 +748,6 @@ useEffect(() => {
               <span className="year-display">{selectedYear}</span>
             </div>
 
-            <div className="filter-buttons">
-
-              <div
-                  className="dm-filter-wrapper"
-                  ref={plannerFilterRef}
-              >
-
-                  <button
-                      className="filter-btn"
-                      onClick={() =>
-                          setShowPlannerFilter(v => !v)
-                      }
-                      aria-label="Filter"
-                      title="Filter"
-                  >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 4.5h18L14 13v6.5l-4 2.2V13L3 4.5z" fill="currentColor"/>
-                      </svg>
-                  </button>
-
-
-                  {showPlannerFilter && (
-                    <div className="dm-filter-dropdown-new">
-                      <div className="dm-filter-header">Filter Executes</div>
-
-
-                      <div className="dm-filter-date-row">
-
-                      <div className="dm-filter-field">
-                        <label>Start Date</label>
-                        <DatePicker
-                          selected={startDate}
-                          onChange={(date) => setStartDate(date)}
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select start date"
-                          className="dm-filter-date-input"
-                        />
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>End Date</label>
-                        <DatePicker
-                          selected={endDate}
-                          onChange={(date) => setEndDate(date)}
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select end date"
-                          className="dm-filter-date-input"
-                        />
-                      </div>
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>Stage</label>
-                        <select
-                          className="dm-filter-stage-select"
-                          value={selectedFilterStage}
-                          onChange={(e) => setSelectedFilterStage(e.target.value)}
-                        >
-                          <option value="">All Stages</option>
-                          {FILTER_STAGES.map(stage => (
-                            <option key={stage} value={stage}>
-                              {stage.charAt(0).toUpperCase() + stage.slice(1)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>Topic</label>
-                        <select
-                          className="dm-filter-stage-select"
-                          value={selectedFilterOccasion}
-                          onChange={(e) => setSelectedFilterOccasion(e.target.value)}
-                        >
-                          <option value="">All Topics</option>
-                          {occasions.map((event) => (
-                            <option key={event.occasion_id} value={event.occasion_id}>
-                              {event.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>Product</label>
-                        <select
-                          value={selectedFilterProduct}
-                          onChange={(e) => setSelectedFilterProduct(e.target.value)}
-                        >
-                          <option value="">All Products</option>
-                          {productList.map(product => (
-                            <option key={product.product_id} value={product.product_id}>
-                              {product.product_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>Persona</label>
-                        <select
-                          value={selectedFilterPersona}
-                          onChange={(e) => setSelectedFilterPersona(e.target.value)}
-                        >
-                          <option value="">All Personas</option>
-                          {personaList.map(persona => (
-                            <option key={persona.persona_id} value={persona.persona_id}>
-                              {persona.persona_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="dm-filter-field">
-                        <label>Search</label>
-                        <input
-                          type="text"
-                          value={searchText}
-                          onChange={(e) => setSearchText(e.target.value)}
-                          placeholder="Search title"
-                        />
-                      </div>
-
-                      <button
-                        className="dm-filter-clear-btn"
-                        onClick={() => {
-                          setStartDate(null);
-                          setEndDate(null);
-                          setSelectedFilterStage("");
-                          setSelectedFilterProduct("");
-                          setSelectedFilterPersona("");
-                          setSelectedFilterMediaType("");
-                          setSelectedFilterOccasion("");
-                          setSelectedFilterSubType("");
-                          setSearchText("");
-                          setShowPlannerFilter(false)
-                        }}
-                      >
-                        Clear Filter
-                      </button>
-                    </div>
-                  )}
-
-                  </div>
-                  
-                  
-
-
-              <div className="planner-filter-chip-box">
-              <div className="planner-filter-chips">
-
-                  {filterChips.map((chip, index) => (
-                      <div
-                          key={index}
-                          className="planner-filter-chip"
-                      >
-                          <span>{chip.label}</span>
-
-                          <button
-                              className="planner-filter-chip-remove"
-                              onClick={chip.clear}
-                          >
-                              ✕
-                          </button>
-                      </div>
-                  ))}
-
-              </div>
-          </div>
-
-
-
-
-
-            </div>
 
           </div>
 

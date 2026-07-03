@@ -437,8 +437,8 @@ export default function BusinessSetup() {
         <div className="bs-section">
           <h2 className="bs-section-title">BUSINESS NAME</h2>
 
-          {/* 🔗 LinkedIn Connect Button */}
-          <div style={{ marginBottom: "12px" }}>
+          {/* 🔗 LinkedIn Connect Button (hidden) */}
+          <div className="bs-linkedin-hidden" style={{ marginBottom: "12px" }}>
             <button
               type="button"
               onClick={connectLinkedIn}
@@ -462,7 +462,7 @@ export default function BusinessSetup() {
 
           <SelectRow label="Business Type *" name="businessType" value={formData.businessType}
             onChange={handleInputChange} disabled={!isEditing}
-            options={categories} placeholder="Select Category" />
+            options={[...categories, "Others"]} placeholder="Select Category" />
 
           <SelectRow label="Industry / Category *" name="industry" value={formData.industry}
             onChange={handleInputChange} disabled={!isEditing}
@@ -489,7 +489,7 @@ export default function BusinessSetup() {
               data-tooltip="Click Edit to modify">
               <textarea name="description" value={formData.description}
                 onChange={handleInputChange} className="bs-textarea"
-                disabled={!isEditing} rows={4}
+                disabled={!isEditing} rows={8}
                 placeholder="Describe your business — what you do, your mission, your values, and what sets you apart." />
             </div>
           </div>
@@ -521,12 +521,12 @@ export default function BusinessSetup() {
           )}
         </div>
 
-        {/* ══ ROW 2  ── BUSINESS LOGO & CONTACT  |  BUSINESS ADDRESS ══ */}
+        {/* ══ ROW 2  ── BUSINESS DETAILS & CONTACT  |  BUSINESS ADDRESS ══ */}
 
-        {/* BUSINESS LOGO & CONTACT */}
+        {/* BUSINESS DETAILS & CONTACT */}
         <div className="bs-section">
           <div className="bs-logo-header">
-            <h2 className="bs-section-title">BUSINESS LOGO</h2>
+            <h2 className="bs-section-title">BUSINESS DETAILS</h2>
             <label className={`bs-upload-btn ${!isEditing ? "bs-upload-btn--disabled" : ""}`}>
               ⬆ Upload Logo
               <input type="file" accept="image/*" onChange={handleLogoUpload}
@@ -584,10 +584,10 @@ export default function BusinessSetup() {
           ))}
         </div>
 
-        {/* ══ ROW 3  ── FINANCIAL PREFERENCES  |  BRANDING ══ */}
+        {/* ══ ROW 3  ── FINANCIAL PREFERENCES (hidden)  |  BRANDING ══ */}
 
-        {/* FINANCIAL */}
-        <div className="bs-section">
+        {/* FINANCIAL (hidden) */}
+        <div className="bs-section bs-hidden-section">
           <h2 className="bs-section-title">FINANCIAL PREFERENCES</h2>
           {[
             ["Default Currency",        "currency",   "e.g. USD"],
@@ -636,10 +636,10 @@ export default function BusinessSetup() {
           )}
         </div>
 
-        {/* ══ ROW 4  ── PREFERENCES  |  LEGAL ══ */}
+        {/* ══ ROW 4  ── PREFERENCES (hidden)  |  LEGAL ══ */}
 
-        {/* PREFERENCES */}
-        <div className="bs-section">
+        {/* PREFERENCES (hidden) */}
+        <div className="bs-section bs-hidden-section">
           <h2 className="bs-section-title">PREFERENCES</h2>
           {[
             ["Language Preference",     "language",      "e.g. English"],
@@ -791,7 +791,7 @@ export default function BusinessSetup() {
         {/* ══ SAVE ══ */}
         <div className="bs-actions">
           <button type="submit" className="bs-save-btn" disabled={!isEditing}>
-            SAVE &amp; NEXT
+            SAVE
           </button>
         </div>
 

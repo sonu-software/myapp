@@ -5,30 +5,19 @@
    UI scaled 25% larger than the previous production build. No JSX/workflow
    logic was touched — only pixel dimensions in this stylesheet, plus a fix
    for the unstyled .dm-info-close button (Labels/Info panel "x").
+
+   ── Latest pass ──────────────────────────────────────────────────────────
+   - Field overlay (expand icon + char counter) now sits INSIDE the input/
+     textarea border, bottom-right, instead of floating in the extra
+     whitespace below it (Title / Description / Visual elements / Summary).
+   - Chat input pill and Generate button now share an identical height and
+     baseline inside .dm-chat-input-row.
+   - Chat input text color fixed (was inheriting white from a global reset,
+     making typed text invisible).
+   - Scrollbars are visually hidden throughout .dm-page (scrolling still
+     works via wheel/drag) so no scrollbar track appears in the UI, and a
+     couple of extra responsive breakpoints were added.
 ============================================================================= */
-
-:root{
-
-    --primary:#5C52C9;
-    --primary-hover:#4F46B5;
-
-    --background:#F6F7FB;
-    --surface:#FFFFFF;
-
-    --text:#2F3A56;
-    --text-light:#7A8499;
-
-    --border:#D8DDE8;
-    --border-light:#ECEFF5;
-
-    --placeholder:#AAB3C5;
-
-    --shadow:
-    0 8px 20px rgba(40,55,90,.08);
-
-    --radius:14px;
-
-}
 
 /* ── Scoped box-sizing ──────────────────────────────────────────────────────── */
 .dm-page *, .dm-page *::before, .dm-page *::after {
@@ -43,7 +32,7 @@
 
 .dm-page textarea,
 .dm-page input {
-  font-family: \inherit;
+  font-family: inherit;
 }
 
 /* =============================================================================
@@ -54,7 +43,7 @@
   flex-direction: column;
   height: 100vh;
   width: 100%;
-  background:var(--background);
+  background: #f4f4f4;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 9px;
   color: #1a2744;
@@ -63,290 +52,88 @@
 }
 
 /* =============================================================================
-   TOP BAR
-============================================================================= */
-.dm-topbar-new {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  min-height: 36px;
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  flex-shrink: 0;
-  padding: 0 9px;
-  gap: 6px;
-  z-index: 10;
-  width: 100%;
-}
-
-.dm-topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.dm-topbar-center {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 5px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.dm-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-/* ── Topbar icon buttons ────────────────────────────────────────────────────── */
-.dm-page .dm-topbar-icon-btn {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
-  border-radius: 5px !important;
-  border: 1px solid #d1d5db !important;
-  background:var(--surface);
-  color: #1a2744 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  flex-shrink: 0 !important;
-  transition: background 0.15s, border-color 0.15s !important;
-}
-.dm-page .dm-topbar-icon-btn:hover {
-  background:#F3F1FF !important;
-  border:1px solid var(--border) !important;
-}
-.dm-page .dm-topbar-icon-btn svg {
-  display: block !important;
-  width: 12px !important;
-  height: 12px !important;
-  flex-shrink: 0 !important;
-}
-
-/* ── Avatar button ─────────────────────────────────────────────────────────── */
-.dm-page .dm-topbar-avatar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  border-radius: 50% !important;
-  border: 1px solid var(--border) !important;
-  background: #f3f4f6 !important;
-  color: #1a2744 !important;
-  padding: 0 !important;
-  flex-shrink: 0 !important;
-  transition: background 0.15s !important;
-}
-.dm-page .dm-topbar-avatar:hover {
-  background: #eef4fc !important;
-}
-
-/* ── Search bar ────────────────────────────────────────────────────────────── */
-.dm-page .dm-search-bar {
-  display: flex !important;
-  align-items: center !important;
-  gap: 5px !important;
-  height: 24px !important;
-  padding: 0 9px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-  background: #f9fafb !important;
-  min-width: 120px !important;
-}
-.dm-page .dm-search-bar svg {
-  flex-shrink: 0;
-  display: block;
-  width: 10px;
-  height: 10px;
-}
-.dm-page .dm-search-bar input {
-  border: none !important;
-  background: transparent !important;
-  outline: none !important;
-  font-size: 9px !important;
-  color: #1a2744 !important;
-  width: 100% !important;
-  height: 100% !important;
-  line-height: normal !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  vertical-align: middle !important;
-  display: block !important;
-  align-self: center !important;
-}
-.dm-page .dm-search-bar input::placeholder {
-  color: #9ca3af;
-  vertical-align: middle;
-}
-
-/* ── Filter pill button ────────────────────────────────────────────────────── */
-.dm-page .dm-filter-pill-btn {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  height: 21px !important;
-  padding: 0 9px !important;
-  border-radius: 10px !important;
-  background:var(--primary);
-  color: #fff !important;
-  border: none !important;
-  font-size: 9px !important;
-  font-weight: 600 !important;
-  flex-shrink: 0 !important;
-  white-space: nowrap !important;
-  transition: opacity 0.15s !important;
-}
-.dm-page .dm-filter-pill-btn:hover {
-    background: var(--primary-hover) !important;
-    opacity: 1 !important;
-}
-.dm-page .dm-filter-pill-btn svg { display: block; flex-shrink: 0; }
-
-/* ── Active filter pills ───────────────────────────────────────────────────── */
-.dm-active-filter-pill {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 18px;
-  padding: 0 6px;
-  border-radius: 9px;
-  background: #eef4fc;
-  border: 1px solid #d6e4f7;
-  font-size: 8px;
-  font-weight: 500;
-  color: #1a2744;
-  flex-shrink: 0;
-}
-.dm-active-filter-pill button {
-  font-size: 9px;
-  line-height: 1;
-  color: #6b7280;
-  padding: 0;
-  background: none !important;
-  border: none !important;
-}
-.dm-active-filter-pill button:hover { color: #ef4444 !important; }
-
-/* ── Filter wrapper + dropdown ─────────────────────────────────────────────── */
-.dm-filter-wrapper { position: relative; }
-
-.dm-filter-dropdown-new {
-    position: absolute;
-
-    top: calc(100% + 8px);
-
-    right: 0;          /* <-- change */
-
-    left: auto;        /* <-- add */
-
-    width: 338px;      /* or keep your preferred width */
-
-    max-width: calc(100vw - 30px);
-
-    background: #fff;
-
-    border: 1px solid #e2e8f0;
-
-    border-radius: 12px;
-
-    padding: 12px;  
-
-    box-shadow: 0 15px 35px rgba(0,0,0,.12);
-
-    z-index: 9999;
-
-    overflow-y: auto;
-
-    max-height: 650px;
-}
-
-.dm-filter-header {
-  font-size: 9px;
-  font-weight: 700;
-  color: #1a2744;
-  margin-bottom: 9px;
-}
-.dm-filter-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 9px;
-}
-.dm-filter-field label {
-  font-size: 8px;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.dm-page .dm-filter-field input,
-.dm-page .dm-filter-field select,
-.dm-page .dm-filter-date-input,
-.dm-page .dm-filter-stage-select {
-  width: 100% !important;
-  height: 25px !important;
-  border: 1px solid #dbe3ee !important;
-  border-radius: 6px !important;
-  padding: 0 8px !important;
-  font-size: 9px !important;
-  background: #fff !important;
-  color: #1a2744 !important;
-  outline: none !important;
-  transition: border-color 0.15s;
-}
-.dm-page .dm-filter-field input:focus,
-.dm-page .dm-filter-field select:focus,
-.dm-page .dm-filter-date-input:focus,
-.dm-page .dm-filter-stage-select:focus {
-  border-color: #4A90E2 !important;
-}
-.dm-page .dm-filter-clear-btn {
-  width: 100% !important;
-  height: 28px !important;
-  border-radius: 6px !important;
-  background: #1a2744 !important;
-  color: #fff !important;
-  border: none !important;
-  font-size: 9px !important;
-  font-weight: 600 !important;
-  margin-top: 2px !important;
-  transition: opacity 0.15s;
-}
-.dm-page .dm-filter-clear-btn:hover { opacity: 0.9 !important; }
-
-/* =============================================================================
    CAROUSEL
 ============================================================================= */
 .dm-carousel-new {
   display: flex;
   align-items: center;
-  height: 54px;
-  min-height: 54px;
-  background:var(--surface);
-  border-radius:14px;
-  box-shadow:var(--shadow);
+  height: 58px;
+  min-height: 58px;
+  background: #fff;
   border-bottom: 1px solid #dfe3ea;
   flex-shrink: 0;
   width: 100%;
+}
+
+/* ── Side icon column (Info / Labels) — sits left of the prev arrow ─────────── */
+.dm-carousel-side-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 2px;
+  height: 100%;
+  max-height: 58px;
+  padding: 6px 6px 4px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-right: 1px solid #eceff5;
+  overflow: visible;
+}
+
+.dm-page .dm-carousel-info-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: #1a2744 !important;
+  color: #fff !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  transition: filter 0.15s !important;
+}
+.dm-page .dm-carousel-info-btn:hover { filter: brightness(1.2) !important; }
+.dm-page .dm-carousel-info-btn svg {
+  display: block !important;
+  width: 9px !important;
+  height: 9px !important;
+}
+
+.dm-page .dm-carousel-labels-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  border-radius: 5px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #1a2744 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  transition: background 0.15s !important;
+}
+.dm-page .dm-carousel-labels-btn:hover { background: #f3f4f6 !important; }
+.dm-page .dm-carousel-labels-btn svg {
+  display: block !important;
+  width: 12px !important;
+  height: 12px !important;
 }
 
 .dm-page .dm-carousel-nav-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 29px !important;
-  min-width: 29px !important;
+  width: 27px !important;
+  min-width: 27px !important;
   height: 100% !important;
   background: #fff !important;
   border: none !important;
@@ -391,8 +178,8 @@
 }
 .dm-carousel-item:hover { background: #f8faff; }
 .dm-carousel-item--active {
-  background:#F2F0FF;
-  border-bottom:3px solid var(--primary);
+  background: #eef4ff;
+  border-bottom: 2px solid #4A90E2;
 }
 .dm-carousel-item-info {
   display: flex;
@@ -482,9 +269,7 @@
   width: 38%;
   min-width: 195px;
   flex-shrink: 0;
-  background:var(--surface);
-  border-radius:14px;
-  box-shadow:var(--shadow);
+  background: #fff;
   border-right: 1px solid #e8eaed;
   overflow: hidden;
 }
@@ -494,13 +279,11 @@
   flex: 0 0 40%;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
   border-bottom: 1px solid #e8eaed;
   background: #fff;
 }
-.dm-left-fields-scroll::-webkit-scrollbar { width: 4px; }
-.dm-left-fields-scroll::-webkit-scrollbar-thumb { background: #e8eaed; border-radius: 5px; }
+.dm-left-fields-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 /* ── Chat/AI zone (bottom 60% of left column) ──────────────────────────────── */
 .dm-left-chat-zone {
@@ -565,7 +348,7 @@
   min-width: 21px !important;
   min-height: 21px !important;
   border-radius: 5px !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   background: #ffffff !important;
   color: #1a2744 !important;
   padding: 0 !important;
@@ -605,33 +388,70 @@
   position: relative;
   min-width: 0;
 }
+
+/* ── Field box: wraps ONLY the input/textarea itself so the overlay
+   (expand icon + char counter) anchors to the box's own bottom-right
+   corner, instead of drifting into the whitespace below it. ────────────── */
+.dm-field-box {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+/* ── Overlay: char counter + expand icon, living INSIDE the field box ───── */
+.dm-field-overlay {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 5;
+  pointer-events: none;
+}
+.dm-field-overlay .dm-char-count {
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 8px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+/* The expand button is now a normal flex item inside the overlay, not its
+   own absolutely-positioned element — override the standalone rule below. */
+.dm-page .dm-field-overlay .dm-expand-btn {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  pointer-events: auto !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
 .dm-page .dm-form-input {
   width: 100% !important;
-  padding: 2px 6px !important;
-  border:1px solid var(--border) !important;
-  border-radius:8px !important;
+  min-height: 30px !important;
+  padding: 3px 66px 3px 8px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
   font-size: 9px !important;
-  color:var(--text) !important;
+  color: #1a2744 !important;
   background: #fff !important;
   outline: none !important;
   line-height: 1.4 !important;
   transition: border-color 0.15s;
 }
-.dm-page .dm-form-input:focus{
-border-color:var(--primary);
-box-shadow:
-0 0 0 3px rgba(92,82,201,.08);
-}
+.dm-page .dm-form-input:focus { border-color: #4A90E2 !important; }
 .dm-page .dm-form-input:disabled { background: #f9fafb !important; color: #9ca3af !important; }
 .dm-page .dm-form-input::placeholder { color: #9ca3af; }
 
 .dm-page .dm-form-textarea {
   width: 100% !important;
-  padding: 4px 6px !important;
-  border:1px solid var(--border) !important;
-  border-radius:8px !important;
+  padding: 4px 66px 20px 8px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
   font-size: 9px !important;
-  color:var(--text) !important;
+  color: #1a2744 !important;
   background: #fff !important;
   outline: none !important;
   resize: none !important;
@@ -642,11 +462,60 @@ box-shadow:
 .dm-page .dm-form-textarea:disabled { background: #f9fafb !important; color: #9ca3af !important; }
 .dm-page .dm-form-textarea::placeholder { color: #9ca3af; }
 
+/* Legacy footer (kept for backward compatibility; no longer used by the
+   Title/Description/Visual elements/Summary fields, which now render their
+   counter inside .dm-field-overlay instead). */
+.dm-field-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 1px;
+}
 .dm-char-count {
   font-size: 8px;
   color: #9ca3af;
-  align-self: flex-end;
-  margin-top: 1px;
+}
+
+/* ── Expand icon (standalone fallback positioning; overridden to `static`
+   whenever it lives inside .dm-field-overlay, see above) ───────────────── */
+.dm-page .dm-expand-btn {
+  position: absolute !important;
+  right: 8px !important;
+  bottom: 8px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: none !important;
+  border-radius: 4px !important;
+
+  background: rgba(255,255,255,.95) !important;
+
+  color: #1a2744 !important;
+
+  cursor: pointer !important;
+
+  z-index: 5 !important;
+
+  transition: background .15s;
+}
+
+.dm-page .dm-expand-btn:hover{
+    background:#eef4fc !important;
+}
+
+.dm-page .dm-expand-btn svg{
+    width:12px !important;
+    height:12px !important;
 }
 
 /* Tabs */
@@ -673,14 +542,10 @@ box-shadow:
   cursor: pointer !important;
 }
 .dm-page .dm-tab:hover { color: #1a2744 !important; }
-.dm-page .dm-tab--active{
-
-color:var(--primary);
-
-border-bottom:2px solid var(--primary);
-
-font-weight:600;
-
+.dm-page .dm-tab--active {
+  color: #4A90E2 !important;
+  border-bottom-color: #4A90E2 !important;
+  font-weight: 600 !important;
 }
 
 /* Chat panel */
@@ -689,9 +554,7 @@ font-weight:600;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background:var(--surface);
-  border-radius:14px;
-  box-shadow:var(--shadow);
+  background: #fff;
   overflow: hidden;
 }
 .dm-chat-label {
@@ -711,11 +574,9 @@ font-weight:600;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
 }
-.dm-chat-bubbles::-webkit-scrollbar { width: 4px; }
-.dm-chat-bubbles::-webkit-scrollbar-thumb { background: #e8eaed; border-radius: 5px; }
+.dm-chat-bubbles::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .dm-chat-empty { text-align: center; color: #9ca3af; font-size: 9px; padding: 12px 0; }
 
 /* Bubbles */
@@ -791,25 +652,35 @@ font-weight:600;
   background: #fff;
 }
 
-.dm-chat-input-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+.dm-page .dm-chat-input-row{
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    width:100% !important;
+    height:38px !important;
 }
 
-.dm-page .dm-chat-input {
-  flex: 1 !important;
-  height: 29px !important;
-  padding: 0 12px !important;
-  border:1px solid var(--border) !important;
-  border-radius: 18px !important;
-  font-size: 9px !important;
-  color: #1a2744 !important;
-  background:#F8F9FD !important;
-  outline: none !important;
-  line-height: 29px !important;
-  width: 100% !important;
-  transition: border-color 0.15s, background 0.15s;
+.dm-page .dm-chat-input-wrap{
+    position:relative !important;
+    flex:1 1 auto !important;
+    display:flex !important;
+    align-items:center !important;
+    height:38px !important;
+    min-width:0 !important;
+}
+
+.dm-page .dm-chat-input{
+    width:100% !important;
+    height:38px !important;
+    padding:0 44px 0 16px !important;
+    border:1px solid #d1d5db !important;
+    border-radius:20px !important;
+    background:#fff !important;
+    outline:none !important;
+    font-size:13px !important;
+    color:#1a2744 !important;
+    box-sizing:border-box !important;
+    line-height:38px !important;
 }
 .dm-page .dm-chat-input:focus {
   border-color: #4A90E2 !important;
@@ -821,59 +692,72 @@ font-weight:600;
 }
 .dm-page .dm-chat-input::placeholder { color: #9ca3af; }
 
-/* Send button */
-.dm-page .dm-chat-send {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: static !important;
-  transform: none !important;
-  width: 21px !important;
-  height: 21px !important;
-  min-width: 21px !important;
-  min-height: 21px !important;
-  border-radius: 50% !important;
-  background: transparent !important;
-  border: none !important;
-  color: #9ca3af !important;
-  padding: 0 !important;
-  flex-shrink: 0 !important;
-  transition: color 0.15s !important;
-}
-.dm-page .dm-chat-send:hover { color: #4A90E2 !important; }
-.dm-page .dm-chat-send:disabled { opacity: 0.3 !important; }
-.dm-page .dm-chat-send svg {
-  display: block !important;
-  width: 10px !important;
-  height: 10px !important;
+/* Send button — sits inside the input pill, right-aligned */
+.dm-page .dm-chat-send{
+    position:absolute !important;
+    top:50% !important;
+    right:12px !important;
+    transform:translateY(-50%) !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    width:22px !important;
+    height:22px !important;
+
+    padding:0 !important;
+    margin:0 !important;
+
+    border:none !important;
+    background:transparent !important;
+
+    color:#9ca3af !important;
+
+    z-index:5 !important;
 }
 
-/* Generate button */
+.dm-page .dm-chat-send svg{
+    width:16px !important;
+    height:16px !important;
+    display:block !important;
+}
+
+/* Generate button — sits inline in the chat-input-row, sharing the exact
+   same height/box-sizing as .dm-chat-input so both share one baseline. */
 .dm-page .dm-generate-btn {
   position: relative !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  align-self: center !important;
   gap: 4px !important;
-  height: 25px !important;
-  width: 100% !important;
-  border-radius: 12px !important;
+  height: 38px !important;
+  width: auto !important;
+  min-width: 150px !important;
+  padding: 0 24px !important;
+  margin: 0 !important;
+  border-radius: 20px !important;
+  box-sizing: border-box !important;
   font-size: 9px !important;
   font-weight: 600 !important;
-  background: #b0b8cc !important;
+  background: linear-gradient(90deg, #34368C 0%, #7B5382 50%, #B45F56 100%) !important;
+  box-shadow: 0 2px 8px rgba(75,60,120,0.35) !important;
   color: #fff !important;
   border: none !important;
-  cursor: not-allowed !important;
-  transition: filter 0.15s, background 0.2s !important;
-  letter-spacing: 1px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: filter 0.15s !important;
+  letter-spacing: 0.4px !important;
 }
 .dm-page .dm-generate-btn--on {
-  background:var(--primary) !important;
-  box-shadow:var(--shadow) !important;
+  background: linear-gradient(90deg, #34368C 0%, #7B5382 50%, #B45F56 100%) !important;
+  box-shadow: 0 2px 8px rgba(75,60,120,0.35) !important;
   cursor: pointer !important;
 }
-.dm-page .dm-generate-btn--on:hover:not(:disabled) { filter: brightness(1.07) !important; }
-.dm-page .dm-generate-btn:disabled { opacity: 0.6 !important; }
+.dm-page .dm-generate-btn:hover:not(:disabled) { filter: brightness(1.07) !important; }
+.dm-page .dm-generate-btn:disabled { opacity: 0.6 !important; cursor: not-allowed !important; }
 
 /* Tooltip */
 .dm-tooltip {
@@ -921,7 +805,7 @@ font-weight:600;
   flex-shrink: 0;
   scrollbar-width: none;
 }
-.dm-thumb-strip::-webkit-scrollbar { display: none; }
+.dm-thumb-strip::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 .dm-thumb-logo {
   width: 40px;
@@ -1082,24 +966,29 @@ font-weight:600;
 .dm-visual-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
   padding: 4px 9px;
   border-top: 1px solid #e8eaed;
   flex-shrink: 0;
 }
 
-/* ── Upload button ───────────────────────────────────────────────────────────── */
+/* ── Upload button — shrink-to-content, pinned to the right ─────────────────── */
 .dm-page .dm-upload-btn {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 21px !important;
-  padding: 0 10px !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 5px !important;
+  width: fit-content !important;
+  max-width: fit-content !important;
+  flex: 0 0 auto !important;
+  height: 18px !important;
+  padding: 0 8px !important;
+  margin: 0 0 0 auto !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 4px !important;
   background: #ffffff !important;
   color: #1a2744 !important;
-  font-size: 9px !important;
+  font-size: 8px !important;
   font-weight: 600 !important;
   white-space: nowrap !important;
   transition: background 0.15s, border-color 0.15s, color 0.15s !important;
@@ -1127,11 +1016,9 @@ font-weight:600;
   color: #374151;
   line-height: 1.6;
   white-space: pre-wrap;
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
 }
-.dm-message-body::-webkit-scrollbar { width: 4px; }
-.dm-message-body::-webkit-scrollbar-thumb { background: #e8eaed; border-radius: 5px; }
+.dm-message-body::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .dm-page .dm-message-editor {
   width: 100% !important;
   height: 100% !important;
@@ -1153,15 +1040,22 @@ font-weight:600;
 }
 .dm-page .dm-msg-edit-btn,
 .dm-page .dm-msg-save-btn {
-  height: 18px !important;
-  padding: 0 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  max-width: fit-content !important;
+  flex: 0 0 auto !important;
+  height: 16px !important;
+  padding: 0 7px !important;
+  margin: 0 0 0 auto !important;
   border-radius: 4px !important;
   font-size: 8px !important;
   font-weight: 600 !important;
   transition: background 0.15s !important;
 }
 .dm-page .dm-msg-edit-btn {
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   background: #fff !important;
   color: #374151 !important;
 }
@@ -1176,8 +1070,11 @@ font-weight:600;
 /* Bottom action buttons */
 .dm-bottom-actions {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
   border-top: 1px solid #e8eaed;
+  background: #fff;
   min-height: 32px;
   flex-shrink: 0;
 }
@@ -1192,25 +1089,24 @@ font-weight:600;
   justify-content: center !important;
   gap: 4px !important;
   flex: 1 !important;
-  padding: 8px 6px !important;
+  height: 27px !important;
+  padding: 0 10px !important;
   border: none !important;
-  border-right: 1px solid #e8eaed !important;
-  border-radius: 0 !important;
-  background: #fff !important;
+  border-radius: 14px !important;
+  background: #F2F1FD !important;
   font-size: 9px !important;
-  font-weight: 500 !important;
-  color: #374151 !important;
+  font-weight: 600 !important;
+  color: #1a2744 !important;
   white-space: nowrap !important;
   transition: background 0.15s !important;
   cursor: pointer !important;
 }
-.dm-action-wrap:last-child .dm-action-btn { border-right: none !important; }
-.dm-page .dm-action-btn:hover { background: #f9fafb !important; }
+.dm-page .dm-action-btn:hover { background: #E7E4FB !important; }
 .dm-page .dm-action-btn--submit {
-  background:var(--primary) !important;
+  background: linear-gradient(90deg, #4E48A4 0%, #6F59E7 100%) !important;
   color: #fff !important;
 }
-.dm-page .dm-action-btn--submit:hover { background: #253261 !important; }
+.dm-page .dm-action-btn--submit:hover { filter: brightness(1.06) !important; }
 
 /* Dropdowns */
 .dm-dropdown {
@@ -1260,49 +1156,6 @@ font-weight:600;
 .dm-dropdown-empty { padding: 6px 8px; font-size: 8px; color: #9ca3af; text-align: center; }
 
 /* =============================================================================
-   STAGE BAR
-============================================================================= */
-.dm-stagebar {
-  display: flex;
-  align-items: center;
-  height: 29px;
-  min-height: 29px;
-  width: 100%;
-  padding: 0 6px;
-  background: #fff;
-  border-top: 1px solid #e8eaed;
-  flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.dm-stagebar::-webkit-scrollbar { display: none; }
-
-.dm-stagebar-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 9px;
-  height: 100%;
-  border-right: 1px solid #e8eaed;
-  flex: 1;
-  min-width: 0;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.12s;
-  white-space: nowrap;
-}
-.dm-stagebar-item:last-of-type { border-right: none; }
-.dm-stagebar-item:hover { background: #f3f4f6; }
-.dm-stagebar-icon  { font-size: 10px; line-height: 1; flex-shrink: 0; }
-.dm-stagebar-label { font-size: 9px; font-weight: 600; }
-.dm-stagebar-count { font-size: 9px; font-weight: 700; }
-.dm-stagebar-refresh {
-  margin-left: 5px;
-  flex-shrink: 0;
-  flex: 0 !important;
-}
-
-/* =============================================================================
    MODALS
 ============================================================================= */
 .dm-overlay {
@@ -1332,6 +1185,38 @@ font-weight:600;
   max-height: 90vh;
 }
 .dm-modal--feedback { width: 345px; }
+.dm-modal--expand { width: 480px; }
+.dm-page .dm-expand-textarea {
+  width: 100% !important;
+  min-height: 260px !important;
+  padding: 10px !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-family: inherit !important;
+  color: #1a2744 !important;
+  background: #fff !important;
+  resize: vertical !important;
+  outline: none !important;
+  line-height: 1.6 !important;
+  transition: border-color 0.15s;
+}
+.dm-page .dm-expand-textarea:focus { border-color: #4A90E2 !important; }
+.dm-page .dm-expand-textarea:disabled { background: #f9fafb !important; color: #9ca3af !important; }
+
+/* Expand modal footer — full-width, centered "Done" button */
+.dm-modal--expand .dm-modal-footer {
+  justify-content: center;
+  padding: 10px 14px 14px;
+}
+.dm-page .dm-modal--expand .dm-modal-btn--save {
+  width: 100% !important;
+  justify-content: center !important;
+  height: 34px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+}
+
 .dm-modal-header {
   display: flex;
   align-items: center;
@@ -1402,11 +1287,9 @@ font-weight:600;
   flex: 1;
   padding: 10px 12px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
 }
-.dm-modal-body::-webkit-scrollbar { width: 4px; }
-.dm-modal-body::-webkit-scrollbar-thumb { background: #e8eaed; border-radius: 5px; }
+.dm-modal-body::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .dm-modal-body--scroll { overflow-y: auto; }
 .dm-modal-footer {
   display: flex;
@@ -1432,7 +1315,7 @@ font-weight:600;
 .dm-page .dm-modal-group textarea {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   color: #1a2744 !important;
@@ -1458,7 +1341,7 @@ font-weight:600;
   cursor: pointer !important;
 }
 .dm-page .dm-modal-btn--cancel {
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   background: #fff !important;
   color: #374151 !important;
 }
@@ -1566,7 +1449,7 @@ font-weight:600;
 .dm-page .docket-field-textarea {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   font-family: inherit !important;
@@ -1609,7 +1492,7 @@ font-weight:600;
   flex: 1;
   resize: none;
   padding: 5px 6px;
-  border: 1px solid var(--border);
+  border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: 9px;
   font-family: inherit;
@@ -1671,7 +1554,7 @@ font-weight:600;
 .dm-page .planner-datepicker {
   width: 100% !important;
   padding: 5px 6px !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid #d1d5db !important;
   border-radius: 5px !important;
   font-size: 9px !important;
   color: #1a2744 !important;
@@ -1682,23 +1565,25 @@ font-weight:600;
 .dm-page .planner-datepicker:focus { border-color: #4A90E2 !important; }
 
 /* =============================================================================
-   GLOBAL THIN SCROLLBARS (scoped)
+   GLOBAL SCROLLBAR VISUALS — hidden everywhere in .dm-page.
+   Scrolling still works (wheel/trackpad/drag); only the visible track/thumb
+   is removed so no scrollbar ever appears in the UI.
 ============================================================================= */
 .dm-page * {
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.dm-page *::-webkit-scrollbar { width: 4px; height: 4px; }
-.dm-page *::-webkit-scrollbar-thumb { background: #e8eaed; border-radius: 5px; }
+.dm-page *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
 
 /* =============================================================================
    RESPONSIVE
 ============================================================================= */
 @media (max-width: 1100px) {
   .dm-left-col { width: 42%; }
-  .dm-stagebar-label { font-size: 8px; }
-  .dm-stagebar-count { font-size: 8px; }
-  .dm-stagebar-item  { padding: 0 6px; gap: 2px; }
 }
 
 @media (max-width: 900px) {
@@ -1706,10 +1591,10 @@ font-weight:600;
   .dm-thumb-strip { width: 42px; min-width: 42px; }
   .dm-carousel-item { min-width: 120px; max-width: 120px; }
   .dm-carousel-item-date { display: none; }
-  .dm-stagebar-label { display: none; }
-  .dm-stagebar-item  { padding: 0 5px; }
-  .dm-topbar-new { padding: 0 6px; gap: 4px; }
-  .dm-search-bar { min-width: 75px; }
+  .dm-carousel-side-icons { padding: 4px; gap: 4px; }
+  .dm-page .dm-carousel-info-btn,
+  .dm-page .dm-carousel-labels-btn { width: 16px !important; height: 16px !important; min-width: 16px !important; min-height: 16px !important; }
+  .dm-page .dm-generate-btn { min-width: 76px !important; padding: 0 12px !important; }
 }
 
 @media (max-width: 700px) {
@@ -1736,18 +1621,19 @@ font-weight:600;
   }
   .dm-right-col { flex: 1; min-height: 50vh; }
   .dm-carousel-item { min-width: 48%; }
-  .dm-topbar-left { display: none; }
-  .dm-search-bar { min-width: 60px; }
-  .dm-stagebar-item { flex: 0 0 auto; }
-  .dm-stagebar-label { display: none; }
-  .dm-stagebar-count { font-size: 8px; }
+  .dm-page .dm-chat-input-row { height: auto !important; flex-wrap: wrap !important; }
+  .dm-page .dm-chat-input-wrap { flex: 1 1 100% !important; }
+  .dm-page .dm-generate-btn { flex: 1 1 100% !important; min-width: 0 !important; }
 }
 
 @media (max-width: 480px) {
-  .dm-search-bar { display: none; }
   .dm-carousel-item { min-width: 80%; }
   .dm-form-label { width: 52px; font-size: 8px; }
   .dm-left-col { min-height: 60vh; }
+  .dm-page .dm-generate-btn { min-width: 64px !important; padding: 0 10px !important; }
+  .dm-field-overlay { right: 4px !important; bottom: 4px !important; gap: 3px !important; }
+  .dm-field-overlay .dm-char-count { font-size: 7px !important; padding: 1px 3px !important; }
+  .dm-page .dm-field-overlay .dm-expand-btn { width: 16px !important; height: 16px !important; min-width: 16px !important; min-height: 16px !important; }
 }
 
 /* =============================================================================
@@ -1846,7 +1732,7 @@ font-weight:600;
   flex: 1;
   padding: 14px;
   overflow-y: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
 .dm-info-grid {
@@ -1899,8 +1785,7 @@ font-weight:600;
   flex: 1;
   padding: 14px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #e8eaed transparent;
+  scrollbar-width: none;
 }
 .dm-label-sidebar {
   display: flex;

@@ -4,6 +4,31 @@
 
 * { box-sizing: border-box; }
 
+/* ========== SCOPED BUTTON RESET ==========
+   global.css defines an unscoped `button { width:100%; margin:10px 0; ... }`
+   rule that applies to every <button> in the app. Class selectors here
+   (e.g. .month-btn) already win the specificity fight on properties they
+   redeclare (width, padding, background, font-size...), but `margin` was
+   never redeclared anywhere in this file — so global.css's `margin: 10px 0`
+   was silently leaking onto every button on this page.
+
+   In .months-list that meant 12 stacked buttons each picking up 20px of
+   unintended vertical margin (~240px total), fighting the flex `gap`
+   this file uses for spacing and blowing out the panel's height at every
+   breakpoint — which is why the month list was the one part of the page
+   that didn't respond cleanly to viewport changes. It also silently broke
+   width:auto expectations on buttons like .project-card .ai-btn.
+
+   Resetting margin/width here, once, makes this file the single source
+   of truth for its own buttons instead of depending on what global.css
+   happens to define. Every button below that needs a specific width
+   already re-declares it explicitly (with equal or higher specificity),
+   so this is safe. */
+.planner-page button {
+  margin: 0;
+  width: auto;
+}
+
 /* ========== PAGE WRAPPER ========== */
 .planner-page {
   width: 100%;
@@ -30,7 +55,7 @@
 
 /* ========== SIDEBAR ========== */
 .sidebar {
-  width: 104zpx;
+  width: 104px;
   flex-shrink: 0;
   background: #4B479E;
   border-radius: 9.6px;
@@ -211,21 +236,6 @@
   font-size: 12.8px;
   font-weight: 500;
   color: #6b7280;
-}
-
-.filter-buttons{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    background:#f3f4f6;
-
-    padding:4.8px 9.6px;
-
-    border-radius:17.6px;
 }
 
 .filter-btn {
@@ -926,8 +936,43 @@
 
 /* ============================================================
    RESPONSIVE BREAKPOINTS
+
+   Ladder (large -> small), each block only overrides what actually
+   needs to change at that width — everything else inherits from the
+   step above it:
+
+     ≥1801px   ultra-wide      cap + center the content, base styles
+                                stretch to fill the rest
+     1281–1800 desktop         base rules above (no query needed)
+     1025–1280 small laptop    gentle tightening before the bigger
+                                tablet jump
+      901–1024 tablet landscape
+      769–900  tablet portrait
+      601–768  large phone / small tablet, still fit-to-viewport
+      481–600  phone           layout switches to a stacked,
+                                naturally-scrolling page
+      381–480  small phone
+      ≤380     very small phone / foldables
+      short landscape phones handled separately via max-height
    ============================================================ */
 
+/* ---------- Ultra-wide: keep the layout from stretching absurdly ---------- */
+@media (min-width: 1801px) {
+  .planner-content {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+}
+
+/* ---------- Small laptop: gentle step down from the desktop defaults ---------- */
+@media (max-width: 1280px) {
+  .sidebar { width: 92px; }
+  .right-panel { width: 160px; }
+  .current-month { font-size: 15px; }
+  .month-btn { font-size: 8.4px !important; }
+}
+
+/* ---------- Tablet landscape ---------- */
 @media (max-width: 1024px) {
   .planner-content { padding: 8px; gap: 8px; }
   .sidebar { width: 76px; padding: 6.4px 4px; }
@@ -945,6 +990,37 @@
   .calendar-grid { gap: 3.2px; }
   .calendar-weekdays { gap: 3.2px; }
 }
+
+/* ---------- Tablet portrait: bridges the gap before mobile stacking ---------- */
+@media (max-width: 900px) {
+  .sidebar { width: 68px; }
+  .right-panel { width: 128px; }
+  .project-title { font-size: 8px; }
+  .project-details p { font-size: 6.8px; }
+  .date-display { font-size: 8px; padding: 4px; }
+  .form-row { grid-template-columns: 42% 58%; }
+}
+
+/* ---------- Large phone / small tablet: still fit-to-viewport, tighter still ---------- */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; padding: 4.8px 3.2px; }
+  .right-panel { width: 112px; padding: 6.4px; }
+  .current-month { font-size: 12px; }
+  .year-display { font-size: 9.6px; }
+  .weekday-cell { font-size: 7.2px; }
+  .day-number { font-size: 8px; }
+  .calendar-day { padding: 3.2px; gap: 1.6px; }
+  .occasion-chip { font-size: 6.4px; }
+  .project-card { padding: 4.8px 6.4px; }
+  .modal-content { max-width: 340px; }
+}
+
+/* ============================================================
+   From here down the layout stops trying to fit everything into
+   one screen and switches to a naturally stacking, scrollable page
+   — sidebar and right panel become horizontal strips, the calendar
+   grid gets fixed-height rows instead of stretching to fill space.
+   ============================================================ */
 
 @media (max-width: 600px) {
   .planner-page { height: auto; min-height: 100%; overflow: auto; }
@@ -997,6 +1073,8 @@
     font-size: 8px !important;
     white-space: nowrap !important;
     text-align: center !important;
+    /* comfortable tap target now that months sit in a horizontal strip */
+    min-height: 28px;
   }
 
   .month-btn.always-active {
@@ -1061,6 +1139,98 @@
 
   /* Multi-chips wrap tightly on small screens */
   .multi-chip { font-size: 7.2px; padding: 1.6px 4px 1.6px 4.8px; }
+
+  /* Form rows lose the fixed 35/65 split and stack label above input —
+     at this width a percentage-split label column leaves too little
+     room for the input itself. */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 3.2px;
+    padding: 4.8px 0;
+  }
+
+  .form-label { padding-top: 0; }
+}
+
+/* ---------- Small phone ---------- */
+@media (max-width: 480px) {
+  .planner-title span { font-size: 8.8px; }
+  .month-btn { font-size: 7.2px !important; padding: 3.2px 4.8px !important; }
+  .current-month { font-size: 11.2px; }
+  .calendar-grid { grid-auto-rows: 36px; }
+  .weekday-cell { font-size: 6.4px; }
+  .day-number { font-size: 7.2px; }
+  .project-card { min-width: 92px; padding: 4.8px 6.4px; }
+  .project-title { font-size: 8.8px; }
+  .date-display { font-size: 8.8px; padding: 4px 6.4px; }
+
+  /* Two fields side-by-side (e.g. title + date) get cramped once the
+     modal itself is only ~90% of a ~360–480px screen — stack them. */
+  .schedule-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6.4px;
+  }
+  .schedule-title-field,
+  .schedule-picker-field { flex: none; width: 100%; }
+
+  .modal-cancel-btn,
+  .modal-save-btn { width: 100%; }
+  .modal-actions { flex-direction: column; gap: 6.4px; }
+}
+
+/* ---------- Very small phone / foldables ---------- */
+@media (max-width: 380px) {
+  .planner-content { padding: 4.8px; gap: 4.8px; }
+  .sidebar { padding: 4.8px 6.4px; gap: 3.2px; }
+  .planner-title { padding: 0 6.4px 0 0; }
+  .planner-title span { font-size: 8px; }
+  .month-btn { font-size: 6.8px !important; padding: 2.4px 4px !important; }
+  .calendar-grid { grid-auto-rows: 32px; gap: 2.4px; }
+  .calendar-weekdays { gap: 2.4px; }
+  .day-number { font-size: 6.8px; }
+  .occasion-chip { font-size: 5.6px; padding: 0.8px 1.6px; }
+  .right-panel { padding: 6.4px; gap: 6.4px; }
+  .project-card { min-width: 84px; }
+  .modal-tabs { padding: 6.4px 9.6px 0; }
+  .modal-body { padding: 6.4px 9.6px; }
+}
+
+/* ---------- Short-height landscape phones ----------
+   A landscape phone (e.g. ~667×375) is wider than the 600px stacking
+   breakpoint but far too short for the fit-to-viewport desktop/tablet
+   layout to work — the calendar grid would get crushed to a sliver.
+   Force the same stacked, scrollable layout here based on height
+   rather than width. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .planner-page { height: auto; min-height: 100%; overflow: auto; }
+
+  .planner-content { flex-direction: column; overflow: visible; padding: 6.4px; gap: 6.4px; }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+  }
+
+  .right-panel {
+    width: 100%;
+    flex-direction: row;
+    align-items: flex-start;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+
+  .projects-list { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+  .project-card { min-width: 104px; flex-shrink: 0; }
+
+  .calendar-section { flex: none; overflow: visible; }
+  .calendar-grid { grid-auto-rows: 40px; overflow: visible; }
+
+  .modal-overlay { padding-top: 0; align-items: center; }
+  .modal-content { max-height: 88vh; }
 }
 
 /* ========== OVERFLOW POPUP ========== */
@@ -1220,218 +1390,4 @@
 
 .react-datepicker-popper {
   z-index: 999999 !important;
-}
-
-
-
-/* ── Filter wrapper + dropdown ─────────────────────────────────────────────── */
-.dm-filter-wrapper{
-    position:relative;
-    display:flex;
-    align-items:center;
-}
-
-.dm-filter-dropdown-new{
-    position:absolute;
-
-    top:calc(100% + 4px);
-    right:0;
-
-    width:170px;
-    min-width:170px;
-    max-width:170px;
-
-    padding:6px;
-
-    border-radius:6px;
-    border:1px solid #E5E7EB;
-
-    background:#fff;
-
-    box-shadow:0 8px 20px rgba(0,0,0,.12);
-
-    max-height:250px;
-
-    overflow-y:auto;
-    overflow-x:hidden;
-
-    z-index:99999;
-}
-
-
-
-.dm-filter-dropdown-new::-webkit-scrollbar{
-    width:4.8px;
-}
-
-.dm-filter-dropdown-new::-webkit-scrollbar-thumb{
-    background:#cbd5e1;
-    border-radius:16px;
-}
-
-.dm-filter-dropdown-new::-webkit-scrollbar-track{
-    background:transparent;
-}
-
-
-.dm-filter-header{
-    font-size:11px;
-    font-weight:700;
-    color:#4B479E;
-
-    padding-bottom:6px;
-    margin-bottom:8px;
-
-    border-bottom:1px solid #eef2f7;
-}
-
-
-.dm-filter-field{
-    margin-bottom:5px;
-    gap:2px;
-}
-
-
-.dm-filter-field label{
-    font-size:7px;
-    font-weight:600;
-    margin-left:2px;
-}
-
-
-.dm-filter-field input,
-.dm-filter-field select,
-.dm-filter-date-input,
-.dm-filter-stage-select{
-
-    width:100%;
-
-    height:28px;
-
-    border:1px solid #D9D6E8;
-    border-radius:6px;
-
-    padding:0 8px;
-
-    font-size:9px;
-
-    background:#fff;
-    color:#4B479E;
-}
-
-.dm-filter-field input:focus,
-.dm-filter-field select:focus,
-.dm-filter-date-input:focus,
-.dm-filter-stage-select:focus{
-
-    outline:none;
-
-    border-color:#4B479E;
-
-    box-shadow:0 0 0 2.4px rgba(75,71,158,.15);
-}
-
-
-.dm-filter-clear-btn{
-
-    width:100%;
-
-    height:30px;
-
-    margin-top:6px;
-
-    border:none;
-    border-radius:6px;
-
-    background:#4B479E;
-    color:#fff;
-
-    font-size:9px;
-    font-weight:600;
-
-    cursor:pointer;
-}
-
-.dm-filter-clear-btn:hover{
-
-    background:#3C397E;
-}
-
-
-.planner-filter-chip-box{
-    display:flex;
-    align-items:center;
-
-    width:608px;          /* adjust as required */
-    height:30.4px;
-
-    overflow:hidden;
-}
-
-.planner-filter-chips{
-    display:flex;
-    align-items:center;
-    gap:6.4px;
-
-    width:100%;
-    height:100%;
-
-    overflow-x:auto;
-    overflow-y:hidden;
-
-    white-space:nowrap;
-    flex-wrap:nowrap;
-
-    scrollbar-width:thin;
-    scrollbar-color:#C2BFDA transparent;
-}
-
-.planner-filter-chip{
-
-    flex-shrink:0;
-
-    display:flex;
-
-    align-items:center;
-
-    padding:3.2px 9.6px;
-
-    border-radius:12.8px;
-
-    background:#EEECF8;
-
-    border:0.8px solid #D6D2ED;
-
-    color:#4B479E;
-
-    font-size:9.6px;
-
-    font-weight:600;
-
-    white-space:nowrap;
-
-}
-
-
-
-.planner-filter-chip{
-    display:flex;
-    align-items:center;
-    gap:6.4px;
-}
-
-.planner-filter-chip-remove{
-    border:none;
-    background:none;
-    cursor:pointer;
-    font-size:10.4px;
-    opacity:.6;
-    padding:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.planner-filter-chip-remove:hover{
-    opacity:1;
 }

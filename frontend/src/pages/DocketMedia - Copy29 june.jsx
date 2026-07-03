@@ -5,7 +5,7 @@
 // =============================================================================
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/docket.css';
 
 import DatePicker from "react-datepicker";
@@ -337,22 +337,11 @@ const InfoIcon = () => (
     />
   </svg>
 );
-
-const InfoIconWhite = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-    <path d="M12 10V17" stroke="#ffffff" strokeWidth="3" strokeLinecap="round"/>
-    <circle cx="12" cy="6.5" r="1.5" fill="#ffffff"/>
-  </svg>
-);
-
-const LabelsIcon = () => (
+const FilterIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="5" width="18" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
-    <rect x="3" y="11" width="13" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
-    <rect x="3" y="17" width="9" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+    <path d="M4 6H20M7 12H17M10 18H14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
   </svg>
 );
-
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
     <circle cx="11" cy="11" r="8" stroke="#9CA3AF" strokeWidth="2"/>
@@ -478,15 +467,6 @@ const DocketMedia = () => {
 
   const navigate = useNavigate();
 
-  // ── AppFrame filter bridge ──────────────────────────────────────────────
-  // AppFrame owns the header "Filter" dropdown and the footer stage counts.
-  // It passes its live filter values down through <Outlet context={...} />.
-  // We read them here (read-only) and use them, when present, as the source
-  // of truth for the carousel query below — no local filter state, UI, or
-  // any other function in this file is modified.
-  const outletContext = useOutletContext();
-  const appFrameFilters = outletContext?.filters ?? null;
-
   // ── Mode / Media ──────────────────────────────────────────────────────────
   const [mode,       setMode]       = useState('');
   const [subMode,    setSubMode]    = useState('');
@@ -579,6 +559,18 @@ const DocketMedia = () => {
 
 
 
+
+  const FILTER_STAGES = [
+  "discovery",
+  "draft",
+  "generate",
+  "review",
+  "approval",
+  "publish",
+  "closed",
+  "rejected",
+];
+
 const formatDate = (date) => {
 
   const year = date.getFullYear();
@@ -601,95 +593,186 @@ const formatDate = (date) => {
 
 
 
-  // ── Single source of truth for "what filters are active" ───────────────
-  // Prefer the filters coming from AppFrame's header filter dropdown (shared
-  // across every page it wraps, via Outlet context). Fall back to this
-  // page's own local filter state so nothing breaks if DocketMedia is ever
-  // rendered without an AppFrame ancestor. This is the ONLY place that
-  // decides which filter values are "effective" — every fetch that loads
-  // carousel dockets or stage counts must go through it.
-  const effectiveFilters = useMemo(() => ({
-    startDate:  appFrameFilters ? appFrameFilters.startDate  : startDate,
-    endDate:    appFrameFilters ? appFrameFilters.endDate    : endDate,
-    stage:      appFrameFilters ? appFrameFilters.stage      : selectedFilterStage,
-    productId:  appFrameFilters ? appFrameFilters.productId  : selectedFilterProduct,
-    personaId:  appFrameFilters ? appFrameFilters.personaId  : selectedFilterPersona,
-    occasionId: appFrameFilters ? appFrameFilters.occasionId : selectedFilterOccasion,
-    search:     (appFrameFilters ? appFrameFilters.search    : searchText) || "",
-    mediaType:  selectedFilterMediaType,
-    subType:    selectedFilterSubType,
-  }), [
-    appFrameFilters?.startDate,
-    appFrameFilters?.endDate,
-    appFrameFilters?.stage,
-    appFrameFilters?.productId,
-    appFrameFilters?.personaId,
-    appFrameFilters?.occasionId,
-    appFrameFilters?.search,
+    useEffect(() => {
+
+    const fetchFilteredData = async () => {
+
+      try {
+
+        // =====================================
+        // FILTERED CAROUSEL
+        // =====================================
+
+        const params = new URLSearchParams();
+
+          if (startDate) {
+            params.append(
+              "start_date",
+              formatDate(startDate)
+            );
+          }
+
+          if (endDate) {
+            params.append(
+              "end_date",
+              formatDate(endDate)
+            );
+          }
+
+          if (selectedFilterStage) {
+            params.append(
+              "stage",
+              selectedFilterStage
+            );
+          }
+
+
+
+          if (selectedFilterProduct) {
+            params.append(
+              "product_id",
+              selectedFilterProduct
+            );
+          }
+
+          if (selectedFilterPersona) {
+            params.append(
+              "persona_id",
+              selectedFilterPersona
+            );
+          }
+
+
+          if (selectedFilterOccasion) {
+              params.append(
+                "occasion_id",
+                selectedFilterOccasion
+              );
+            }
+
+
+
+
+
+
+          if (selectedFilterMediaType) {
+            params.append(
+              "media_type",
+              selectedFilterMediaType
+            );
+          }
+
+          if (selectedFilterSubType) {
+            params.append(
+              "subtype_name",
+              selectedFilterSubType
+            );
+          }
+
+          if (searchText.trim()) {
+            params.append(
+              "search",
+              searchText.trim()
+            );
+          }
+
+
+
+
+
+
+
+          const docketRes = await fetch(
+            `${API}/planner/carousel-dockets?${params.toString()}`,
+          { headers: AUTH() }
+        );
+
+        const docketData = await docketRes.json();
+
+        if (docketData.success) {
+          setCarouselDockets(docketData.data || []);
+        }
+
+        // =====================================
+        // FILTERED STAGE COUNTS
+        // =====================================
+
+        const stageRes = await fetch(
+          `${API}/planner/stage-counts?${params.toString()}`,
+          { headers: AUTH() }
+        );
+
+        const stageData = await stageRes.json();
+
+        if (stageData.success) {
+          setStageCounts(stageData.data);
+        }
+
+      } catch (err) {
+        console.error("Filter error:", err);
+      }
+    };
+
+    fetchFilteredData();
+
+  }, [
+
     startDate,
     endDate,
+
     selectedFilterStage,
+
     selectedFilterProduct,
     selectedFilterPersona,
+
     selectedFilterOccasion,
+
     selectedFilterMediaType,
     selectedFilterSubType,
+
     searchText,
+
+    carouselPage
+
   ]);
 
-  function buildFilterParams(filters) {
-    // Same param names/shape as PlannerPage's carousel-dockets call, so both
-    // pages ask the backend for exactly the same thing given the same filters.
-    const params = new URLSearchParams();
 
-    if (filters.startDate)  params.append("start_date", formatDate(filters.startDate));
-    if (filters.endDate)    params.append("end_date",   formatDate(filters.endDate));
-    if (filters.stage)      params.append("stage",      filters.stage);
-    if (filters.productId)  params.append("product_id", filters.productId);
-    if (filters.personaId)  params.append("persona_id", filters.personaId);
-    if (filters.occasionId) params.append("occasion_id", filters.occasionId);
-    if (filters.mediaType)  params.append("media_type",  filters.mediaType);
-    if (filters.subType)    params.append("subtype_name", filters.subType);
-    if (filters.search && filters.search.trim()) params.append("search", filters.search.trim());
 
-    return params;
-  }
 
-  // ── Fetch carousel dockets + stage counts, always through the active filters ──
-  // This is the single fetch path used on mount, whenever a filter changes,
-  // whenever the carousel page changes, and whenever anything else needs to
-  // reload the list (e.g. after creating/saving an execute). No other
-  // function in this file should call the carousel-dockets or stage-counts
-  // endpoints directly — route everything through here so the filter is
-  // always the source of truth.
-  const fetchCarouselAndStageCounts = useCallback(async (filters) => {
-    try {
-      const params = buildFilterParams(filters);
 
-      const docketRes  = await fetch(`${API}/planner/carousel-dockets?${params.toString()}`, { headers: AUTH() });
-      const docketData = await docketRes.json();
-      if (docketData.success) {
-        setCarouselDockets(docketData.data || []);
-        if (typeof docketData.total === "number") setCarouselTotal(docketData.total);
-      }
 
-      const stageRes  = await fetch(`${API}/planner/stage-counts?${params.toString()}`, { headers: AUTH() });
-      const stageData = await stageRes.json();
-      if (stageData.success) setStageCounts(stageData.data);
-    } catch (err) {
-      console.error("Filter error:", err);
-    }
-  }, []);
 
   useEffect(() => {
-    fetchCarouselAndStageCounts(effectiveFilters);
-  }, [effectiveFilters, fetchCarouselAndStageCounts]);
+
+    const handleClickOutside = (event) => {
+
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target)
+      ) {
+        setShowFilterDropdown(false);
+      }
+
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+
+  }, []);
 
 
 
 
-
-
+  
 
   // ── Product / Persona ─────────────────────────────────────────────────────
   const [productList,         setProductList]         = useState([]);
@@ -728,9 +811,10 @@ const formatDate = (date) => {
   const [selectedHistoryPrompt, setSelectedHistoryPrompt] = useState(null);
   const [visualHistoryList,     setVisualHistoryList]     = useState([]);
 
-  const [leftPanel, setLeftPanel] = useState(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
-
+  const [showLabelsModal, setShowLabelsModal] =
+  useState(false);
 
 
   // ── Visual output ─────────────────────────────────────────────────────────
@@ -797,6 +881,11 @@ const formatDate = (date) => {
   const [showNamesDropdown, setShowNamesDropdown] = useState(false);
 
 
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  
+
+  const filterRef = useRef(null);
+
   // ── Toast ─────────────────────────────────────────────────────────────────
   const [showCopyToast,    setShowCopyToast]    = useState(false);
   const [showSaveToast,    setShowSaveToast]    = useState(false);
@@ -815,10 +904,6 @@ const formatDate = (date) => {
   const [modalBoxType,  setModalBoxType]  = useState('optional');
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldValue, setNewFieldValue] = useState('');
-
-  // ── Expand-field modal (UI-only; reuses the same state setters as the
-  //    inline fields, so Save/generate/etc. workflows are untouched) ────────
-  const [expandField, setExpandField] = useState(null);
 
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [businessProfile, setBusinessProfile] = useState(null);
@@ -847,6 +932,25 @@ const formatDate = (date) => {
     const d = new Date(uploadedDateTime);
     return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
   }, [uploadedDateTime]);
+
+  const activeFilters = useMemo(() => {
+    const pills = [];
+    if (selectedFilterStage) pills.push({ key: 'stage', label: selectedFilterStage, clear: () => setSelectedFilterStage("") });
+    if (selectedFilterProduct) {
+      const p = productList.find(x => String(x.product_id) === String(selectedFilterProduct));
+      pills.push({ key: 'product', label: p?.product_name || 'Product', clear: () => setSelectedFilterProduct("") });
+    }
+    if (selectedFilterPersona) {
+      const p = personaList.find(x => String(x.persona_id) === String(selectedFilterPersona));
+      pills.push({ key: 'persona', label: p?.persona_name || 'Persona', clear: () => setSelectedFilterPersona("") });
+    }
+    if (selectedFilterOccasion) {
+      const o = occasionList.find(x => String(x.occasion_id) === String(selectedFilterOccasion));
+      pills.push({ key: 'occasion', label: o?.title || 'Topic', clear: () => setSelectedFilterOccasion("") });
+    }
+    if (searchText.trim()) pills.push({ key: 'search', label: `"${searchText}"`, clear: () => setSearchText("") });
+    return pills;
+  }, [selectedFilterStage, selectedFilterProduct, selectedFilterPersona, selectedFilterOccasion, searchText, productList, personaList, occasionList]);
 
   // scroll chat to bottom
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversationBubbles]);
@@ -1055,27 +1159,22 @@ const formatDate = (date) => {
          }),
 
       fetch(`${API}/docket/${docketId}/product`, { headers })
-        .then(r => r.json())
-        .then(data => {
-          if (!data.success) return;
+        .then(r => r.json()).then(data => { if (data.success) setSelectedProductData(data.data);
 
-          setSelectedProductData(data.data);
+          if (
+            data.data.images &&
+            data.data.images.length
+          ) {
 
-          setSelectedProductImage(prev => {
+            setSelectedProductImage(
+              data.data.images[0].img_url
+            );
 
-            // Keep user's current selection
-            if (
-              prev &&
-              data.data.images?.some(img => img.img_url === prev)
-            ) {
-              return prev;
-            }
+          }
 
-            // Only initialize once
-            return data.data.images?.[0]?.img_url || null;
 
-          });
-        }),
+
+         }),
 
       fetch(`${API}/docket/${docketId}/persona`, { headers })
         .then(r => r.json()).then(data => { if (data.success) setSelectedPersonaData(data.data); }),
@@ -1178,11 +1277,21 @@ const formatDate = (date) => {
 
 
 
-    // NOTE: stage-counts and carousel-dockets are intentionally NOT fetched
-    // here unfiltered. They are always loaded through
-    // fetchCarouselAndStageCounts(effectiveFilters, ...) so the AppFrame
-    // filter remains the single source of truth for what's shown — see the
-    // dedicated effect above.
+    fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
+      .then(r => r.json())
+      .then(data => { if (data.success) setStageCounts(data.data); })
+      .catch(console.error);
+
+    fetch(`${API}/planner/carousel-dockets`, {
+      headers: AUTH()
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setCarouselDockets(data.data || []);
+        }
+      })
+      .catch(console.error);
 
   }, [docketId]);
 
@@ -1473,10 +1582,20 @@ const formatDate = (date) => {
 
   const reloadCarousel = async () => {
     try {
-      // Always reload through the active filters, never unfiltered, so a
-      // freshly created/updated execute still respects whatever filter is
-      // currently applied (or drops out of view if it no longer matches).
-      await fetchCarouselAndStageCounts(effectiveFilters);
+
+      const res = await fetch(
+        `${API}/planner/carousel-dockets`,
+        {
+          headers: AUTH()
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setCarouselDockets(data.data || []);
+      }
+
     } catch (err) {
       console.error(err);
     }
@@ -1728,19 +1847,7 @@ const formatDate = (date) => {
       }
     } catch (err) { setIsGeneratingImage(false); console.error(err); }
     setIsEditMode(false);
-  }, [mode,
-    mediaType,
-    subType,
-    businessProfile,
-    finalPersonaData,
-    selectedProductData,
-    selectedProductImage,
-    selectedLogo,
-    fieldValues,
-    docketId,
-    mandatoryFields,
-    optionalFields,
-    assignedUser]);
+  }, [mode, mediaType, subType, businessProfile, finalPersonaData, selectedProductData, fieldValues, docketId, mandatoryFields, optionalFields]);
 
 
   // ==========================================================================
@@ -1893,16 +2000,25 @@ const formatDate = (date) => {
     const newPage = carouselPage + dir;
     if (newPage < 1 || newPage > totalPages) return;
     setCarouselPage(newPage);
-    // NOTE: this no longer fires its own fetch — it used to call an
-    // unfiltered `/planner/dockets-carousel` endpoint directly, which is
-    // exactly the kind of stray call that let unfiltered data creep back
-    // in. Pagination itself (page/page_size against the backend) isn't
-    // wired up in the filtered endpoint yet — that's a separate, pre-existing
-    // gap (carouselTotal is also never populated from the API today), not
-    // part of this filter-persistence fix. Flagging it in case you want it
-    // addressed next.
+    fetch(`${API}/planner/dockets-carousel?page=${newPage}&page_size=${CAROUSEL_PER_PAGE}`, { headers: AUTH() })
+      .then(r => r.json()).then(data => { if (data.success) setCarouselDockets(data.data || []); });
   };
 
+
+  // ==========================================================================
+  //  STAGE BAR CONFIG
+  // ==========================================================================
+
+  const STAGE_BAR = [
+    { key: 'discovery', label: 'Discovery', color: '#E65100', icon: '🔍' },
+    { key: 'draft',     label: 'Draft',     color: '#2E7D32', icon: '✏️' },
+    { key: 'generate',  label: 'Generate',  color: '#4527A0', icon: '✨' },
+    { key: 'review',    label: 'Review',    color: '#1565C0', icon: '📋' },
+    { key: 'approve',   label: 'Approve',   color: '#1B5E20', icon: '✅' },
+    { key: 'publish',   label: 'Publish',   color: '#E65100', icon: '📤' },
+    { key: 'closed',    label: 'Closed',    color: '#4E342E', icon: '🔒' },
+    { key: 'rejected',  label: 'Rejected',  color: '#B71C1C', icon: '❌' },
+  ];
 
   const descTitle = executeDescription.length;
   const descMax   = 5000;
@@ -1919,25 +2035,370 @@ const formatDate = (date) => {
   return (
     <div className="dm-page">
 
-      {/* ════════ CAROUSEL ════════════════════════════════════════════════════ */}
-      <div className="dm-carousel-new">
-        <div className="dm-carousel-side-icons">
-          <button
-            className="dm-carousel-info-btn"
-            title="Info"
-            onClick={() => setLeftPanel(leftPanel === "info" ? null : "info")}
-          >
-            <InfoIconWhite />
-          </button>
-          <button
-            className="dm-carousel-labels-btn"
-            title="Labels"
-            onClick={() => setLeftPanel(leftPanel === "labels" ? null : "labels")}
-          >
-            <LabelsIcon />
-          </button>
+      {/* ════════ TOP BAR ════════════════════════════════════════════════════ */}
+      <div className="dm-topbar-new">
+        <div className="dm-topbar-left">
+          <button className="dm-topbar-icon-btn"><GridIcon /></button>
+          <button className="dm-topbar-icon-btn"><MenuIcon /></button>
         </div>
 
+        <div className="dm-topbar-center">
+          <div className="dm-filter-wrapper" ref={filterRef}>
+            <button className="dm-filter-pill-btn" onClick={() => setShowFilterDropdown(v => !v)}>
+              <FilterIcon /> Filter
+              <svg width="10" height="10" viewBox="0 0 14 14" fill="none" style={{ marginLeft: 4 }}>
+                <line x1="1" y1="1" x2="13" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="13" y1="1" x2="1" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+
+            {showFilterDropdown && (
+              <div className="dm-filter-dropdown-new">
+                <div className="dm-filter-header">Filter Executes</div>
+
+                <div className="dm-filter-field">
+                  <label>Start Date</label>
+                  <DatePicker
+                    selected={startDate}
+                    onChange={(date) => setStartDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select start date"
+                    className="dm-filter-date-input"
+                  />
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>End Date</label>
+                  <DatePicker
+                    selected={endDate}
+                    onChange={(date) => setEndDate(date)}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select end date"
+                    className="dm-filter-date-input"
+                  />
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Stage</label>
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterStage}
+                    onChange={(e) => setSelectedFilterStage(e.target.value)}
+                  >
+                    <option value="">All Stages</option>
+                    {FILTER_STAGES.map(stage => (
+                      <option key={stage} value={stage}>
+                        {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Topic</label>
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterOccasion}
+                    onChange={(e) => setSelectedFilterOccasion(e.target.value)}
+                  >
+                    <option value="">All Topics</option>
+                    {occasionList.map((event) => (
+                      <option key={event.occasion_id} value={event.occasion_id}>
+                        {event.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Product</label>
+                  <select
+                    value={selectedFilterProduct}
+                    onChange={(e) => setSelectedFilterProduct(e.target.value)}
+                  >
+                    <option value="">All Products</option>
+                    {productList.map(product => (
+                      <option key={product.product_id} value={product.product_id}>
+                        {product.product_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Persona</label>
+                  <select
+                    value={selectedFilterPersona}
+                    onChange={(e) => setSelectedFilterPersona(e.target.value)}
+                  >
+                    <option value="">All Personas</option>
+                    {personaList.map(persona => (
+                      <option key={persona.persona_id} value={persona.persona_id}>
+                        {persona.persona_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="dm-filter-field">
+                  <label>Search</label>
+                  <input
+                    type="text"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder="Search title"
+                  />
+                </div>
+
+                <button
+                  className="dm-filter-clear-btn"
+                  onClick={() => {
+                    setStartDate(null);
+                    setEndDate(null);
+                    setSelectedFilterStage("");
+                    setSelectedFilterProduct("");
+                    setSelectedFilterPersona("");
+                    setSelectedFilterMediaType("");
+                    setSelectedFilterOccasion("");
+                    setSelectedFilterSubType("");
+                    setSearchText("");
+                    setShowFilterDropdown(false);
+                  }}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            )}
+
+
+            
+          </div>
+
+          {activeFilters.map(f => (
+            <div key={f.key} className="dm-active-filter-pill">
+              <span>{f.label}</span>
+              <button onClick={f.clear}>✕</button>
+            </div>
+          ))}
+        </div>
+
+        <div className="dm-topbar-right">
+          <div className="dm-search-bar">
+            <SearchIcon />
+            <input type="text" placeholder="Search" value={searchText} onChange={e => setSearchText(e.target.value)}/>
+          </div>
+          <button className="dm-topbar-icon-btn" onClick={() => setShowCreateExecuteModal(true)} title="Create Execute">
+            <PlusCircleIcon />
+
+          </button>
+
+
+
+          <div className="dm-filter-wrapper" ref={filterRef}>
+
+            <button
+              className="dm-filter-pill-btn"
+              onClick={() => setShowFilterDropdown(v => !v)}
+            >
+              <FilterIcon />
+              <span>Filter</span>
+            </button>
+
+            {showFilterDropdown && (
+
+              <div className="dm-filter-dropdown-new">
+
+                <div className="dm-filter-header">
+                  Filter Executes
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Start Date</label>
+
+                  <DatePicker
+                    selected={startDate}
+                    onChange={setStartDate}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select start date"
+                    className="dm-filter-date-input"
+                  />
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>End Date</label>
+
+                  <DatePicker
+                    selected={endDate}
+                    onChange={setEndDate}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText="Select end date"
+                    className="dm-filter-date-input"
+                  />
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Stage</label>
+
+                  <select
+                    className="dm-filter-stage-select"
+                    value={selectedFilterStage}
+                    onChange={(e)=>setSelectedFilterStage(e.target.value)}
+                  >
+
+                    <option value="">
+                      All Stages
+                    </option>
+
+                    {FILTER_STAGES.map(stage=>(
+                      <option key={stage} value={stage}>
+                        {stage.charAt(0).toUpperCase()+stage.slice(1)}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Topic</label>
+
+                  <select
+                    value={selectedFilterOccasion}
+                    onChange={(e)=>setSelectedFilterOccasion(e.target.value)}
+                  >
+
+                    <option value="">
+                      All Topics
+                    </option>
+
+                    {occasionList.map(item=>(
+                      <option
+                        key={item.occasion_id}
+                        value={item.occasion_id}
+                      >
+                        {item.title}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Product</label>
+
+                  <select
+                    value={selectedFilterProduct}
+                    onChange={(e)=>setSelectedFilterProduct(e.target.value)}
+                  >
+
+                    <option value="">
+                      All Products
+                    </option>
+
+                    {productList.map(product=>(
+                      <option
+                        key={product.product_id}
+                        value={product.product_id}
+                      >
+                        {product.product_name}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Persona</label>
+
+                  <select
+                    value={selectedFilterPersona}
+                    onChange={(e)=>setSelectedFilterPersona(e.target.value)}
+                  >
+
+                    <option value="">
+                      All Personas
+                    </option>
+
+                    {personaList.map(persona=>(
+                      <option
+                        key={persona.persona_id}
+                        value={persona.persona_id}
+                      >
+                        {persona.persona_name}
+                      </option>
+                    ))}
+
+                  </select>
+
+                </div>
+
+                <div className="dm-filter-field">
+
+                  <label>Search</label>
+
+                  <input
+                    type="text"
+                    value={searchText}
+                    onChange={(e)=>setSearchText(e.target.value)}
+                    placeholder="Search title"
+                  />
+
+                </div>
+
+                <button
+                  className="dm-filter-clear-btn"
+                  onClick={() => {
+
+                    setStartDate(null);
+                    setEndDate(null);
+
+                    setSelectedFilterStage("");
+                    setSelectedFilterProduct("");
+                    setSelectedFilterPersona("");
+                    setSelectedFilterOccasion("");
+                    setSelectedFilterMediaType("");
+                    setSelectedFilterSubType("");
+
+                    setSearchText("");
+
+                    setShowFilterDropdown(false);
+
+                  }}
+                >
+                  Clear Filter
+                </button>
+
+              </div>
+
+            )}
+
+          </div>
+
+
+
+
+
+          <button className="dm-topbar-avatar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" stroke="#1a2744" strokeWidth="2"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#1a2744" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ════════ CAROUSEL ════════════════════════════════════════════════════ */}
+      <div className="dm-carousel-new">
         <button
           className="dm-carousel-nav-btn"
           onClick={() => document.getElementById("executeCarousel")?.scrollBy({ left: -300, behavior: "smooth" })}
@@ -1996,432 +2457,48 @@ const formatDate = (date) => {
       </div>
 
       {/* ════════ MAIN BODY ═══════════════════════════════════════════════════ */}
-      <div className={`dm-body ${leftPanel ? "dm-body-info-open" : ""}`}>
+      <div className="dm-body">
 
-          {/* ───────────────── INFO PANEL ───────────────── */}
-
-          {leftPanel === "info" && (
-
-          <div className="dm-info-panel">
-
-              <div className="dm-info-card-new">
-
-                  <div className="dm-info-header">
-
-                      <h3>Execute Information</h3>
-
-                  </div>
-
-                  <div className="dm-info-body">
-
-                      <div className="dm-info-grid">
-
-                          <label>Topic</label>
-
-                          <input
-                              type="text"
-                              value={selectedFilterOccasion || ""}
-                              readOnly
-                          />
-
-                          <label>Date</label>
-
-                          <input
-                              type="text"
-                              value={formattedDateTime}
-                              readOnly
-                          />
-
-                          <label>Stage</label>
-
-                          <input
-                              type="text"
-                              value={currentStage}
-                              readOnly
-                          />
-
-                          <label>Media</label>
-
-                          <input
-                              type="text"
-                              value={mediaType}
-                              readOnly
-                          />
-
-                          <label>Sub Type</label>
-
-                          <input
-                              type="text"
-                              value={subType}
-                              readOnly
-                          />
-
-                          <label>Product</label>
-
-                          <input
-                              type="text"
-                              value={selectedProductData?.product_name || ""}
-                              readOnly
-                          />
-
-                          <label>Persona</label>
-
-                          <input
-                              type="text"
-                              value={selectedPersonaData?.persona_name || ""}
-                              readOnly
-                          />
-
-                      </div>
-
-                  </div>
-
-                  <div className="dm-info-footer">
-
-                      <button
-                          className="dm-info-save-btn"
-                          onClick={handleFullSave}
-                          disabled={!isCurrentOwner}
-                      >
-                          Save
-                      </button>
-
-                  </div>
-
-              </div>
-
-          </div>
-
-          )}
-
-
-
-    {/* ════════ LABELS MODAL ═════════════════════════════════════════════════ */}
-      {leftPanel === "labels" && (
-
-        <div className="dm-info-panel">
-
-            <div className="dm-label-card">
-
-                <div className="dm-info-header">
-
-                    <h3>Labels</h3>
-
-                    <button
-                        className="dm-info-close"
-                        onClick={() => setLeftPanel(null)}
-                    >
-                        <CloseIcon />
-                    </button>
-
-                </div>
-
-                <div className="dm-label-body">
-                  <div className="dm-label-sidebar">
-
-                    {/* ===================== MANDATORY ===================== */}
-
-                    <section className="docket-mandatory-section">
-
-                        <div className="docket-optionals-header">
-
-                            <h3 className="docket-column-title">
-                                MANDATORY FIELDS
-                            </h3>
-
-                            <button
-                                className="docket-add-more-btn"
-                                onClick={() => {
-                                    setModalBoxType("mandatory");
-                                    setShowModal(true);
-                                }}
-                            >
-                                Add More +
-                            </button>
-
-                        </div>
-
-                        <div className="docket-form-section">
-
-                            {mandatoryFields.map((field) => (
-
-                                <div
-                                    key={field.id}
-                                    className="docket-field-row"
-                                >
-
-                                    <div className="docket-field-left">
-
-                                        <input
-                                            type="checkbox"
-                                            className="docket-field-checkbox"
-                                            checked={
-                                                fieldValues[field.variable_name]?.enabled ||
-                                                false
-                                            }
-                                            onChange={(e) =>
-                                                setFieldValues(prev => ({
-                                                    ...prev,
-                                                    [field.variable_name]: {
-                                                        ...prev[field.variable_name],
-                                                        enabled: e.target.checked
-                                                    }
-                                                }))
-                                            }
-                                        />
-
-                                        <label className="docket-field-label-text">
-                                            {field.label}
-                                        </label>
-
-                                        {field.isCustom && (
-
-                                            <button
-                                                className="docket-delete-btn"
-                                                onClick={() => handleDeleteCustomField(field)}
-                                            >
-                                                ×
-                                            </button>
-
-                                        )}
-
-                                    </div>
-
-                                    <textarea
-                                        className="docket-field-textarea"
-                                        value={
-                                            fieldValues[field.variable_name]?.value || ""
-                                        }
-                                        rows={1}
-                                        placeholder="Enter info..."
-                                        onChange={(e) => {
-
-                                            setFieldValues(prev => ({
-                                                ...prev,
-                                                [field.variable_name]: {
-                                                    ...prev[field.variable_name],
-                                                    value: e.target.value
-                                                }
-                                            }));
-
-                                            const el = e.target;
-
-                                            el.style.height = "auto";
-
-                                            const lineH = 20;
-
-                                            const pad = 16;
-
-                                            const maxH = lineH * 3 + pad;
-
-                                            const newH =
-                                                Math.min(el.scrollHeight, maxH);
-
-                                            el.style.height = `${newH}px`;
-
-                                            el.style.overflowY =
-                                                el.scrollHeight > maxH
-                                                    ? "auto"
-                                                    : "hidden";
-
-                                        }}
-                                    />
-
-                                </div>
-
-                            ))}
-
-                        </div>
-
-                    </section>
-
-                    {/* ===================== OPTIONAL ===================== */}
-
-                    <section className="docket-mandatory-section">
-
-                        <div className="docket-optionals-header">
-
-                            <h3 className="docket-column-title">
-                                OPTIONAL FIELDS
-                            </h3>
-
-                            <button
-                                className="docket-add-more-btn"
-                                onClick={() => {
-                                    setModalBoxType("optional");
-                                    setShowModal(true);
-                                }}
-                            >
-                                Add More +
-                            </button>
-
-                        </div>
-
-                        <div className="docket-form-section">
-
-                            {optionalFields.map((field) => (
-
-                                <div
-                                    key={field.id}
-                                    className="docket-field-row"
-                                >
-
-                                    <div className="docket-field-left">
-
-                                        <input
-                                            type="checkbox"
-                                            className="docket-field-checkbox"
-                                            checked={
-                                                fieldValues[field.variable_name]?.enabled ||
-                                                false
-                                            }
-                                            onChange={(e) =>
-                                                setFieldValues(prev => ({
-                                                    ...prev,
-                                                    [field.variable_name]: {
-                                                        ...prev[field.variable_name],
-                                                        enabled: e.target.checked
-                                                    }
-                                                }))
-                                            }
-                                        />
-
-                                        <label className="docket-field-label-text">
-                                            {field.label}
-                                        </label>
-
-                                        {field.isCustom && (
-
-                                            <button
-                                                className="docket-delete-btn"
-                                                onClick={() => handleDeleteCustomField(field)}
-                                            >
-                                                ×
-                                            </button>
-
-                                        )}
-
-                                    </div>
-
-                                    <textarea
-                                        className="docket-field-textarea"
-                                        value={
-                                            fieldValues[field.variable_name]?.value || ""
-                                        }
-                                        rows={1}
-                                        placeholder="Enter info..."
-                                        onChange={(e) => {
-
-                                            setFieldValues(prev => ({
-                                                ...prev,
-                                                [field.variable_name]: {
-                                                    ...prev[field.variable_name],
-                                                    value: e.target.value
-                                                }
-                                            }));
-
-                                            const el = e.target;
-
-                                            el.style.height = "auto";
-
-                                            const lineH = 20;
-
-                                            const pad = 16;
-
-                                            const maxH = lineH * 3 + pad;
-
-                                            const newH =
-                                                Math.min(el.scrollHeight, maxH);
-
-                                            el.style.height = `${newH}px`;
-
-                                            el.style.overflowY =
-                                                el.scrollHeight > maxH
-                                                    ? "auto"
-                                                    : "hidden";
-
-                                        }}
-                                    />
-
-                                </div>
-
-                            ))}
-
-                        </div>
-
-                    </section>
-
-                </div>
-                </div>
-
-                <div className="dm-label-footer">
-
-                    <button
-                        className="dm-info-save-btn"
-                        onClick={handleFullSave}
-                    >
-                        Save Changes
-                    </button>
-
-                </div>
-
-            </div>
-          
-
-        </div>
-
-    )}
-
-
-
-
-
-
-
-
-    {/* ───────────────── LEFT COLUMN ───────────────── */}
-
-    <div className="dm-left-col">
-
-          <div className="dm-left-content"></div>
+        {/* ── LEFT COLUMN ──────────────────────────────────────────────────── */}
+        <div className="dm-left-col">
 
           {/* ── SCROLLABLE FORM FIELDS (40%) ──────────────────────────────── */}
           <div className="dm-left-fields-scroll">
 
-          {/* Top row: datetime + save icon */}
+          {/* Top row: info icon | datetime + icons */}
           <div className="dm-left-toprow">
-            <span className="dm-datetime-text">{formattedDateTime}</span>
-            <button className="dm-icon-sm" title="Save" onClick={handleFullSave} disabled={!isCurrentOwner}>
-              <SaveIcon />
+            <button className="dm-info-btn" title="Info" onClick={() => setShowInfoModal(true)}>
+              <InfoIcon />
             </button>
+            <div className="dm-left-toprow-right">
+              <span className="dm-datetime-text">{formattedDateTime}</span>
+              <button className="dm-icon-sm" title="Labels" onClick={() => setShowLabelsModal(true)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="5" width="18" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                  <rect x="3" y="11" width="13" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                  <rect x="3" y="17" width="9" height="3" rx="1" stroke="#1a2744" strokeWidth="2"/>
+                </svg>
+              </button>
+              <button className="dm-icon-sm" title="Save" onClick={handleFullSave} disabled={!isCurrentOwner}>
+                <SaveIcon />
+              </button>
+            </div>
           </div>
 
           {/* Title field */}
           <div className="dm-form-row">
             <label className="dm-form-label">Title</label>
             <div className="dm-form-field-wrap">
-              <div className="dm-field-box">
-                <input
-                  className="dm-form-input"
-                  type="text"
-                  placeholder="Enter a catchy title"
-                  disabled={!isCurrentOwner}
-                  value={docketTitle}
-                  maxLength={titleMax}
-                  onChange={e => setDocketTitle(e.target.value)}
-                />
-                <div className="dm-field-overlay">
-                  <span className="dm-char-count">{titleLen}/{titleMax}</span>
-                  <button
-                    type="button"
-                    className="dm-expand-btn"
-                    title="Expand"
-                    onClick={() => setExpandField({ label: 'Title', value: docketTitle, onChange: setDocketTitle, maxLength: titleMax })}
-                  >
-                    <ExpandIcon/>
-                  </button>
-                </div>
-              </div>
+              <input
+                className="dm-form-input"
+                type="text"
+                placeholder="Enter a catchy title"
+                disabled={!isCurrentOwner}
+                value={docketTitle}
+                maxLength={titleMax}
+                onChange={e => setDocketTitle(e.target.value)}
+              />
+              <span className="dm-char-count">{titleLen}/{titleMax}</span>
             </div>
           </div>
 
@@ -2429,28 +2506,16 @@ const formatDate = (date) => {
           <div className="dm-form-row">
             <label className="dm-form-label">Description</label>
             <div className="dm-form-field-wrap">
-              <div className="dm-field-box">
-                <textarea
-                  className="dm-form-textarea"
-                  placeholder="Describe your visual"
-                  disabled={!isCurrentOwner}
-                  value={executeDescription}
-                  maxLength={descMax}
-                  rows={3}
-                  onChange={e => setExecuteDescription(e.target.value)}
-                />
-                <div className="dm-field-overlay">
-                  <span className="dm-char-count">{descTitle}/{descMax}</span>
-                  <button
-                    type="button"
-                    className="dm-expand-btn"
-                    title="Expand"
-                    onClick={() => setExpandField({ label: 'Description', value: executeDescription, onChange: setExecuteDescription, maxLength: descMax })}
-                  >
-                    <ExpandIcon/>
-                  </button>
-                </div>
-              </div>
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Describe your visual"
+                disabled={!isCurrentOwner}
+                value={executeDescription}
+                maxLength={descMax}
+                rows={3}
+                onChange={e => setExecuteDescription(e.target.value)}
+              />
+              <span className="dm-char-count">{descTitle}/{descMax}</span>
             </div>
           </div>
 
@@ -2458,28 +2523,16 @@ const formatDate = (date) => {
           <div className="dm-form-row">
             <label className="dm-form-label">Visual elements</label>
             <div className="dm-form-field-wrap">
-              <div className="dm-field-box">
-                <textarea
-                  className="dm-form-textarea"
-                  placeholder="Add key elements to include"
-                  disabled={!isCurrentOwner}
-                  value={visualElements}
-                  maxLength={veMax}
-                  rows={3}
-                  onChange={e => setVisualElements(e.target.value)}
-                />
-                <div className="dm-field-overlay">
-                  <span className="dm-char-count">{veLen}/{veMax}</span>
-                  <button
-                    type="button"
-                    className="dm-expand-btn"
-                    title="Expand"
-                    onClick={() => setExpandField({ label: 'Visual elements', value: visualElements, onChange: setVisualElements, maxLength: veMax })}
-                  >
-                    <ExpandIcon/>
-                  </button>
-                </div>
-              </div>
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Add key elements to include"
+                disabled={!isCurrentOwner}
+                value={visualElements}
+                maxLength={veMax}
+                rows={3}
+                onChange={e => setVisualElements(e.target.value)}
+              />
+              <span className="dm-char-count">{veLen}/{veMax}</span>
             </div>
           </div>
 
@@ -2487,26 +2540,14 @@ const formatDate = (date) => {
           <div className="dm-form-row">
             <label className="dm-form-label">Summary</label>
             <div className="dm-form-field-wrap">
-              <div className="dm-field-box">
-                <textarea
-                  className="dm-form-textarea"
-                  placeholder="Enter summary"
-                  disabled={!isCurrentOwner}
-                  value={summary}
-                  rows={3}
-                  onChange={e => setSummary(e.target.value)}
-                />
-                <div className="dm-field-overlay">
-                  <button
-                    type="button"
-                    className="dm-expand-btn"
-                    title="Expand"
-                    onClick={() => setExpandField({ label: 'Summary', value: summary, onChange: setSummary })}
-                  >
-                    <ExpandIcon/>
-                  </button>
-                </div>
-              </div>
+              <textarea
+                className="dm-form-textarea"
+                placeholder="Enter summary"
+                disabled={!isCurrentOwner}
+                value={summary}
+                rows={3}
+                onChange={e => setSummary(e.target.value)}
+              />
             </div>
           </div>
 
@@ -2535,52 +2576,44 @@ const formatDate = (date) => {
               </div>
               <div className="dm-chat-footer">
                 <div className="dm-chat-input-row">
-
-                  <div className="dm-chat-input-wrap">
-
-                    <input
-                      className="dm-chat-input"
-                      placeholder="Type your message"
-                      disabled={!isCurrentOwner}
-                      value={userMessage}
-                      onChange={e => setUserMessage(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-
-                    <button
-                      className="dm-chat-send"
-                      disabled={!isCurrentOwner}
-                      onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
-                    >
-                      <SendIcon active={Boolean(userMessage.trim())}/>
-                    </button>
-
-                  </div>
-
+                  <input
+                    className="dm-chat-input"
+                    placeholder="Type your message"
+                    disabled={!isCurrentOwner}
+                    value={userMessage}
+                    onChange={e => setUserMessage(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
+                        e.preventDefault(); handleSendMessage();
+                      }
+                    }}
+                  />
                   <button
-                    className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
-                    onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
-                    disabled={!isCurrentOwner || isGeneratingImage}
+                    className="dm-chat-send"
+                    disabled={!isCurrentOwner}
+                    onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
                   >
-                    <SparkleIcon/>
-                    {isGeneratingImage ? 'Generating…' : 'Generate'}
-                    {!canGenerate && (
-                      <div className="dm-tooltip">
-                        <div className="dm-tooltip-title">Please fill:</div>
-                        <ul>
-                          {!mode && <li>Prompt Type</li>}
-                          {mode && !mediaType && <li>Media Type</li>}
-                          {mediaType && !subType && <li>Sub Type</li>}
-                        </ul>
-                      </div>
-                    )}
+                    <SendIcon active={Boolean(userMessage.trim())}/>
                   </button>
                 </div>
+                <button
+                  className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
+                  onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
+                  disabled={!isCurrentOwner || isGeneratingImage}
+                >
+                  <SparkleIcon/>
+                  {isGeneratingImage ? 'Generating…' : '✦ Generate'}
+                  {!canGenerate && (
+                    <div className="dm-tooltip">
+                      <div className="dm-tooltip-title">Please fill:</div>
+                      <ul>
+                        {!mode && <li>Prompt Type</li>}
+                        {mode && !mediaType && <li>Media Type</li>}
+                        {mediaType && !subType && <li>Sub Type</li>}
+                      </ul>
+                    </div>
+                  )}
+                </button>
               </div>
             </div>
           )}
@@ -2617,31 +2650,20 @@ const formatDate = (date) => {
               </div>
               <div className="dm-chat-footer">
                 <div className="dm-chat-input-row">
-
-                  <div className="dm-chat-input-wrap">
-
-                    <input
-                      className="dm-chat-input"
-                      placeholder="Write feedback..."
-                      value={feedbackText}
-                      onChange={e => setFeedbackText(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && feedbackText.trim()) {
-                          e.preventDefault();
-                          submitFeedback();
-                        }
-                      }}
-                    />
-
-                    <button
-                      className="dm-chat-send"
-                      onClick={feedbackText.trim() ? submitFeedback : undefined}
-                    >
-                      <SendIcon active={Boolean(feedbackText.trim())}/>
-                    </button>
-
-                  </div>
-
+                  <input
+                    className="dm-chat-input"
+                    placeholder="Write feedback..."
+                    value={feedbackText}
+                    onChange={e => setFeedbackText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && feedbackText.trim()) {
+                        e.preventDefault(); submitFeedback();
+                      }
+                    }}
+                  />
+                  <button className="dm-chat-send" onClick={feedbackText.trim() ? submitFeedback : undefined}>
+                    <SendIcon active={Boolean(feedbackText.trim())}/>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2740,26 +2762,17 @@ const formatDate = (date) => {
           <div className="dm-message-section">
             <div className="dm-section-header">
               <span className="dm-section-title">Message</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button
-                  className="dm-icon-sm"
-                  title="Expand"
-                  onClick={() => setExpandField({ label: 'Message', value: visualMessage, onChange: setVisualMessage })}
-                >
-                  <ExpandIcon/>
-                </button>
-                <button
-                  className="dm-icon-sm"
-                  title="Copy message"
-                  onClick={() => {
-                    navigator.clipboard.writeText(visualMessage || '');
-                    setShowCopyToast(true);
-                    setTimeout(() => setShowCopyToast(false), 2000);
-                  }}
-                >
-                  <CopyIcon/>
-                </button>
-              </div>
+              <button
+                className="dm-icon-sm"
+                title="Copy message"
+                onClick={() => {
+                  navigator.clipboard.writeText(visualMessage || '');
+                  setShowCopyToast(true);
+                  setTimeout(() => setShowCopyToast(false), 2000);
+                }}
+              >
+                <CopyIcon/>
+              </button>
             </div>
             <div className="dm-message-body">
               {isEditMode
@@ -2836,6 +2849,28 @@ const formatDate = (date) => {
         </div>
       </div>
       {/* END MAIN BODY */}
+
+      {/* ════════ STAGE BAR ═══════════════════════════════════════════════════ */}
+      <div className="dm-stagebar">
+        {STAGE_BAR.map(s => (
+          <div key={s.key} className="dm-stagebar-item">
+            <span className="dm-stagebar-icon" style={{ color: s.color }}>{s.icon}</span>
+            <span className="dm-stagebar-label" style={{ color: s.color }}>{s.label}</span>
+            <span className="dm-stagebar-count" style={{ color: s.color }}>{stageCounts[s.key] ?? 0}</span>
+          </div>
+        ))}
+        <button
+          className="dm-icon-sm dm-stagebar-refresh"
+          title="Refresh counts"
+          onClick={() => {
+            fetch(`${API}/planner/stage-counts`, { headers: AUTH() })
+              .then(r => r.json())
+              .then(data => { if (data.success) setStageCounts(data.data); });
+          }}
+        >
+          <ClockIcon/>
+        </button>
+      </div>
 
       {/* ════════ CREATE EXECUTE MODAL ════════════════════════════════════════ */}
       {showCreateExecuteModal && (
@@ -2944,35 +2979,136 @@ const formatDate = (date) => {
         </div>
       )}
 
-      {/* ════════ EXPAND FIELD MODAL ═══════════════════════════════════════════ */}
-      {expandField && (
-        <div className="dm-overlay" onClick={() => setExpandField(null)}>
-          <div className="dm-modal dm-modal--expand" onClick={e => e.stopPropagation()}>
+      {/* ════════ INFO MODAL ═══════════════════════════════════════════════════ */}
+      {showInfoModal && (
+        <div className="dm-overlay" onClick={() => setShowInfoModal(false)}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
             <div className="dm-modal-header">
-              <h3>{expandField.label}</h3>
-              <button className="dm-modal-close" onClick={() => setExpandField(null)}><CloseIcon/></button>
+              <h3>Execute Details</h3>
+              <button className="dm-modal-close" onClick={() => setShowInfoModal(false)}><CloseIcon/></button>
             </div>
             <div className="dm-modal-body">
-              <textarea
-                className="dm-expand-textarea"
-                value={expandField.value}
-                maxLength={expandField.maxLength}
-                disabled={!isCurrentOwner}
-                autoFocus
-                onChange={e => {
-                  const val = e.target.value;
-                  expandField.onChange(val);
-                  setExpandField(f => (f ? { ...f, value: val } : f));
-                }}
-              />
-              {typeof expandField.maxLength === 'number' && (
-                <div className="dm-char-count" style={{ marginTop: 6 }}>
-                  {expandField.value.length}/{expandField.maxLength}
-                </div>
-              )}
+              <div className="info-grid">
+                <div><strong>Title</strong><p>{docketTitle || "-"}</p></div>
+                <div><strong>Mode</strong><p>{mode || "-"}</p></div>
+                <div><strong>Media Type</strong><p>{mediaType || "-"}</p></div>
+                <div><strong>Media Subtype</strong><p>{subType || "-"}</p></div>
+                <div><strong>Product</strong><p>{selectedProductData?.product_name || "-"}</p></div>
+                <div><strong>Persona</strong><p>{selectedPersonaData?.persona_name || "-"}</p></div>
+                <div><strong>Occasion / Event</strong><p>-</p></div>
+                <div><strong>Current Owner</strong><p>{assignedUser || "-"}</p></div>
+                <div><strong>Current Stage</strong><p>{selectedStage || "Discovery"}</p></div>
+                <div><strong>Assigned User</strong><p>{assignedUser || "-"}</p></div>
+              </div>
             </div>
-            <div className="dm-modal-footer">
-              <button className="dm-modal-btn dm-modal-btn--save" onClick={() => setExpandField(null)}>Done</button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ LABELS MODAL ═════════════════════════════════════════════════ */}
+      {showLabelsModal && (
+        <div className="dm-overlay" onClick={() => setShowLabelsModal(false)}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>Labels</h3>
+              <button className="dm-modal-close" onClick={() => setShowLabelsModal(false)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              <section className="docket-mandatory-section">
+                <div className="docket-optionals-header">
+                  <h3 className="docket-column-title">MANDATORY FIELDS</h3>
+                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("mandatory"); setShowModal(true); }}>Add More +</button>
+                </div>
+                <div className="docket-form-section">
+                  {mandatoryFields.map((field) => (
+                    <div key={field.id} className="docket-field-row">
+                      <div className="docket-field-left">
+                        <input
+                          type="checkbox"
+                          className="docket-field-checkbox"
+                          checked={fieldValues[field.variable_name]?.enabled || false}
+                          onChange={(e) =>
+                            setFieldValues(prev => ({
+                              ...prev,
+                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
+                            }))
+                          }
+                        />
+                        <label className="docket-field-label-text">{field.label}</label>
+                        {field.isCustom && (
+                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
+                        )}
+                      </div>
+                      <textarea
+                        className="docket-field-textarea"
+                        value={fieldValues[field.variable_name]?.value || ""}
+                        rows={1}
+                        placeholder="Enter info..."
+                        onChange={(e) => {
+                          setFieldValues(prev => ({
+                            ...prev,
+                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
+                          }));
+                          const el = e.target;
+                          el.style.height = "auto";
+                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
+                          const newH = Math.min(el.scrollHeight, maxH);
+                          el.style.height = `${newH}px`;
+                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="docket-mandatory-section">
+                <div className="docket-optionals-header">
+                  <h3 className="docket-column-title">OPTIONAL FIELDS</h3>
+                  <button className="docket-add-more-btn" onClick={() => { setModalBoxType("optional"); setShowModal(true); }}>Add More +</button>
+                </div>
+                <div className="docket-form-section">
+                  {optionalFields.map((field) => (
+                    <div key={field.id} className="docket-field-row">
+                      <div className="docket-field-left">
+                        <input
+                          type="checkbox"
+                          className="docket-field-checkbox"
+                          checked={fieldValues[field.variable_name]?.enabled || false}
+                          onChange={(e) =>
+                            setFieldValues(prev => ({
+                              ...prev,
+                              [field.variable_name]: { ...prev[field.variable_name], enabled: e.target.checked }
+                            }))
+                          }
+                        />
+                        <label className="docket-field-label-text">{field.label}</label>
+                        {field.isCustom && (
+                          <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
+                        )}
+                      </div>
+                      <textarea
+                        className="docket-field-textarea"
+                        value={fieldValues[field.variable_name]?.value || ""}
+                        rows={1}
+                        placeholder="Enter info..."
+                        onChange={(e) => {
+                          setFieldValues(prev => ({
+                            ...prev,
+                            [field.variable_name]: { ...prev[field.variable_name], value: e.target.value }
+                          }));
+                          const el = e.target;
+                          el.style.height = "auto";
+                          const lineH = 20, pad = 16, maxH = lineH * 3 + pad;
+                          const newH = Math.min(el.scrollHeight, maxH);
+                          el.style.height = `${newH}px`;
+                          el.style.overflowY = el.scrollHeight > maxH ? "auto" : "hidden";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
         </div>

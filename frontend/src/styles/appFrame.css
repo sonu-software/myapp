@@ -438,6 +438,9 @@ flex:1;
 min-width:0;
 min-height:0;
 
+display:flex;
+flex-direction:column;
+
 overflow:hidden;
 
 background:#f6f7fb;
@@ -445,8 +448,10 @@ background:#f6f7fb;
 
 .app-content{
 
+flex:1;
+
 width:100%;
-height:100%;
+min-height:0;
 
 overflow-y:auto;
 overflow-x:auto;
@@ -454,6 +459,402 @@ overflow-x:auto;
 padding:4.2px;
 
 background:white;
+}
+
+/* =========================================================
+HEADER BAR
+========================================================= */
+
+.app-header-bar{
+
+flex-shrink:0 !important;
+
+width:100% !important;
+height:42px !important;
+
+display:flex !important;
+align-items:center !important;
+justify-content:space-between !important;
+
+gap:10.5px !important;
+
+padding:0 10.5px !important;
+margin:0 !important;
+
+background:white !important;
+
+border:none !important;
+border-bottom:1px solid #edf0f5 !important;
+
+overflow:hidden;
+}
+
+.header-left{
+
+display:flex !important;
+align-items:center !important;
+
+flex:0 1 auto !important;
+
+gap:8.4px !important;
+
+margin:0 !important;
+padding:0 !important;
+
+min-width:0;
+}
+
+.header-right{
+
+display:flex !important;
+align-items:center !important;
+
+flex:0 0 auto !important;
+
+gap:8.4px !important;
+
+margin:0 !important;
+padding:0 !important;
+}
+
+.header-filter-btn{
+
+flex:0 0 auto !important;
+
+width:21px !important;
+height:21px !important;
+min-width:21px !important;
+color:#4B479E;
+
+margin:0 !important;
+padding:0 !important;
+
+display:flex !important;
+align-items:center !important;
+justify-content:center !important;
+
+border:none !important;
+border-radius:0 !important;
+outline:none !important;
+
+background:transparent !important;
+
+color:#4B479E;
+
+font-size:0 !important;
+line-height:1 !important;
+
+appearance:none;
+-webkit-appearance:none;
+
+cursor:pointer;
+
+transition:color .15s ease;
+}
+
+.header-filter-btn svg{
+width:14px !important;
+height:14px !important;
+flex-shrink:0;
+}
+
+.header-filter-btn:hover{
+color:#5B479E;
+background:transparent !important;
+transform:none !important;
+}
+
+.header-clear-btn{
+
+flex:0 0 auto !important;
+
+width:auto !important;
+height:100% !important;
+
+margin:0 !important;
+padding:0 10.5px !important;
+
+border:none !important;
+border-left:1px solid #edf0f5 !important;
+border-radius:0 !important;
+outline:none !important;
+
+background:transparent !important;
+
+color:#d83810;
+
+font-family:Inter,Segoe UI,sans-serif !important;
+font-size:11.5px !important;
+font-weight:600 !important;
+line-height:1 !important;
+
+appearance:none;
+-webkit-appearance:none;
+
+cursor:pointer;
+
+white-space:nowrap;
+
+transition:color .15s ease, background-color .15s ease;
+}
+
+.header-clear-btn:hover{
+color:#5B479E;
+background:rgba(75,71,158,.06) !important;
+transform:none !important;
+}
+
+.header-search-wrap{
+
+position:relative;
+
+flex:0 0 auto !important;
+
+display:flex !important;
+align-items:center !important;
+
+margin:0 !important;
+padding:0 !important;
+}
+
+.header-search-input{
+
+flex:0 0 auto !important;
+
+width:184px !important;
+
+height:29.4px !important;
+
+margin:0 !important;
+padding:0 30px 0 10.5px !important;
+
+border:1px solid #dcdfe6 !important;
+border-radius:6.3px !important;
+
+background:#fafbfc !important;
+
+font-family:Inter,Segoe UI,sans-serif !important;
+font-size:11.5px !important;
+line-height:normal !important;
+color:#333;
+
+appearance:none;
+-webkit-appearance:none;
+
+outline:none !important;
+
+transition:border-color .15s ease, background-color .15s ease;
+}
+
+.header-search-input::placeholder{
+color:#9aa0a9;
+}
+
+.header-search-input:focus{
+border-color:#4B479E !important;
+background:white !important;
+outline:none !important;
+}
+
+.header-search-icon{
+
+position:absolute !important;
+
+right:10.5px !important;
+
+width:14px !important;
+height:14px !important;
+
+color:#8a8f98;
+
+pointer-events:none;
+}
+
+.header-add-btn{
+
+flex:0 0 auto !important;
+
+width:29.4px !important;
+height:29.4px !important;
+min-width:29.4px !important;
+
+margin:0 !important;
+padding:0 !important;
+
+display:flex !important;
+align-items:center !important;
+justify-content:center !important;
+
+border:none !important;
+border-radius:6.3px !important;
+outline:none !important;
+
+background:#4B479E !important;
+
+color:white;
+
+font-size:0 !important;
+line-height:1 !important;
+
+appearance:none;
+-webkit-appearance:none;
+
+cursor:pointer;
+
+transition:background-color .15s ease;
+}
+
+.header-add-btn svg{
+width:16px !important;
+height:16px !important;
+flex-shrink:0;
+}
+
+.header-add-btn:hover{
+background:#5B479E !important;
+transform:none !important;
+}
+
+/* =========================================================
+FOOTER STATUS BAR
+========================================================= */
+
+.app-footer-bar{
+
+flex-shrink:0;
+
+width:100%;
+height:42px;
+
+display:flex;
+align-items:center;
+
+gap:6.3px;
+
+padding:0 10.5px;
+
+margin:0;
+
+background:white;
+
+border-top:1px solid #edf0f5;
+
+box-shadow:0 -1px 4px rgba(16,24,40,.03);
+
+overflow:hidden;
+}
+
+.footer-card{
+
+flex:1;
+
+height:29.4px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+gap:4.2px;
+
+padding:0 8.4px;
+
+border:1px solid #edf0f5;
+border-radius:999px;
+
+background:white;
+
+cursor:default;
+
+transition:.15s ease;
+
+min-width:0;
+}
+
+.footer-card:hover{
+border-color:rgba(0,0,0,.12);
+background:#fafbfd;
+}
+
+.footer-card-icon{
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+color:var(--card-color);
+flex-shrink:0;
+}
+
+.footer-card-icon svg{
+width:12.6px;
+height:12.6px;
+}
+
+.footer-card-label{
+
+font-size:8.4px;
+font-weight:600;
+
+color:#1f2430;
+
+white-space:nowrap;
+}
+
+.footer-card-count{
+
+font-size:8.4px;
+font-weight:700;
+
+color:var(--card-color);
+
+white-space:nowrap;
+}
+
+.footer-refresh-btn{
+
+flex-shrink:0 !important;
+
+width:29.4px !important;
+height:29.4px !important;
+min-width:29.4px !important;
+
+margin:0 !important;
+padding:0 !important;
+
+display:flex !important;
+align-items:center !important;
+justify-content:center !important;
+
+border:1px solid #edf0f5 !important;
+border-radius:999px !important;
+outline:none !important;
+
+background:white !important;
+
+color:#4b5565;
+
+font-size:0 !important;
+line-height:1 !important;
+
+appearance:none;
+-webkit-appearance:none;
+
+cursor:pointer;
+
+transition:background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.footer-refresh-btn svg{
+width:13.5px !important;
+height:13.5px !important;
+flex-shrink:0;
+}
+
+.footer-refresh-btn:hover{
+background:#f6f7fb !important;
+border-color:rgba(0,0,0,.12) !important;
+color:#1f2430;
+transform:none !important;
 }
 
 /* =========================================================
@@ -468,6 +869,288 @@ height:6.3px;
 .app-content::-webkit-scrollbar-thumb{
 background:rgba(0,0,0,.15);
 border-radius:0;
+}
+
+/* =========================================================
+HEADER — FILTER DROPDOWN
+========================================================= */
+
+.header-filter-wrap{
+
+position:relative !important;
+
+flex:0 0 auto !important;
+
+display:flex !important;
+align-items:center !important;
+
+margin:0 !important;
+padding:0 !important;
+}
+
+.header-filter-backdrop{
+
+position:fixed;
+
+inset:0;
+
+background:transparent;
+
+z-index:999997;
+}
+
+.header-filter-dropdown{
+
+position:fixed;
+
+width:262px;
+max-width:calc(100vw - 24px);
+
+background:white;
+
+border:1px solid #edf0f5;
+border-radius:8.4px;
+
+box-shadow:0 12px 32px rgba(16,24,40,.16);
+
+padding:10.5px;
+
+display:flex;
+flex-direction:column;
+
+gap:8.4px;
+
+z-index:999998;
+
+max-height:calc(100vh - 32px);
+overflow-y:auto;
+
+animation:headerFilterFade .15s ease;
+}
+
+.header-filter-btn.active{
+color:#4B479E;
+background:rgba(158, 104, 71, 0.08) !important;
+}
+
+@keyframes headerFilterFade{
+
+from{
+opacity:0;
+transform:translateY(-4px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+.header-filter-dropdown-title{
+
+font-size:11px;
+font-weight:700;
+
+color:#1f2430;
+
+margin-bottom:2.1px;
+}
+
+.header-filter-field{
+
+display:flex;
+flex-direction:column;
+
+gap:3.15px;
+}
+
+.header-filter-field label{
+
+font-size:9px;
+font-weight:600;
+
+color:#6b7280;
+
+text-transform:uppercase;
+letter-spacing:.3px;
+}
+
+.header-filter-field select,
+.header-filter-date-input{
+
+width:100%;
+
+height:27.3px;
+
+padding:0 8.4px;
+
+border:1px solid #dcdfe6;
+border-radius:5.25px;
+
+background:white;
+
+font-family:Inter,Segoe UI,sans-serif;
+font-size:11px;
+color:#333;
+
+outline:none;
+
+transition:border-color .15s ease;
+}
+
+.header-filter-field select:focus,
+.header-filter-date-input:focus{
+border-color:#4B479E;
+}
+
+.header-filter-clear-btn{
+
+margin-top:2.1px;
+
+width:100%;
+
+height:29.4px;
+
+border:none;
+border-radius:5.25px;
+
+background:#4B479E;
+
+color:white;
+
+font-size:11px;
+font-weight:600;
+
+cursor:pointer;
+
+transition:background-color .15s ease;
+}
+
+.header-filter-clear-btn:hover{
+background:#5B479E;
+}
+
+/* =========================================================
+HEADER — ACTIVE FILTER PILLS
+========================================================= */
+
+.header-filters-box{
+
+flex:0 0 auto;
+
+width:294px;
+
+height:29.4px;
+
+display:flex;
+align-items:stretch;
+
+border:1px solid #edf0f5;
+border-radius:6.3px;
+
+background:#fafbfc;
+
+overflow:hidden;
+}
+
+.header-active-filters{
+
+    display:flex;
+    align-items:center;
+
+    gap:5.25px;
+
+    flex:1 1 auto;
+
+    min-width:0;
+
+    padding:0 8.4px;
+
+    overflow-x:auto;
+    overflow-y:hidden;
+
+    scrollbar-width:thin;
+    scrollbar-color:#b8bfd2 transparent;
+}
+
+.header-active-filters::-webkit-scrollbar{
+    height:6px;
+}
+
+.header-active-filters::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+.header-active-filters::-webkit-scrollbar-thumb{
+    background:#b8bfd2;
+    border-radius:999px;
+}
+
+.header-active-filters::-webkit-scrollbar-thumb:hover{
+    background:#9ca3af;
+}
+
+.header-filters-empty{
+
+font-size:9.5px;
+font-weight:500;
+
+color:#a8adb8;
+
+white-space:nowrap;
+}
+
+.header-clear-btn:disabled{
+color:#c3c7d1 !important;
+cursor:default;
+}
+
+.header-clear-btn:disabled:hover{
+background:transparent !important;
+}
+
+.header-filter-pill{
+
+flex:0 0 auto;
+
+display:flex;
+align-items:center;
+
+gap:4.2px;
+
+height:22.05px;
+
+padding:0 8.4px;
+
+border-radius:999px;
+
+background:rgba(75,71,158,.08);
+
+color:#4B479E;
+
+font-size:9.5px;
+font-weight:600;
+
+white-space:nowrap;
+}
+
+.header-filter-pill button{
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+border:none;
+background:transparent;
+
+color:#4B479E;
+
+font-size:9.5px;
+line-height:1;
+
+cursor:pointer;
+
+padding:0;
 }
 
 /* =========================================================
@@ -491,4 +1174,697 @@ height:39.9px;
 .profile-menu{
 left:81.9px;
 }
+
+.app-footer-bar{
+height:39.9px;
+}
+
+.footer-card{
+height:27.3px;
+}
+
+.footer-refresh-btn{
+width:27.3px;
+height:27.3px;
+}
+
+.app-header-bar{
+height:39.9px !important;
+}
+
+.header-search-input{
+height:27.3px !important;
+}
+
+.header-filters-box{
+width:500px;
+height:32.3px;
+}
+
+.header-add-btn{
+width:27.3px !important;
+height:27.3px !important;
+min-width:27.3px !important;
+}
+}
+
+
+/* =========================================================
+CREATE EXECUTE MODAL
+========================================================= */
+
+.ce-overlay{
+
+position:fixed;
+
+inset:0;
+
+background:rgba(15,18,30,.45);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+z-index:999999;
+
+animation:ceOverlayFade .15s ease;
+}
+
+@keyframes ceOverlayFade{
+
+from{
+opacity:0;
+}
+
+to{
+opacity:1;
+}
+}
+
+.ce-modal{
+
+width:420px;
+
+max-height:calc(100vh - 64px);
+
+display:flex;
+flex-direction:column;
+
+background:white;
+
+border-radius:10.5px;
+
+box-shadow:0 24px 60px rgba(16,24,40,.28);
+
+overflow:hidden;
+
+animation:ceModalPop .15s ease;
+}
+
+@keyframes ceModalPop{
+
+from{
+opacity:0;
+transform:translateY(8px) scale(.98);
+}
+
+to{
+opacity:1;
+transform:translateY(0) scale(1);
+}
+}
+
+.ce-modal-header{
+
+flex-shrink:0;
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+padding:14px 16.8px;
+
+border-bottom:1px solid #edf0f5;
+}
+
+.ce-modal-header h3{
+
+font-size:13.5px;
+font-weight:700;
+
+color:#1f2430;
+}
+
+.ce-modal-close{
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+width:26.25px;
+height:26.25px;
+
+border:none;
+border-radius:6.3px;
+
+background:transparent;
+
+color:#6b7280;
+
+cursor:pointer;
+
+transition:background-color .15s ease, color .15s ease;
+}
+
+.ce-modal-close:hover{
+background:#f6f7fb;
+color:#1f2430;
+}
+
+.ce-modal-close svg{
+width:16px !important;
+height:16px !important;
+flex-shrink:0;
+display:block !important;
+}
+
+.ce-modal-body{
+
+flex:1;
+
+min-height:0;
+
+overflow-y:auto;
+
+padding:16.8px;
+
+display:flex;
+flex-direction:column;
+
+gap:12.6px;
+}
+
+.ce-modal-group{
+
+display:flex;
+flex-direction:column;
+
+gap:4.2px;
+}
+
+.ce-modal-group label{
+
+font-size:9.5px;
+font-weight:600;
+
+color:#6b7280;
+
+text-transform:uppercase;
+letter-spacing:.3px;
+}
+
+.ce-modal-group input[type="text"],
+.ce-modal-group select,
+.ce-modal-group textarea,
+.ce-modal-date-input{
+
+width:100%;
+
+padding:8.4px 10.5px;
+
+border:1px solid #dcdfe6;
+border-radius:6.3px;
+
+background:white;
+
+font-family:Inter,Segoe UI,sans-serif;
+font-size:11.5px;
+color:#333;
+
+outline:none;
+
+transition:border-color .15s ease;
+}
+
+.ce-modal-group textarea{
+
+min-height:63px;
+
+resize:vertical;
+
+line-height:1.4;
+}
+
+.ce-modal-group input[type="text"]:focus,
+.ce-modal-group select:focus,
+.ce-modal-group textarea:focus,
+.ce-modal-date-input:focus{
+border-color:#4B479E;
+}
+
+.ce-modal-footer{
+
+flex-shrink:0;
+
+display:flex;
+align-items:center;
+justify-content:flex-end;
+
+gap:8.4px;
+
+padding:12.6px 16.8px;
+
+border-top:1px solid #edf0f5;
+
+background:#fafbfd;
+}
+
+.ce-modal-btn{
+
+height:31.5px;
+
+padding:0 16.8px;
+
+border:none;
+border-radius:6.3px;
+
+font-size:11.5px;
+font-weight:600;
+
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:6.3px;
+
+cursor:pointer;
+
+transition:background-color .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+.ce-modal-btn:disabled{
+cursor:not-allowed;
+opacity:.7;
+}
+
+.ce-modal-btn--cancel{
+border:1px solid #dcdfe6;
+background:white;
+color:#4b5565;
+}
+
+.ce-modal-btn--cancel:hover:not(:disabled){
+background:#f6f7fb;
+border-color:rgba(0,0,0,.12);
+}
+
+.ce-modal-btn--save{
+background:#4B479E;
+color:white;
+}
+
+.ce-modal-btn--save:hover:not(:disabled){
+background:#5B479E;
+}
+
+.ce-modal-btn--save:disabled{
+background:#8481c0;
+}
+
+/* Spinner shown on the Create Execute button while the request
+   is in flight — same icon-based approach used elsewhere in the
+   app, just animated. */
+.ce-spinner{
+animation:ceSpin .7s linear infinite;
+}
+
+@keyframes ceSpin{
+from{ transform:rotate(0deg); }
+to{ transform:rotate(360deg); }
+}
+
+.ce-modal-close:disabled{
+cursor:not-allowed;
+opacity:.5;
+}
+
+@media (max-width:1366px){
+
+.ce-modal{
+width:378px;
+}
+}
+
+/* =========================================================
+ADDITIONAL RESPONSIVE BREAKPOINTS
+
+Continues the ladder the file already starts at 1366px, down to
+phone widths, plus a short-height landscape fallback.
+
+Rule for every block below: only box DIMENSIONS (width / height /
+flex-basis / overflow / wrap behaviour / position) are adjusted.
+No font-size and no gap value is touched anywhere in this section —
+every element keeps the exact type scale and spacing rhythm it has
+on desktop; only how much room each element is given, and whether a
+row wraps or scrolls, changes.
+
+  1025–1366  small laptop     base tier (existing, untouched above)
+  769–1024   tablet landscape gentle taper, still one-line header
+  601–768    tablet portrait  further taper, still one-line header
+  481–600    phone            header switches to two wrapped rows,
+                               footer bar becomes horizontally
+                               scrollable instead of squeezing text
+  381–480    small phone      same layout, tighter box sizes
+  ≤380       very small phone / foldables
+  short landscape phones handled separately via max-height
+========================================================= */
+
+/* ---------- Tablet landscape ---------- */
+@media (max-width:1024px){
+
+.sidebar{
+width:70px;
+min-width:70px;
+max-width:70px;
+}
+
+.sidebar-item,
+.account-button{
+width:50px;
+height:38px;
+}
+
+.profile-menu{
+left:76.3px;
+}
+
+.app-footer-bar{
+height:38px;
+}
+
+.footer-card{
+height:26px;
+}
+
+.footer-refresh-btn{
+width:26px !important;
+height:26px !important;
+min-width:26px !important;
+}
+
+.app-header-bar{
+height:38px !important;
+}
+
+.header-search-input{
+width:165px !important;
+height:26px !important;
+}
+
+.header-filters-box{
+width:340px;
+height:30px;
+}
+
+.header-add-btn{
+width:26px !important;
+height:26px !important;
+min-width:26px !important;
+}
+
+.ce-modal{
+width:360px;
+}
+
+}
+
+/* ---------- Tablet portrait: still one-line, tighter still ---------- */
+@media (max-width:768px){
+
+.sidebar{
+width:64px;
+min-width:64px;
+max-width:64px;
+}
+
+.sidebar-item,
+.account-button{
+width:46px;
+height:36px;
+}
+
+.profile-menu{
+left:70.3px;
+width:190px;
+}
+
+.app-footer-bar{
+height:36px;
+}
+
+.footer-card{
+height:25px;
+}
+
+.footer-refresh-btn{
+width:25px !important;
+height:25px !important;
+min-width:25px !important;
+}
+
+.app-header-bar{
+height:36px !important;
+}
+
+.header-search-input{
+width:145px !important;
+height:25px !important;
+}
+
+.header-filters-box{
+width:300px;
+height:28px;
+}
+
+.header-add-btn{
+width:25px !important;
+height:25px !important;
+min-width:25px !important;
+}
+
+.ce-modal{
+width:340px;
+}
+
+}
+
+/* ============================================================
+   From here down the header stops trying to fit both groups on
+   one line and wraps to two full-width rows, and the footer bar
+   stops squeezing its pills and becomes a horizontally scrollable
+   strip instead — the same "stop shrinking, start scrolling"
+   pattern already used for the planner page below 600px.
+   ============================================================ */
+
+/* ---------- Phone ---------- */
+@media (max-width:600px){
+
+.sidebar{
+width:58px;
+min-width:58px;
+max-width:58px;
+}
+
+.sidebar-item,
+.account-button{
+width:42px;
+height:34px;
+}
+
+.profile-menu{
+left:64.3px;
+width:180px;
+}
+
+/* Footer: keep every pill at its natural, fully-readable size —
+   scroll the strip instead of compressing eight labels into a
+   too-narrow row. */
+.app-footer-bar{
+height:34px;
+overflow-x:auto;
+overflow-y:hidden;
+scrollbar-width:none;
+}
+
+.app-footer-bar::-webkit-scrollbar{
+display:none;
+}
+
+.footer-card{
+flex:0 0 auto;
+height:24px;
+}
+
+.footer-refresh-btn{
+flex-shrink:0 !important;
+width:24px !important;
+height:24px !important;
+min-width:24px !important;
+}
+
+/* Header: wrap instead of clip. header-left and header-right each
+   take a full-width row; the gap already declared above (10.5px)
+   is reused automatically as the row gap once wrapped. */
+.app-header-bar{
+height:auto !important;
+flex-wrap:wrap !important;
+}
+
+.header-left{
+flex:1 1 100% !important;
+width:100%;
+}
+
+.header-right{
+flex:1 1 100% !important;
+width:100%;
+justify-content:flex-end !important;
+}
+
+.header-filters-box{
+width:auto;
+flex:1 1 auto;
+min-width:0;
+max-width:100%;
+height:27px;
+}
+
+.header-search-wrap{
+flex:1 1 auto !important;
+}
+
+.header-search-input{
+width:100% !important;
+min-width:0;
+height:24px !important;
+}
+
+.header-add-btn{
+width:24px !important;
+height:24px !important;
+min-width:24px !important;
+}
+
+.ce-modal{
+width:calc(100vw - 32px);
+max-width:378px;
+}
+
+}
+
+/* ---------- Small phone ---------- */
+@media (max-width:480px){
+
+.sidebar{
+width:54px;
+min-width:54px;
+max-width:54px;
+}
+
+.sidebar-item,
+.account-button{
+width:40px;
+height:32px;
+}
+
+.profile-menu{
+left:60.3px;
+width:170px;
+}
+
+.app-footer-bar{
+height:32px;
+}
+
+.footer-card{
+height:23px;
+}
+
+.footer-refresh-btn{
+width:23px !important;
+height:23px !important;
+min-width:23px !important;
+}
+
+.header-filters-box{
+height:26px;
+}
+
+.header-search-input{
+height:23px !important;
+}
+
+.header-add-btn{
+width:23px !important;
+height:23px !important;
+min-width:23px !important;
+}
+
+.ce-modal{
+width:calc(100vw - 24px);
+}
+
+}
+
+/* ---------- Very small phone / foldables ---------- */
+@media (max-width:380px){
+
+.sidebar{
+width:50px;
+min-width:50px;
+max-width:50px;
+}
+
+.sidebar-item,
+.account-button{
+width:38px;
+height:30px;
+}
+
+.profile-menu{
+left:56.3px;
+width:160px;
+}
+
+.app-footer-bar{
+height:30px;
+}
+
+.footer-card{
+height:22px;
+}
+
+.footer-refresh-btn{
+width:22px !important;
+height:22px !important;
+min-width:22px !important;
+}
+
+.header-filters-box{
+height:25px;
+}
+
+.header-search-input{
+height:22px !important;
+}
+
+.header-add-btn{
+width:22px !important;
+height:22px !important;
+min-width:22px !important;
+}
+
+.ce-modal{
+width:calc(100vw - 16px);
+}
+
+}
+
+/* ---------- Short-height landscape phones ----------
+   .sidebar is height:100vh with a fixed-size logo + 5 nav items +
+   footer stacked in a column and no scroll ability — on a short
+   landscape phone that stack can be taller than the viewport and
+   get clipped by .app-shell's overflow:hidden. Let the nav list
+   scroll internally instead, same fix already applied on the
+   planner page for this case. */
+@media (max-height:480px) and (orientation:landscape){
+
+.sidebar{
+overflow-y:auto;
+}
+
+.sidebar-menu{
+min-height:0;
+overflow-y:auto;
+}
+
 }

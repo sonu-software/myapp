@@ -259,7 +259,6 @@ export default function Product() {
       {popup.show && (
         <div className="ai-popup-overlay">
           <div className={`ai-popup ${popup.type === "done" ? "success" : popup.type}`}>
-            <div className="ai-popup-icon">{popup.type === "warning" ? "⚠️" : "✅"}</div>
             <h3>{popup.title}</h3>
             <p>{popup.message}</p>
             <div className="ai-popup-actions">
@@ -495,7 +494,6 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
       {pendingDeleteIndex !== null && (
         <div className="ai-popup-overlay">
           <div className="ai-popup warning">
-            <div className="ai-popup-icon">⚠️</div>
             <h3>Remove Field</h3>
             <p>This field will be removed. Are you sure?</p>
             <div className="ai-popup-actions">
