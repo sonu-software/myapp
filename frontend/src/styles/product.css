@@ -24,6 +24,13 @@
   --radius-card: 18px;
   --radius-input: 10px;
   --radius-btn: 10px;
+
+  /* Text-box spacing scale — reuse these anywhere you need the same
+     "row of inputs" rhythm as the Features/USP/Value cards. */
+  --field-gap: 10px;          /* vertical space BETWEEN text boxes */
+  --input-padding-y: 7px;     /* padding inside a text box, top/bottom */
+  --input-padding-x: 10px;    /* padding inside a text box, left/right */
+  --input-padding-x-with-x: 30px; /* right padding when a delete "×" sits inside */
 }
 
 /* =========================
@@ -303,7 +310,7 @@
 .product-page .pn-field-row {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: var(--field-gap);
 }
 
 /* =========================
@@ -319,7 +326,7 @@
 
 .product-page .pn-input-wrapper .pn-value-input {
   width: 100% !important;
-  padding-right: 28px !important;
+  padding-right: var(--input-padding-x-with-x) !important;
 }
 
 .product-page .pn-input-wrapper .pn-delete-x {
@@ -347,8 +354,13 @@
   border-radius: 0 !important;
 }
 
+.product-page .pn-input-wrapper .pn-delete-x:hover {
+  transform: translateY(-50%) !important;
+  color: #000000 !important;
+}
+
 .product-page .pn-input-wrapper .pn-value-input {
-  padding-right: 30px !important;
+  padding-right: var(--input-padding-x-with-x) !important;
 }
 
 /* =========================
@@ -365,7 +377,7 @@
   line-height: 20px !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
   width: 100% !important;
-  padding: 7px 10px !important;
+  padding: var(--input-padding-y) var(--input-padding-x) !important;
   box-sizing: border-box !important;
   min-height: 36px !important;
 }
@@ -388,6 +400,10 @@
 
 /* =========================
    DELETE ×
+   Locked down: `transform` is explicitly reset to `none` on both the base
+   rule and the :hover rule so nothing (inherited transforms, font-metric
+   shifts, etc.) can nudge the glyph. Hover is a pure color change to a
+   solid dark tone — no movement at all.
 ========================= */
 .product-page .pn-delete-x {
   width: 20px;
@@ -403,11 +419,15 @@
   line-height: 1;
   font-family: 'Inter', sans-serif;
   flex-shrink: 0;
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition: color 0.15s ease;
   user-select: none;
+  transform: none;
 }
 
-.product-page .pn-delete-x:hover { color: #dc2626; transform: scale(1.2); }
+.product-page .pn-delete-x:hover {
+  color: #000000 !important;
+  transform: none !important;
+}
 
 .product-page .pn-delete-x--no-hover:hover {
   color: var(--text-muted) !important;
@@ -461,8 +481,28 @@
   cursor: pointer !important;
 }
 
-.product-page .pn-value-autogrow::-webkit-scrollbar { width: 4px; }
-.product-page .pn-value-autogrow::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+/* =========================
+   DESCRIPTION SCROLLBAR
+========================= */
+
+.product-page .pn-value-autogrow::-webkit-scrollbar {
+    width: 14px;
+}
+
+.product-page .pn-value-autogrow::-webkit-scrollbar-track {
+    background: #d7dde8;
+    border-radius: 12px;
+}
+
+.product-page .pn-value-autogrow::-webkit-scrollbar-thumb {
+    background: #5d6b82;
+    border-radius: 12px;
+    border: 2px solid #d7dde8;
+}
+
+.product-page .pn-value-autogrow::-webkit-scrollbar-thumb:hover {
+    background: #3f4d63;
+}
 
 /* =========================
    IMAGE GRID
@@ -525,7 +565,43 @@
   font-family: 'Inter', sans-serif;
 }
 
-.product-page .pn-image-delete { font-size: 15px; width: 16px; height: 16px; min-width: 16px; margin-top: 2px; }
+/* ── Delete button on image slots ──
+   Now lives INSIDE the .pn-image-box (which is position: relative),
+   absolutely positioned in the top-right corner. No margin is used,
+   so nothing can nudge the glyph on hover — only the color transitions. ── */
+.product-page .pn-image-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  width: 20px;
+  height: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0;
+  padding: 0;
+
+  font-size: 18px;
+  line-height: 1;
+
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+
+  cursor: pointer;
+
+  z-index: 5;
+
+  transition: color 0.2s ease;
+}
+
+.product-page .pn-image-delete:hover {
+  color: #ef4444 !important;
+  transform: none !important;
+}
 
 /* =========================
    SAVE WRAPPER — hashtag left, buttons right
@@ -686,7 +762,7 @@
 }
 
 /* =========================
-   POPUP
+   POPUP (generic — success / warning / done)
 ========================= */
 .ai-popup-overlay {
   position: fixed;
@@ -770,6 +846,89 @@
 .product-page .ai-btn.ai-popup-cancel:hover {
   background: var(--bg-input) !important;
   border-color: var(--text-secondary) !important;
+}
+
+/* =========================
+   DELETE-CONFIRM MODAL
+   ("🗑️ DELETE FIELD?" danger-style design)
+   Scoped modifier on top of the base .ai-popup so the
+   Save/Exit/Duplicate/Clear-all popups are left untouched.
+========================= */
+.ai-popup.ai-popup--confirm-delete {
+  background: #fdfcf7;
+  border: 1.5px solid #ddd8c6;
+  padding: 34px 40px 32px;
+}
+
+.ai-popup--confirm-delete .ai-popup-confirm-icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 14px;
+  filter: grayscale(0.25);
+}
+
+.ai-popup--confirm-delete h3 {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #1c1c28;
+  margin-bottom: 16px;
+}
+
+.ai-popup--confirm-delete p {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: #55524a;
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.product-page .ai-btn.ai-popup-keep-btn {
+  width: auto !important;
+  background: #fff !important;
+  border: 1.5px solid #ddd8c6 !important;
+  color: #6b6b80 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  padding: 10px 26px !important;
+  border-radius: 999px !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  transition: all 0.2s ease !important;
+  text-transform: uppercase !important;
+}
+
+.product-page .ai-btn.ai-popup-keep-btn:hover {
+  background: #f5f3ea !important;
+  border-color: #b8b39c !important;
+}
+
+.product-page .ai-btn.ai-popup-confirm-btn--danger {
+  width: auto !important;
+  background: #e11d1d !important;
+  border: none !important;
+  color: #fff !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  padding: 10px 26px !important;
+  border-radius: 999px !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  transition: all 0.2s ease !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 29, 0.3) !important;
+}
+
+.product-page .ai-btn.ai-popup-confirm-btn--danger:hover {
+  background: #c81616 !important;
+  box-shadow: 0 6px 18px rgba(225, 29, 29, 0.4) !important;
 }
 
 /* =========================

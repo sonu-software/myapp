@@ -518,7 +518,6 @@ export default function Persona() {
     setConfirmModal({
       show: true,
       variant: "warning",
-      icon: "⚠️",
       title: "Exit Without Saving?",
       message: "Any unsaved changes to this persona will be lost.",
       confirmLabel: "Exit",

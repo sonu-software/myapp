@@ -296,10 +296,6 @@ export default function BusinessSetup() {
     }
   };
 
-
-
-
-
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
@@ -350,6 +346,12 @@ export default function BusinessSetup() {
     } finally {
       setAddingMember(false);
     }
+  };
+
+  const handleClearAll = () => {
+    setFormData(EMPTY_FORM);
+    setHashtags([]);
+    setLogoPreview(null);
   };
 
   const handleSubmit = async (e) => {
@@ -464,7 +466,7 @@ export default function BusinessSetup() {
             onChange={handleInputChange} disabled={!isEditing}
             options={[...categories, "Others"]} placeholder="Select Category" />
 
-          <SelectRow label="Industry / Category *" name="industry" value={formData.industry}
+          <SelectRow label="Business Sub-Category *" name="industry" value={formData.industry}
             onChange={handleInputChange} disabled={!isEditing}
             options={subCategories} placeholder="Select Sub Category" />
 
@@ -788,10 +790,13 @@ export default function BusinessSetup() {
           </div>
         </div>
 
-        {/* ══ SAVE ══ */}
+        {/* ══ SAVE & CLEAR ══ */}
         <div className="bs-actions">
+          <button type="button" className="bs-clear-all-btn" disabled={!isEditing} onClick={handleClearAll}>
+            Clear all
+          </button>
           <button type="submit" className="bs-save-btn" disabled={!isEditing}>
-            SAVE
+            Save
           </button>
         </div>
 

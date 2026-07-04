@@ -718,98 +718,130 @@ export default function AppFrame() {
                       onClick={(e) => e.stopPropagation()}
                     >
 
-                      <div className="header-filter-dropdown-title">
-                        Filter Executes
-                      </div>
+                      <div className="header-filter-dropdown-head">
 
-                      <div className="header-filter-field">
-                        <label>Start Date</label>
-                        <DatePicker
-                          selected={startDate}
-                          onChange={setStartDate}
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select start date"
-                          className="header-filter-date-input"
-                        />
-                      </div>
+                        <div className="header-filter-dropdown-title">
+                          <Filter size={13} strokeWidth={2.6} />
+                          <span>Filter Executes</span>
+                        </div>
 
-                      <div className="header-filter-field">
-                        <label>End Date</label>
-                        <DatePicker
-                          selected={endDate}
-                          onChange={setEndDate}
-                          dateFormat="yyyy-MM-dd"
-                          placeholderText="Select end date"
-                          className="header-filter-date-input"
-                        />
-                      </div>
-
-                      <div className="header-filter-field">
-                        <label>Stage</label>
-                        <select
-                          value={selectedFilterStage}
-                          onChange={(e) => setSelectedFilterStage(e.target.value)}
+                        <button
+                          className="header-filter-dropdown-close"
+                          title="Close"
+                          onClick={() => setShowFilterDropdown(false)}
                         >
-                          <option value="">All Stages</option>
-                          {FILTER_STAGES.map(stage => (
-                            <option key={stage} value={stage}>
-                              {stage.charAt(0).toUpperCase() + stage.slice(1)}
-                            </option>
-                          ))}
-                        </select>
+                          <X size={14} strokeWidth={2.4} />
+                        </button>
+
                       </div>
 
-                      <div className="header-filter-field">
-                        <label>Topic</label>
-                        <select
-                          value={selectedFilterOccasion}
-                          onChange={(e) => setSelectedFilterOccasion(e.target.value)}
+                      <div className="header-filter-dropdown-body">
+
+                        <div className="header-filter-dropdown-row">
+
+                          <div className="header-filter-field">
+                            <label>Start Date</label>
+                            <DatePicker
+                              selected={startDate}
+                              onChange={setStartDate}
+                              dateFormat="yyyy-MM-dd"
+                              placeholderText="Select start date"
+                              className="header-filter-date-input"
+                            />
+                          </div>
+
+                          <div className="header-filter-field">
+                            <label>End Date</label>
+                            <DatePicker
+                              selected={endDate}
+                              onChange={setEndDate}
+                              dateFormat="yyyy-MM-dd"
+                              placeholderText="Select end date"
+                              className="header-filter-date-input"
+                            />
+                          </div>
+
+                        </div>
+
+                        <div className="header-filter-dropdown-row">
+
+                          <div className="header-filter-field">
+                            <label>Stage</label>
+                            <select
+                              value={selectedFilterStage}
+                              onChange={(e) => setSelectedFilterStage(e.target.value)}
+                            >
+                              <option value="">All Stages</option>
+                              {FILTER_STAGES.map(stage => (
+                                <option key={stage} value={stage}>
+                                  {stage.charAt(0).toUpperCase() + stage.slice(1)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="header-filter-field">
+                            <label>Topic</label>
+                            <select
+                              value={selectedFilterOccasion}
+                              onChange={(e) => setSelectedFilterOccasion(e.target.value)}
+                            >
+                              <option value="">All Topics</option>
+                              {occasionList.map(o => (
+                                <option key={o.occasion_id} value={o.occasion_id}>
+                                  {o.title}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                        </div>
+
+                        <div className="header-filter-dropdown-row">
+
+                          <div className="header-filter-field">
+                            <label>Product</label>
+                            <select
+                              value={selectedFilterProduct}
+                              onChange={(e) => setSelectedFilterProduct(e.target.value)}
+                            >
+                              <option value="">All Products</option>
+                              {productList.map(p => (
+                                <option key={p.product_id} value={p.product_id}>
+                                  {p.product_name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="header-filter-field">
+                            <label>Persona</label>
+                            <select
+                              value={selectedFilterPersona}
+                              onChange={(e) => setSelectedFilterPersona(e.target.value)}
+                            >
+                              <option value="">All Personas</option>
+                              {personaList.map(p => (
+                                <option key={p.persona_id} value={p.persona_id}>
+                                  {p.persona_name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      <div className="header-filter-dropdown-foot">
+                        <button
+                          className="header-filter-clear-btn"
+                          onClick={clearAllFilters}
                         >
-                          <option value="">All Topics</option>
-                          {occasionList.map(o => (
-                            <option key={o.occasion_id} value={o.occasion_id}>
-                              {o.title}
-                            </option>
-                          ))}
-                        </select>
+                          <RotateCcw size={12} strokeWidth={2.4} />
+                          Clear Filter
+                        </button>
                       </div>
-
-                      <div className="header-filter-field">
-                        <label>Product</label>
-                        <select
-                          value={selectedFilterProduct}
-                          onChange={(e) => setSelectedFilterProduct(e.target.value)}
-                        >
-                          <option value="">All Products</option>
-                          {productList.map(p => (
-                            <option key={p.product_id} value={p.product_id}>
-                              {p.product_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="header-filter-field">
-                        <label>Persona</label>
-                        <select
-                          value={selectedFilterPersona}
-                          onChange={(e) => setSelectedFilterPersona(e.target.value)}
-                        >
-                          <option value="">All Personas</option>
-                          {personaList.map(p => (
-                            <option key={p.persona_id} value={p.persona_id}>
-                              {p.persona_name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <button
-                        className="header-filter-clear-btn"
-                        onClick={clearAllFilters}
-                      >
-                        Clear Filter
-                      </button>
 
                     </div>
 
@@ -947,7 +979,14 @@ export default function AppFrame() {
             >
 
               <div className="ce-modal-header">
-                <h3>Create Execute</h3>
+
+                <div className="ce-modal-header-left">
+                  <div className="ce-modal-header-icon">
+                    <Sparkles size={14} strokeWidth={2.4} />
+                  </div>
+                  <h3>Create Execute</h3>
+                </div>
+
                 <button
                   className="ce-modal-close"
                   onClick={() => setShowCreateExecuteModal(false)}
@@ -959,144 +998,181 @@ export default function AppFrame() {
 
               <div className="ce-modal-body">
 
-                <div className="ce-modal-group">
-                  <label>Execute Title</label>
-                  <input
-                    type="text"
-                    value={newDocketTitle}
-                    onChange={(e) => setNewDocketTitle(e.target.value)}
-                  />
-                </div>
+                <div className="ce-modal-section">
 
-                <div className="ce-modal-group">
-                  <label>Upload Schedule</label>
-                  <DatePicker
-                    selected={newUploadedDateTime}
-                    popperPlacement="bottom-end"
-                    onChange={(date) => setNewUploadedDateTime(date)}
-                    showTimeSelect
-                    dateFormat="MMM d, yyyy h:mm aa"
-                    timeFormat="hh:mm aa"
-                    timeIntervals={15}
-                    className="ce-modal-date-input"
-                    placeholderText="Select upload time"
-                  />
-                </div>
+                  <div className="ce-modal-section-title">Basics</div>
 
-                <div className="ce-modal-group">
-                  <label>Execute Description</label>
-                  <textarea
-                    value={newExecuteDescription}
-                    onChange={(e) => setNewExecuteDescription(e.target.value)}
-                    placeholder="Enter execute description..."
-                  />
-                </div>
-
-                <div className="ce-modal-group">
-                  <label>Visual Elements</label>
-                  <textarea
-                    value={newVisualElements}
-                    onChange={(e) => setNewVisualElements(e.target.value)}
-                    placeholder="Enter visual elements..."
-                  />
-                </div>
-
-                <div className="ce-modal-group">
-                  <label>Prompt Type</label>
-                  <select
-                    value={newMode}
-                    onChange={(e) => {
-                      setNewMode(e.target.value);
-                      setNewMediaType("");
-                      setNewSubType("");
-                    }}
-                  >
-                    <option value="">Select Prompt Type</option>
-                    <option value="message">Message</option>
-                    <option value="visuals">Visuals</option>
-                  </select>
-                </div>
-
-                {newMode && (
                   <div className="ce-modal-group">
-                    <label>{newMode === "message" ? "Message Type" : "Visual Type"}</label>
+                    <label>Execute Title</label>
+                    <input
+                      type="text"
+                      value={newDocketTitle}
+                      onChange={(e) => setNewDocketTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Upload Schedule</label>
+                    <DatePicker
+                      selected={newUploadedDateTime}
+                      popperPlacement="bottom-end"
+                      onChange={(date) => setNewUploadedDateTime(date)}
+                      showTimeSelect
+                      dateFormat="MMM d, yyyy h:mm aa"
+                      timeFormat="hh:mm aa"
+                      timeIntervals={15}
+                      className="ce-modal-date-input"
+                      placeholderText="Select upload time"
+                    />
+                  </div>
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Content</div>
+
+                  <div className="ce-modal-group">
+                    <label>Execute Description</label>
+                    <textarea
+                      value={newExecuteDescription}
+                      onChange={(e) => setNewExecuteDescription(e.target.value)}
+                      placeholder="Enter execute description..."
+                    />
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Visual Elements</label>
+                    <textarea
+                      value={newVisualElements}
+                      onChange={(e) => setNewVisualElements(e.target.value)}
+                      placeholder="Enter visual elements..."
+                    />
+                  </div>
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Classification</div>
+
+                  <div className="ce-modal-row">
+
+                    <div className="ce-modal-group">
+                      <label>Prompt Type</label>
+                      <select
+                        value={newMode}
+                        onChange={(e) => {
+                          setNewMode(e.target.value);
+                          setNewMediaType("");
+                          setNewSubType("");
+                        }}
+                      >
+                        <option value="">Select Prompt Type</option>
+                        <option value="visuals">Visuals</option>
+                      </select>
+                    </div>
+
+                    {newMode && (
+                      <div className="ce-modal-group">
+                        <label>{newMode === "message" ? "Message Type" : "Visual Type"}</label>
+                        <select
+                          value={newMediaType}
+                          onChange={(e) => {
+                            setNewMediaType(e.target.value);
+                            setNewSubType("");
+                          }}
+                        >
+                          <option value="">Select Type</option>
+                          {createMediaTypes.map((t) => (
+                            <option key={t.media_type} value={t.media_type}>
+                              {t.media_type}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {newMediaType && (
+                    <div className="ce-modal-group">
+                      <label>{newMode === "message" ? "Message Sub Type" : "Visual Sub Type"}</label>
+                      <select
+                        value={newSubType}
+                        onChange={(e) => setNewSubType(e.target.value)}
+                      >
+                        <option value="">Select Sub Type</option>
+                        {createSubTypes.map((s) => (
+                          <option key={s.subtype_name} value={s.subtype_name}>
+                            {s.subtype_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Targeting</div>
+
+                  <div className="ce-modal-row">
+
+                    <div className="ce-modal-group">
+                      <label>Product</label>
+                      <select
+                        value={newProductId}
+                        onChange={(e) => setNewProductId(e.target.value)}
+                      >
+                        <option value="">Select Product</option>
+                        {productList.map((p) => (
+                          <option key={p.product_id} value={p.product_id}>
+                            {p.product_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="ce-modal-group">
+                      <label>Persona</label>
+                      <select
+                        value={newPersonaId}
+                        onChange={(e) => setNewPersonaId(e.target.value)}
+                      >
+                        <option value="">Select Persona</option>
+                        {personaList.map((p) => (
+                          <option key={p.persona_id} value={p.persona_id}>
+                            {p.persona_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Topic</label>
                     <select
-                      value={newMediaType}
-                      onChange={(e) => {
-                        setNewMediaType(e.target.value);
-                        setNewSubType("");
-                      }}
+                      value={newOccasionId}
+                      onChange={(e) => setNewOccasionId(e.target.value)}
                     >
-                      <option value="">Select Type</option>
-                      {createMediaTypes.map((t) => (
-                        <option key={t.media_type} value={t.media_type}>
-                          {t.media_type}
+                      <option value="">Select Topic</option>
+                      {occasionList.map((event) => (
+                        <option key={event.occasion_id} value={event.occasion_id}>
+                          {event.title}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
 
-                {newMediaType && (
-                  <div className="ce-modal-group">
-                    <label>{newMode === "message" ? "Message Sub Type" : "Visual Sub Type"}</label>
-                    <select
-                      value={newSubType}
-                      onChange={(e) => setNewSubType(e.target.value)}
-                    >
-                      <option value="">Select Sub Type</option>
-                      {createSubTypes.map((s) => (
-                        <option key={s.subtype_name} value={s.subtype_name}>
-                          {s.subtype_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="ce-modal-group">
-                  <label>Product</label>
-                  <select
-                    value={newProductId}
-                    onChange={(e) => setNewProductId(e.target.value)}
-                  >
-                    <option value="">Select Product</option>
-                    {productList.map((p) => (
-                      <option key={p.product_id} value={p.product_id}>
-                        {p.product_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="ce-modal-group">
-                  <label>Persona</label>
-                  <select
-                    value={newPersonaId}
-                    onChange={(e) => setNewPersonaId(e.target.value)}
-                  >
-                    <option value="">Select Persona</option>
-                    {personaList.map((p) => (
-                      <option key={p.persona_id} value={p.persona_id}>
-                        {p.persona_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="ce-modal-group">
-                  <label>Topic</label>
-                  <select
-                    value={newOccasionId}
-                    onChange={(e) => setNewOccasionId(e.target.value)}
-                  >
-                    <option value="">Select Topic</option>
-                    {occasionList.map((event) => (
-                      <option key={event.occasion_id} value={event.occasion_id}>
-                        {event.title}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
               </div>

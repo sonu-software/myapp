@@ -304,6 +304,39 @@ function ImageIcon() {
 }
 
 /* ───────────────────────────── */
+/*  CONFIRM-DELETE MODAL         */
+/*  Matches the "🗑️ DELETE FIELD?" */
+/*  danger-style confirmation design */
+/* ───────────────────────────── */
+function ConfirmDeleteModal({ show, title = "Delete Field?", label = "This field", onConfirm, onCancel }) {
+  if (!show) return null;
+  return (
+    <div className="ai-popup-overlay">
+      <div className="ai-popup ai-popup--confirm-delete">
+        <div className="ai-popup-confirm-icon">🗑️</div>
+        <h3>{title}</h3>
+        <p>
+          "{label}" will be permanently removed.
+          <br />
+          This cannot be undone.
+        </p>
+        <div className="ai-popup-actions">
+          <button className="ai-btn ai-popup-keep-btn" onClick={onCancel}>
+            Keep It
+          </button>
+          <button
+            className="ai-btn ai-popup-confirm-btn ai-popup-confirm-btn--danger"
+            onClick={onConfirm}
+          >
+            Yes, Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────── */
 /*  HASHTAG BAR                  */
 /*  Lives inside the save bar    */
 /* ───────────────────────────── */
@@ -396,7 +429,9 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
     initialData.length ? [...initialData] : Array.from({ length: INITIAL_ROWS }, () => "")
   );
   const lastLoadedRef = useRef(JSON.stringify(initialData));
-  const [pendingDeleteIndex, setPendingDeleteIndex] = useState(null);
+
+  /* ── Delete confirmation modal state ── */
+  const [confirmModal, setConfirmModal] = useState({ show: false, index: null });
 
   useEffect(() => {
     const incoming = JSON.stringify(initialData);
@@ -419,18 +454,22 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
     setRows((prev) => [...prev, ""]);
   };
 
-  const confirmDeleteRow = (e, index) => {
+  /* ── Opens the "Delete Field?" confirmation modal ── */
+  const onRequestDelete = (e, index) => {
     e.stopPropagation();
-    setPendingDeleteIndex(index);
+    setConfirmModal({ show: true, index });
   };
 
   const doDeleteRow = () => {
-    const updated = rows.filter((_, i) => i !== pendingDeleteIndex);
+    const index = confirmModal.index;
+    const updated = rows.filter((_, i) => i !== index);
     setRows(updated);
     lastLoadedRef.current = JSON.stringify(updated.filter((v) => v.trim() !== ""));
     onSave(updated.filter((v) => v.trim() !== ""));
-    setPendingDeleteIndex(null);
+    setConfirmModal({ show: false, index: null });
   };
+
+  const cancelDeleteRow = () => setConfirmModal({ show: false, index: null });
 
   return (
     <>
@@ -480,7 +519,7 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
                 {isExpanded && index !== 0 && (
                   <span
                     className="pn-delete-x pn-delete-x--no-hover"
-                    onClick={(e) => confirmDeleteRow(e, index)}
+                    onClick={(e) => onRequestDelete(e, index)}
                     title="Delete row"
                   >×</span>
                 )}
@@ -490,19 +529,14 @@ function EditableCard({ title, subtitle, onSave, initialData = [], isExpanded, o
         </div>
       </div>
 
-      {/* ── Delete confirmation popup ── */}
-      {pendingDeleteIndex !== null && (
-        <div className="ai-popup-overlay">
-          <div className="ai-popup warning">
-            <h3>Remove Field</h3>
-            <p>This field will be removed. Are you sure?</p>
-            <div className="ai-popup-actions">
-              <button className="ai-btn ai-popup-cancel" onClick={() => setPendingDeleteIndex(null)}>Cancel</button>
-              <button className="ai-btn ai-popup-close" onClick={doDeleteRow}>Remove</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Delete confirmation modal ── */}
+      <ConfirmDeleteModal
+        show={confirmModal.show}
+        title="Delete Field?"
+        label="This field"
+        onConfirm={doDeleteRow}
+        onCancel={cancelDeleteRow}
+      />
     </>
   );
 }
@@ -518,6 +552,9 @@ function ImageCard({ onSave, initialData = [], isExpanded, onCardClick }) {
     initialData.length ? [...initialData] : Array.from({ length: INITIAL_IMAGES }, () => null)
   );
   const lastLoadedRef = useRef(JSON.stringify(initialData));
+
+  /* ── Delete confirmation modal state (same pattern as EditableCard) ── */
+  const [confirmModal, setConfirmModal] = useState({ show: false, index: null });
 
   useEffect(() => {
     const incoming = JSON.stringify(initialData);
@@ -555,82 +592,114 @@ function ImageCard({ onSave, initialData = [], isExpanded, onCardClick }) {
     setImages((prev) => [...prev, null]);
   };
 
-  const handleDeleteImage = (e, index) => {
+  // Opens the "Delete Image?" confirmation modal — does NOT delete directly.
+  // preventDefault() here also stops the surrounding <label> from firing
+  // its native "open file picker" behavior when the × is clicked.
+  const onRequestDelete = (e, index) => {
+    e.preventDefault();
     e.stopPropagation();
+    setConfirmModal({ show: true, index });
+  };
+
+  const doDeleteImage = () => {
+    const index = confirmModal.index;
     const updated = images.filter((_, i) => i !== index);
     setImages(updated);
     lastLoadedRef.current = JSON.stringify(updated.filter(Boolean));
     onSave(updated.filter(Boolean));
+    setConfirmModal({ show: false, index: null });
   };
 
+  const cancelDeleteImage = () => setConfirmModal({ show: false, index: null });
+
   return (
-    <div
-      className={`pn-card ${isExpanded ? "pn-card--expanded" : ""}`}
-      onClick={onCardClick}
-    >
+    <>
       <div
-        className="pn-card-header"
-        onClick={(e) => { e.stopPropagation(); onCardClick(); }}
+        className={`pn-card ${isExpanded ? "pn-card--expanded" : ""}`}
+        onClick={onCardClick}
       >
-        <div className="pn-card-header-text">
-          <h3>Images</h3>
-          <span className="pn-card-subtitle">Product visuals</span>
+        <div
+          className="pn-card-header"
+          onClick={(e) => { e.stopPropagation(); onCardClick(); }}
+        >
+          <div className="pn-card-header-text">
+            <h3>Images</h3>
+            <span className="pn-card-subtitle">Product visuals</span>
+          </div>
+          <div className="pn-card-actions">
+            <button
+              className="icon-action-btn"
+              onClick={(e) => {
+                if (!isExpanded) { e.stopPropagation(); onCardClick(); return; }
+                handleAddImage(e);
+              }}
+              disabled={isExpanded && images.length >= MAX_IMAGES}
+              title="Add image"
+            >
+              <PlusIcon />
+            </button>
+          </div>
         </div>
-        <div className="pn-card-actions">
-          <button
-            className="icon-action-btn"
-            onClick={(e) => {
-              if (!isExpanded) { e.stopPropagation(); onCardClick(); return; }
-              handleAddImage(e);
-            }}
-            disabled={isExpanded && images.length >= MAX_IMAGES}
-            title="Add image"
-          >
-            <PlusIcon />
-          </button>
+
+        <div
+          className="pn-card-body"
+          onClick={isExpanded ? (e) => e.stopPropagation() : undefined}
+        >
+          <div className="pn-image-grid">
+            {images.map((image, index) => (
+              <div className="pn-image-slot" key={index}>
+                <label
+                  className={`pn-image-box ${image ? "pn-image-box--filled" : ""} ${!isExpanded ? "pn-image-box--disabled" : ""}`}
+                  onClick={(e) => { e.stopPropagation(); if (!isExpanded) onCardClick(); }}
+                >
+                  {image
+                    ? <img src={image.img_url} alt={`Product ${index + 1}`} />
+                    : <div className="pn-image-placeholder"><ImageIcon /><span>{isExpanded ? "Upload" : "No image"}</span></div>
+                  }
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={!isExpanded}
+                    onChange={(e) => handleImageUpload(index, e)}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      opacity: 0,
+                      width: "100%",
+                      height: "100%",
+                      cursor: "pointer",
+                      zIndex: 1,
+                      pointerEvents: isExpanded ? "auto" : "none"
+                    }}
+                  />
+                  {/* Delete button now lives INSIDE the label/image box,
+                      positioned absolutely in the top-right corner, so it
+                      renders above the file input and captures the click
+                      itself instead of the click "falling through" to the
+                      upload trigger underneath it. */}
+                  {isExpanded && (
+                    <span
+                      className="pn-delete-x pn-image-delete"
+                      onClick={(e) => onRequestDelete(e, index)}
+                      title="Remove image"
+                    >×</span>
+                  )}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div
-        className="pn-card-body"
-        onClick={isExpanded ? (e) => e.stopPropagation() : undefined}
-      >
-        <div className="pn-image-grid">
-          {images.map((image, index) => (
-            <div className="pn-image-slot" key={index}>
-              <label
-                className={`pn-image-box ${image ? "pn-image-box--filled" : ""} ${!isExpanded ? "pn-image-box--disabled" : ""}`}
-                onClick={(e) => { e.stopPropagation(); if (!isExpanded) onCardClick(); }}
-              >
-                {image
-                  ? <img src={image.img_url} alt={`Product ${index + 1}`} />
-                  : <div className="pn-image-placeholder"><ImageIcon /><span>{isExpanded ? "Upload" : "No image"}</span></div>
-                }
-                <input
-                  type="file"
-                  accept="image/*"
-                  disabled={!isExpanded}
-                  onChange={(e) => handleImageUpload(index, e)}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    opacity: 0,
-                    width: "100%",
-                    height: "100%",
-                    cursor: "pointer",
-                    zIndex: 1,
-                    pointerEvents: isExpanded ? "auto" : "none"
-                  }}
-                />
-              </label>
-              {isExpanded && (
-                <span className="pn-delete-x pn-image-delete" onClick={(e) => handleDeleteImage(e, index)} title="Remove image">×</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+      {/* ── Delete confirmation modal (same danger-styled design) ── */}
+      <ConfirmDeleteModal
+        show={confirmModal.show}
+        title="Delete Image?"
+        label="This image"
+        onConfirm={doDeleteImage}
+        onCancel={cancelDeleteImage}
+      />
+    </>
   );
 }
 
@@ -660,15 +729,6 @@ function DescriptionCard({ onSave, initialData = "", isExpanded, onCardClick }) 
         <div className="pn-card-header-text">
           <h3>Description</h3>
           <span className="pn-card-subtitle">Product overview</span>
-        </div>
-        <div className="pn-card-actions">
-          <button
-            className="icon-action-btn"
-            onClick={(e) => { e.stopPropagation(); if (!isExpanded) onCardClick(); }}
-            title="Edit description"
-          >
-            <PlusIcon />
-          </button>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import "../styles/plannerpage.css";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { createPortal } from "react-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Sparkles, X, Loader2 } from "lucide-react";
 
 export default function PlannerPage() {
   // ========== STATE MANAGEMENT ==========
@@ -172,9 +174,19 @@ export default function PlannerPage() {
   const [docketTitle, setDocketTitle] = useState("");
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedPersonaId, setSelectedPersonaId] = useState("");
+  const [selectedOccasionId, setSelectedOccasionId] = useState("");
 
   const [executeDescription, setExecuteDescription] = useState("");
   const [visualElements, setVisualElements] = useState("");
+
+  // ── Topic (occasion) reference list for the Create Execute modal ────────
+  // Distinct from `occasions` below, which is the calendar's month-scoped
+  // occasion list. This mirrors AppFrame's full "/planner/all-occasions"
+  // lookup used to populate the Targeting → Topic dropdown.
+  const [occasionList, setOccasionList] = useState([]);
+
+  // ── Create Execute modal: in-flight submission state ─────────────────────
+  const [isCreatingExecute, setIsCreatingExecute] = useState(false);
 
   const [occasions, setOccasions] = useState([]);
   const [occasionModalOpen, setOccasionModalOpen] = useState(false);
@@ -433,6 +445,13 @@ useEffect(() => {
     })
       .then(res => res.json())
       .then(data => { if (data.success) setPersonaList(data.data); });
+
+    fetch(`${API}/planner/all-occasions`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+    })
+      .then(res => res.json())
+      .then(data => { if (data.success) setOccasionList(data.data || []); })
+      .catch(err => console.error("Failed to load occasions", err));
   }, []);
 
   // ========== FETCH MEDIA TYPES ==========
@@ -555,11 +574,30 @@ useEffect(() => {
   };
 
   // ========== EVENT HANDLERS ==========
+  function resetCreateExecuteForm() {
+    setDocketTitle("");
+    setMode("");
+    setMediaType("");
+    setSubType("");
+    setSelectedProductId("");
+    setSelectedPersonaId("");
+    setSelectedOccasionId("");
+    setExecuteDescription("");
+    setVisualElements("");
+    setUploadedDateTime(new Date());
+  }
+
   const handleSubmit = async () => {
+
+    if (isCreatingExecute) return;
+
     if (!docketTitle || !mode || !mediaType || !subType) {
       alert("Please fill all required fields");
       return;
     }
+
+    setIsCreatingExecute(true);
+
     try {
       const formattedDateTime =
         `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')} 00:00:00`;
@@ -572,9 +610,10 @@ useEffect(() => {
         },
         body: JSON.stringify({
           title: docketTitle,
-          tab: activeTab,
+          tab: "media",
           product_id: selectedProductId || null,
           persona_id: selectedPersonaId || null,
+          occasion_id: selectedOccasionId || null,
           mode,
           mediaType,
           subType,
@@ -582,9 +621,9 @@ useEffect(() => {
           uploaded_date_time: uploadedDateTime
             ? new Date(uploadedDateTime).toISOString()
             : null,
-
           execute_description: executeDescription,
-          visual_elements: visualElements
+          visual_elements: visualElements,
+          summary: ""
         })
       });
 
@@ -592,26 +631,24 @@ useEffect(() => {
       if (handleApiError(data)) return;
 
       if (data.success) {
-        if (activeTab === "media") {
-          navigate(`/docket-media/${data.docket_id}`);
-        } else {
-          navigate(`/docket/${data.docket_id}`);
-        }
-      } else alert("Failed to save docket");
+        resetCreateExecuteForm();
+        setShowModal(false);
+        navigate(`/docket-media/${data.docket_id}`);
+      } else {
+        alert(data.message || "Failed to save docket");
+      }
     } catch (err) {
       console.error("Save error:", err);
       alert("Server error");
+    } finally {
+      setIsCreatingExecute(false);
     }
   };
 
   const handleCancel = () => {
+    if (isCreatingExecute) return;
     setShowModal(false);
-    setDocketTitle("");
-    setMode("");
-    setMediaType("");
-    setSubType("");
-    setSelectedProductId("");
-    setSelectedPersonaId("");
+    resetCreateExecuteForm();
   };
 
   const handleSaveOccasion = async () => {
@@ -676,8 +713,6 @@ useEffect(() => {
     if (refreshedData.success) setOccasions(refreshedData.data);
   };
 
-  const [activeTab, setActiveTab] = useState("prompt");
-  const [filterEvents, setFilterEvents] = useState(true);
   const [filterTasks,  setFilterTasks]  = useState(true);
 
 
@@ -765,12 +800,11 @@ useEffect(() => {
 
               const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(dayObj.day).padStart(2, '0')}`;
 
-              // Events (occasions)
-              const dayOccasions = filterEvents
-                ? occasions.filter(o => o.occasion_date === dateStr).map(o => ({ ...o, _type: 'occasion' }))
-                : [];
-
               // Execute (dockets) — blue chips
+              // NOTE: Topics (occasions) are intentionally not rendered on
+              // the calendar dates — only executes show as chips here. The
+              // Add/Edit Topic modal, "Add Topic" context menu action, and
+              // the underlying `occasions` state/fetch above are untouched.
               const dayDockets = filterTasks
                 ? allMonthDockets.filter(d => {
                     const dateField =
@@ -784,7 +818,7 @@ useEffect(() => {
                   }).map(d => ({ ...d, _type: 'docket' }))
                 : [];
 
-              const allDayItems   = [...dayOccasions, ...dayDockets];
+              const allDayItems   = [...dayDockets];
               const MAX_VISIBLE   = 2;
               const visibleItems  = allDayItems.slice(0, MAX_VISIBLE);
               const overflowCount = allDayItems.length - MAX_VISIBLE;
@@ -972,7 +1006,7 @@ useEffect(() => {
               setContextMenu({ ...contextMenu, visible: false });
             }}
           >
-            Add Event
+            Add Topic
           </div>
           <div
             className="context-menu-item"
@@ -986,164 +1020,253 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── DOCKET MODAL ── */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowModal(false)}>
-              <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
-                <line x1="1" y1="1" x2="13" y2="13" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                <line x1="13" y1="1" x2="1" y2="13" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-              </svg>
-            </button>
+      {/* ── CREATE EXECUTE MODAL (same markup/behavior as AppFrame's) ── */}
+      {showModal &&
+        createPortal(
 
-            <div className="modal-tabs">
-              <label className={`tab-button ${activeTab === 'prompt' ? 'active' : ''}`}>
-                <span>Prompt</span>
-                <input type="radio" name="tab" className="tab-radio"
-                  checked={activeTab === 'prompt'} onChange={() => setActiveTab('prompt')} />
-              </label>
-              <label className={`tab-button ${activeTab === 'media' ? 'active' : ''}`}>
-                <span>Media</span>
-                <input type="radio" name="tab" className="tab-radio"
-                  checked={activeTab === 'media'} onChange={() => setActiveTab('media')} />
-              </label>
+          <div
+            className="ce-overlay"
+            onClick={() => {
+              if (!isCreatingExecute) handleCancel();
+            }}
+          >
+
+            <div
+              className="ce-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+
+              <div className="ce-modal-header">
+
+                <div className="ce-modal-header-left">
+                  <div className="ce-modal-header-icon">
+                    <Sparkles size={14} strokeWidth={2.4} />
+                  </div>
+                  <h3>Create Execute</h3>
+                </div>
+
+                <button
+                  className="ce-modal-close"
+                  onClick={handleCancel}
+                  disabled={isCreatingExecute}
+                >
+                  <X size={16} color="#6b7280" strokeWidth={2.4} />
+                </button>
+              </div>
+
+              <div className="ce-modal-body">
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Basics</div>
+
+                  <div className="ce-modal-group">
+                    <label>Execute Title</label>
+                    <input
+                      type="text"
+                      value={docketTitle}
+                      onChange={(e) => setDocketTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Upload Schedule</label>
+                    <DatePicker
+                      selected={uploadedDateTime}
+                      popperPlacement="bottom-end"
+                      onChange={(date) => setUploadedDateTime(date)}
+                      showTimeSelect
+                      dateFormat="MMM d, yyyy h:mm aa"
+                      timeFormat="hh:mm aa"
+                      timeIntervals={15}
+                      className="ce-modal-date-input"
+                      placeholderText="Select upload time"
+                    />
+                  </div>
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Content</div>
+
+                  <div className="ce-modal-group">
+                    <label>Execute Description</label>
+                    <textarea
+                      value={executeDescription}
+                      onChange={(e) => setExecuteDescription(e.target.value)}
+                      placeholder="Enter execute description..."
+                    />
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Visual Elements</label>
+                    <textarea
+                      value={visualElements}
+                      onChange={(e) => setVisualElements(e.target.value)}
+                      placeholder="Enter visual elements..."
+                    />
+                  </div>
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Classification</div>
+
+                  <div className="ce-modal-row">
+
+                    <div className="ce-modal-group">
+                      <label>Prompt Type</label>
+                      <select
+                        value={mode}
+                        onChange={(e) => {
+                          setMode(e.target.value);
+                          setMediaType("");
+                          setSubType("");
+                        }}
+                      >
+                        <option value="">Select Prompt Type</option>
+                        <option value="message">Message</option>
+                        <option value="visuals">Visuals</option>
+                      </select>
+                    </div>
+
+                    {mode && (
+                      <div className="ce-modal-group">
+                        <label>{mode === "message" ? "Message Type" : "Visual Type"}</label>
+                        <select
+                          value={mediaType}
+                          onChange={(e) => {
+                            setMediaType(e.target.value);
+                            setSubType("");
+                          }}
+                        >
+                          <option value="">Select Type</option>
+                          {mediaTypes.map((t) => (
+                            <option key={t.media_type} value={t.media_type}>
+                              {t.media_type}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {mediaType && (
+                    <div className="ce-modal-group">
+                      <label>{mode === "message" ? "Message Sub Type" : "Visual Sub Type"}</label>
+                      <select
+                        value={subType}
+                        onChange={(e) => setSubType(e.target.value)}
+                      >
+                        <option value="">Select Sub Type</option>
+                        {subTypes.map((s) => (
+                          <option key={s.subtype_name} value={s.subtype_name}>
+                            {s.subtype_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="ce-modal-divider" />
+
+                <div className="ce-modal-section">
+
+                  <div className="ce-modal-section-title">Targeting</div>
+
+                  <div className="ce-modal-row">
+
+                    <div className="ce-modal-group">
+                      <label>Product</label>
+                      <select
+                        value={selectedProductId}
+                        onChange={(e) => setSelectedProductId(e.target.value)}
+                      >
+                        <option value="">Select Product</option>
+                        {productList.map((p) => (
+                          <option key={p.product_id} value={p.product_id}>
+                            {p.product_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="ce-modal-group">
+                      <label>Persona</label>
+                      <select
+                        value={selectedPersonaId}
+                        onChange={(e) => setSelectedPersonaId(e.target.value)}
+                      >
+                        <option value="">Select Persona</option>
+                        {personaList.map((p) => (
+                          <option key={p.persona_id} value={p.persona_id}>
+                            {p.persona_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                  </div>
+
+                  <div className="ce-modal-group">
+                    <label>Topic</label>
+                    <select
+                      value={selectedOccasionId}
+                      onChange={(e) => setSelectedOccasionId(e.target.value)}
+                    >
+                      <option value="">Select Topic</option>
+                      {occasionList.map((event) => (
+                        <option key={event.occasion_id} value={event.occasion_id}>
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="ce-modal-footer">
+                <button
+                  className="ce-modal-btn ce-modal-btn--cancel"
+                  onClick={handleCancel}
+                  disabled={isCreatingExecute}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="ce-modal-btn ce-modal-btn--save"
+                  onClick={handleSubmit}
+                  disabled={isCreatingExecute}
+                >
+                  {isCreatingExecute ? (
+                    <>
+                      <Loader2 size={14} className="ce-spinner" strokeWidth={2.4} />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Execute"
+                  )}
+                </button>
+              </div>
+
             </div>
 
-            <div className="modal-body">
-              <div className="schedule-row">
+          </div>,
 
-                <div className="schedule-title-field">
-                  <label className="form-label">Execute Title:</label>
-
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={docketTitle}
-                    onChange={e => setDocketTitle(e.target.value)}
-                  />
-                </div>
-
-                <div className="schedule-picker-field">
-                  <label className="form-label">Upload Schedule:</label>
-
-                  <DatePicker
-                    selected={uploadedDateTime}
-                    popperPlacement="bottom-end"
-                    onChange={(date) => setUploadedDateTime(date)}
-                    showTimeSelect
-                    dateFormat="MMM d, yyyy h:mm aa"
-                    timeFormat="hh:mm aa"
-                    timeIntervals={15}
-                    className="planner-datepicker"
-                    placeholderText="Select upload time"
-                  />
-                </div>
-
-              </div>
-
-
-              <div className="docket-form-group">
-                <label>Execute Description</label>
-
-                <textarea
-                  value={executeDescription}
-                  onChange={(e) => setExecuteDescription(e.target.value)}
-                  placeholder="Enter execute description..."
-                />
-              </div>
-
-              <div className="docket-form-group">
-                <label>Visual Elements</label>
-
-                <textarea
-                  value={visualElements}
-                  onChange={(e) => setVisualElements(e.target.value)}
-                  placeholder="Enter visual elements..."
-                />
-              </div>
-
-              <div className="form-row">
-                <label className="form-label">Prompt Type:</label>
-                <select
-                  className="form-input"
-                  value={mode}
-                  onChange={e => { setMode(e.target.value); setMediaType(""); setSubType(""); }}
-                >
-                  <option value="">Select Prompt Type</option>
-                  <option value="message">Message</option>
-                  <option value="visuals">Visuals</option>
-                </select>
-              </div>
-
-              {mode && (
-                <div className="form-row">
-                  <label className="form-label">{mode === "message" ? "Message Type:" : "Visual Type:"}</label>
-                  <select
-                    className="form-input"
-                    value={mediaType}
-                    onChange={e => { setMediaType(e.target.value); setSubType(""); }}
-                  >
-                    <option value="">Select Type</option>
-                    {mediaTypes.map(t => (
-                      <option key={t.media_type} value={t.media_type}>{t.media_type}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {mediaType && (
-                <div className="form-row">
-                  <label className="form-label">{mode === "message" ? "Message Sub Type:" : "Visual Sub Type:"}</label>
-                  <select
-                    className="form-input"
-                    value={subType}
-                    onChange={e => setSubType(e.target.value)}
-                  >
-                    <option value="">Select Sub Type</option>
-                    {subTypes.map(s => (
-                      <option key={s.subtype_name} value={s.subtype_name}>{s.subtype_name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="form-row">
-                <label className="form-label">Product:</label>
-                <select
-                  className="form-input"
-                  value={selectedProductId}
-                  onChange={e => setSelectedProductId(e.target.value)}
-                >
-                  <option value="">Select Product</option>
-                  {productList.map(p => (
-                    <option key={p.product_id} value={p.product_id}>{p.product_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-row">
-                <label className="form-label">Persona:</label>
-                <select
-                  className="form-input"
-                  value={selectedPersonaId}
-                  onChange={e => setSelectedPersonaId(e.target.value)}
-                >
-                  <option value="">Select Persona</option>
-                  {personaList.map(p => (
-                    <option key={p.persona_id} value={p.persona_id}>{p.persona_name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button className="modal-cancel-btn" onClick={handleCancel}>CANCEL</button>
-              <button className="modal-save-btn" onClick={handleSubmit}>DONE</button>
-            </div>
-          </div>
-        </div>
-      )}
+          document.body
+        )
+      }
 
       {/* ── OCCASION MODAL ── */}
       {occasionModalOpen && (
@@ -1157,7 +1280,7 @@ useEffect(() => {
             </button>
 
             <div className="occasion-modal-header">
-              {editingOccasion ? "Update Event" : "Add Event"}
+              {editingOccasion ? "Update Topic" : "Add Topic"}
             </div>
 
             <div className="modal-body">

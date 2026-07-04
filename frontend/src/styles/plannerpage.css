@@ -1391,3 +1391,355 @@
 .react-datepicker-popper {
   z-index: 999999 !important;
 }
+
+
+/* =========================================================
+CREATE EXECUTE MODAL
+(Ported verbatim from appFrame.css so PlannerPage's Create
+Execute modal matches AppFrame's workflow and UI exactly.)
+========================================================= */
+
+.ce-overlay{
+
+position:fixed;
+
+inset:0;
+
+background:rgba(15,18,30,.45);
+backdrop-filter:blur(2px);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+z-index:999999;
+
+animation:ceOverlayFade .15s ease;
+}
+
+@keyframes ceOverlayFade{
+
+from{
+opacity:0;
+}
+
+to{
+opacity:1;
+}
+}
+
+.ce-modal{
+
+width:420px;
+
+max-height:calc(100vh - 64px);
+
+display:flex;
+flex-direction:column;
+
+background:white;
+
+border-radius:10.5px;
+
+box-shadow:0 24px 60px rgba(16,24,40,.28);
+
+overflow:hidden;
+
+animation:ceModalPop .15s ease;
+}
+
+@keyframes ceModalPop{
+
+from{
+opacity:0;
+transform:translateY(8px) scale(.98);
+}
+
+to{
+opacity:1;
+transform:translateY(0) scale(1);
+}
+}
+
+.ce-modal-header{
+
+flex-shrink:0;
+
+display:flex;
+align-items:center;
+justify-content:space-between;
+
+padding:14px 16.8px;
+
+border-bottom:1px solid #edf0f5;
+}
+
+.ce-modal-header-left{
+
+display:flex;
+align-items:center;
+gap:9.1px;
+}
+
+.ce-modal-header-icon{
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+width:27.3px;
+height:27.3px;
+
+flex-shrink:0;
+
+border-radius:7.35px;
+
+background:linear-gradient(135deg,#4B479E,#5B479E);
+
+color:white;
+}
+
+.ce-modal-header h3{
+
+font-size:13.5px;
+font-weight:700;
+
+color:#1f2430;
+}
+
+.ce-modal-close{
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+width:26.25px;
+height:26.25px;
+
+border:none;
+border-radius:6.3px;
+
+background:transparent;
+
+color:#6b7280;
+
+cursor:pointer;
+
+transition:background-color .15s ease, color .15s ease;
+}
+
+.ce-modal-close:hover{
+background:#f6f7fb;
+color:#1f2430;
+}
+
+.ce-modal-close svg{
+width:16px !important;
+height:16px !important;
+flex-shrink:0;
+display:block !important;
+}
+
+.ce-modal-body{
+
+flex:1;
+
+min-height:0;
+
+overflow-y:auto;
+
+padding:16.8px;
+
+display:flex;
+flex-direction:column;
+
+gap:12.6px;
+}
+
+.ce-modal-group{
+
+display:flex;
+flex-direction:column;
+
+gap:4.2px;
+}
+
+.ce-modal-group label{
+
+font-size:9.5px;
+font-weight:600;
+
+color:#6b7280;
+
+text-transform:uppercase;
+letter-spacing:.3px;
+}
+
+.ce-modal-section{
+
+display:flex;
+flex-direction:column;
+
+gap:12.6px;
+}
+
+.ce-modal-section-title{
+
+font-size:9.5px;
+font-weight:700;
+
+color:#4B479E;
+
+text-transform:uppercase;
+letter-spacing:.5px;
+}
+
+.ce-modal-row{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+
+gap:10.5px;
+}
+
+.ce-modal-divider{
+
+height:1px;
+
+background:#edf0f5;
+
+margin:1.4px 0;
+
+flex-shrink:0;
+}
+
+.ce-modal-group input[type="text"],
+.ce-modal-group select,
+.ce-modal-group textarea,
+.ce-modal-date-input{
+
+width:100%;
+
+padding:8.4px 10.5px;
+
+border:1px solid #dcdfe6;
+border-radius:6.3px;
+
+background:white;
+
+font-family:Inter,Segoe UI,sans-serif;
+font-size:11.5px;
+color:#333;
+
+outline:none;
+
+transition:border-color .15s ease;
+}
+
+.ce-modal-group textarea{
+
+min-height:63px;
+
+resize:vertical;
+
+line-height:1.4;
+}
+
+.ce-modal-group input[type="text"]:focus,
+.ce-modal-group select:focus,
+.ce-modal-group textarea:focus,
+.ce-modal-date-input:focus{
+border-color:#4B479E;
+}
+
+.ce-modal-footer{
+
+flex-shrink:0;
+
+display:flex;
+align-items:center;
+justify-content:flex-end;
+
+gap:8.4px;
+
+padding:12.6px 16.8px;
+
+border-top:1px solid #edf0f5;
+
+background:#fafbfd;
+}
+
+.ce-modal-btn{
+
+height:31.5px;
+
+padding:0 16.8px;
+
+border:none;
+border-radius:6.3px;
+
+font-size:11.5px;
+font-weight:600;
+
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:6.3px;
+
+cursor:pointer;
+
+transition:background-color .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;
+}
+
+.ce-modal-btn:disabled{
+cursor:not-allowed;
+opacity:.7;
+}
+
+.ce-modal-btn--cancel{
+border:1px solid #dcdfe6;
+background:white;
+color:#4b5565;
+}
+
+.ce-modal-btn--cancel:hover:not(:disabled){
+background:#f6f7fb;
+border-color:rgba(0,0,0,.12);
+}
+
+.ce-modal-btn--save{
+background:#4B479E;
+color:white;
+}
+
+.ce-modal-btn--save:hover:not(:disabled){
+background:#5B479E;
+}
+
+.ce-modal-btn--save:disabled{
+background:#8481c0;
+}
+
+/* Spinner shown on the Create Execute button while the request
+   is in flight — same icon-based approach used elsewhere in the
+   app, just animated. */
+.ce-spinner{
+animation:ceSpin .7s linear infinite;
+}
+
+@keyframes ceSpin{
+from{ transform:rotate(0deg); }
+to{ transform:rotate(360deg); }
+}
+
+.ce-modal-close:disabled{
+cursor:not-allowed;
+opacity:.5;
+}
+
+@media (max-width:1366px){
+
+.ce-modal{
+width:378px;
+}
+}

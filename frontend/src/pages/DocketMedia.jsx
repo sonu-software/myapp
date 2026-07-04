@@ -245,8 +245,11 @@ const PencilIcon = () => (
   </svg>
 );
 const ExpandIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-    <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    {/* top-right arrow */}
+    <path d="M12 12L19 5M19 5H14M19 5V10" stroke="#1a2744" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    {/* bottom-left arrow */}
+    <path d="M12 12L5 19M5 19H10M5 19V14" stroke="#1a2744" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 const DownloadIcon = () => (
@@ -1966,6 +1969,9 @@ const formatDate = (date) => {
                 className={`dm-carousel-item${isActive ? ' dm-carousel-item--active' : ''}`}
                 onClick={() => navigate(`/docket-media/${item.docket_id}`)}
               >
+                <div className="dm-carousel-item-thumb">
+                  {image ? <img src={image} alt=""/> : <div className="dm-carousel-item-thumb-empty"/>}
+                </div>
                 <div className="dm-carousel-item-info">
                   <div className="dm-carousel-item-topic">{item.title || "Untitled Execute"}</div>
                   <div className="dm-carousel-item-date">
@@ -1974,9 +1980,6 @@ const formatDate = (date) => {
                       : "No Date"}
                   </div>
                   <div className="dm-carousel-item-stage">{item.current_stage || item.stage || "discovery"}</div>
-                </div>
-                <div className="dm-carousel-item-thumb">
-                  {image ? <img src={image} alt=""/> : <div className="dm-carousel-item-thumb-empty"/>}
                 </div>
               </div>
             );

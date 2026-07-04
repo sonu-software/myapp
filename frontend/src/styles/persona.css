@@ -595,11 +595,39 @@
 .pn-delete-x:hover { color: #dc2626; }
 
 .pn-field-remove-x {
-  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
-  width: 16px; height: 16px; border-radius: 50%; background: #dc2626; color: #fff;
-  display: flex; align-items: center; justify-content: center; cursor: pointer;
-  font-size: 11px; font-weight: 700; line-height: 1; flex-shrink: 0;
-  transition: background 0.15s ease, transform 0.15s ease; user-select: none;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: auto;
+  height: auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  color: #9ca3af;              /* Light grey */
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition: color 0.2s ease,
+              transform 0.2s ease;
+}
+
+.pn-field-remove-x:hover {
+  color: #dc2626;              /* Red only on hover */
+  background: transparent !important;
+  transform: translateY(-50%) scale(1.1);
 }
 
 .pn-field-remove-x:hover { background: #b91c1c; transform: translateY(-50%) scale(1.15); }
@@ -699,6 +727,27 @@
 ========================= */
 .pn-custom-label-wrap {
   position: relative; flex: 1; min-width: 0; display: flex; align-items: center;
+}
+
+/* Custom field alignment */
+.pn-field-row:has(.pn-custom-label-wrap) {
+    align-items: center !important;
+}
+
+.pn-field-row > .pn-field-label:has(.pn-custom-label-wrap) {
+    padding-top: 0 !important;
+    align-items: center !important;
+}
+
+.pn-custom-label-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 36px;
+}
+
+.persona-page .pn-custom-label-input {
+    margin: 0 !important;
 }
 
 /* =========================

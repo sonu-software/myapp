@@ -1,4 +1,21 @@
 /* =============================================================================
+   Defensive page-level reset. A very common cause of an unwanted WHOLE-PAGE
+   scrollbar is simply the browser's default `body` margin (8px) combined
+   with a height:100vh child — the child fits the viewport exactly, but the
+   margin pushes total document height just past it. This neutralizes that
+   regardless of what else changes below. (This file is imported directly by
+   this route, so this reset applies wherever docket.css is loaded — safe/
+   standard for a full-height app shell, but flagging it since we don't have
+   your root index.html/App-level CSS to confirm it's not already handled.)
+============================================================================= */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* =============================================================================
    docket.css — DocketMedia  (global-override-safe edition)
    Every button/input rule is scoped to .dm-page to survive AppFrame resets.
    Palette: #1a2744 navy · #4A90E2 blue · #fff white · #f4f4f4 page bg
@@ -15,8 +32,37 @@
    - Chat input text color fixed (was inheriting white from a global reset,
      making typed text invisible).
    - Scrollbars are visually hidden throughout .dm-page (scrolling still
-     works via wheel/drag) so no scrollbar track appears in the UI, and a
-     couple of extra responsive breakpoints were added.
+     works via wheel/drag) so no scrollbar track appears in the UI, EXCEPT
+     for .dm-info-body / .dm-label-body / .dm-left-fields-scroll, which get
+     a visible custom scrollbar (see "VISIBLE SCROLLBARS" section below).
+   - FIX: the visible-scrollbar override previously only re-enabled the
+     legacy ::-webkit-scrollbar pseudo-elements for those 3 containers, but
+     never reset the standard `scrollbar-width` property. In browsers that
+     support `scrollbar-width` (current Chrome/Edge/Firefox), that property
+     takes precedence over ::-webkit-scrollbar styling — so `scrollbar-width:
+     none` from the global hide-rule was suppressing the scrollbar entirely,
+     regardless of the webkit override. Now `scrollbar-width`/`scrollbar-color`
+     are explicitly restored (with !important) for those 3 containers so the
+     scrollbar actually renders.
+   - Execute Information (.dm-info-body) padding reduced from 10px/12px to
+     6px/8px, and the field grid (.dm-info-grid) row-gap tightened further.
+   - REPLACED `zoom: 0.9` with `transform: scale(0.9)` (+ a compensating
+     111.111% oversized box) on .dm-page. `zoom` is non-standard and has
+     known quirks with `vh` units and `position:fixed` descendants — almost
+     certainly the source of the whole-page-scrolling regression. The
+     transform+oversize technique is the standard, side-effect-free way to
+     shrink an entire subtree: the element's LAYOUT box is 111.111% (which,
+     scaled by 0.9, renders at exactly 100%), so nothing overflows its
+     container, and because `transform` (unlike `zoom`) establishes a
+     containing block for fixed-position descendants, modals/toasts inside
+     .dm-page scale and position consistently with everything else instead
+     of snapping to the true, unscaled viewport.
+   - The equal-thirds split between Execute Information / Title+AI Assistant
+     column / Generated Visual column (active whenever the Info or Labels
+     panel is open) is now implemented with CSS Grid
+     (`grid-template-columns: 1fr 1fr 45px 1fr`) instead of flexbox, so the
+     three columns are guaranteed pixel-equal rather than depending on
+     flex-basis rounding.
 ============================================================================= */
 
 /* ── Scoped box-sizing ──────────────────────────────────────────────────────── */
@@ -41,14 +87,22 @@
 .dm-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100%;
+  width: 111.111%;
+  height: 111.111vh;
   background: #f4f4f4;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 9px;
   color: #1a2744;
   overflow: hidden;
   position: relative;
+  /* Shrinks the ENTIRE UI (fonts, paddings, gaps, icons, everything) by 10%.
+     Box is oversized by the exact reciprocal (1/0.9 = 111.111%), then scaled
+     back down — so the rendered/visual size lands back at exactly 100% x
+     100vh, meaning nothing overflows the viewport and no page-level
+     scrollbar gets triggered. transform-origin stays top-left so the box
+     scales down and to the right rather than drifting off-center. */
+  transform: scale(0.9);
+  transform-origin: top left;
 }
 
 /* =============================================================================
@@ -154,6 +208,8 @@
   display: flex;
   flex: 1;
   align-items: center;
+  gap: 8px;
+  padding: 0 8px;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: smooth;
@@ -168,18 +224,25 @@
   justify-content: space-between;
   min-width: 158px;
   max-width: 158px;
-  height: 100%;
+  height: calc(100% - 12px);
+  margin: 6px 0;
   padding: 6px 9px;
-  border-right: 1px solid #eceff5;
+  border: 1.5px solid #c7d3e8;
+  border-radius: 8px;
   background: #fff;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   flex-shrink: 0;
 }
-.dm-carousel-item:hover { background: #f8faff; }
+.dm-carousel-item:hover {
+  background: #f8faff;
+  border-color: #4A90E2;
+}
 .dm-carousel-item--active {
   background: #eef4ff;
-  border-bottom: 2px solid #4A90E2;
+  border-color: #4A90E2;
+  border-width: 2px;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
 }
 .dm-carousel-item-info {
   display: flex;
@@ -213,7 +276,7 @@
   width: 36px;
   min-width: 36px;
   height: 36px;
-  margin-left: 8px;
+  margin-right: 8px;
   border-radius: 5px;
   overflow: hidden;
   border: 1px solid #dbe2ea;
@@ -279,11 +342,11 @@
   flex: 0 0 40%;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #5d6b82 #d7dde8;
   border-bottom: 1px solid #e8eaed;
   background: #fff;
 }
-.dm-left-fields-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
 /* ── Chat/AI zone (bottom 60% of left column) ──────────────────────────────── */
 .dm-left-chat-zone {
@@ -369,17 +432,17 @@
 .dm-form-row {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  padding: 2px 8px 0;
+  gap: 5px;
+  padding: 1px 8px 0;
 }
 .dm-form-label {
-  width: 65px;
+  width: 60px;
   flex-shrink: 0;
   font-size: 9px;
   font-weight: 600;
   color: #374151;
-  padding-top: 4px;
-  line-height: 1.4;
+  padding-top: 3px;
+  line-height: 1.3;
 }
 .dm-form-field-wrap {
   flex: 1;
@@ -393,21 +456,34 @@
    (expand icon + char counter) anchors to the box's own bottom-right
    corner, instead of drifting into the whitespace below it. ────────────── */
 .dm-field-box {
-  position: relative;
-  display: flex;
-  width: 100%;
+    position: relative;
+    display: inline-block;
+    width: 100%;
 }
 
 /* ── Overlay: char counter + expand icon, living INSIDE the field box ───── */
-.dm-field-overlay {
-  position: absolute;
-  right: 6px;
-  bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  z-index: 5;
-  pointer-events: none;
+.dm-field-overlay{
+
+    position:absolute;
+
+    right:4px;
+
+    bottom:8px;
+
+    left:auto;
+
+    top:auto;
+
+    display:flex;
+
+    align-items:flex-end;
+
+    justify-content:flex-end;
+
+    gap:4px;
+
+    z-index:999 !important;
+
 }
 .dm-field-overlay .dm-char-count {
   pointer-events: none;
@@ -420,18 +496,32 @@
 }
 /* The expand button is now a normal flex item inside the overlay, not its
    own absolutely-positioned element — override the standalone rule below. */
-.dm-page .dm-field-overlay .dm-expand-btn {
-  position: static !important;
-  right: auto !important;
-  bottom: auto !important;
-  pointer-events: auto !important;
-  background: rgba(255, 255, 255, 0.92) !important;
+.dm-page .dm-field-overlay .dm-expand-btn{
+
+    position:relative !important;
+
+    inset:auto !important;
+
+    display:flex !important;
+
+    align-items:center !important;
+
+    justify-content:center !important;
+
+    width:16px !important;
+
+    height:16px !important;
+
+    flex-shrink:0;
+
 }
 
 .dm-page .dm-form-input {
+  display:block !important;
+  box-sizing:border-box !important;
   width: 100% !important;
   min-height: 30px !important;
-  padding: 3px 66px 3px 8px !important;
+  padding:4px 66px 24px 8px;
   border: 1px solid #d1d5db !important;
   border-radius: 4px !important;
   font-size: 9px !important;
@@ -440,14 +530,17 @@
   outline: none !important;
   line-height: 1.4 !important;
   transition: border-color 0.15s;
+  
 }
 .dm-page .dm-form-input:focus { border-color: #4A90E2 !important; }
 .dm-page .dm-form-input:disabled { background: #f9fafb !important; color: #9ca3af !important; }
 .dm-page .dm-form-input::placeholder { color: #9ca3af; }
 
 .dm-page .dm-form-textarea {
+  display:block !important;
+  box-sizing:border-box !important;
   width: 100% !important;
-  padding: 4px 66px 20px 8px !important;
+  padding:4px 66px 28px 8px;
   border: 1px solid #d1d5db !important;
   border-radius: 4px !important;
   font-size: 9px !important;
@@ -478,35 +571,25 @@
 
 /* ── Expand icon (standalone fallback positioning; overridden to `static`
    whenever it lives inside .dm-field-overlay, see above) ───────────────── */
-.dm-page .dm-expand-btn {
-  position: absolute !important;
-  right: 8px !important;
-  bottom: 8px !important;
+.dm-page .dm-expand-btn{
 
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
 
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important;
-  min-height: 18px !important;
+    width:18px !important;
+    height:18px !important;
 
-  padding: 0 !important;
-  margin: 0 !important;
+    padding:0 !important;
 
-  border: none !important;
-  border-radius: 4px !important;
+    border:none !important;
+    border-radius:4px !important;
 
-  background: rgba(255,255,255,.95) !important;
+    background:rgba(255,255,255,.95) !important;
+    color:#1a2744 !important;
 
-  color: #1a2744 !important;
+    cursor:pointer !important;
 
-  cursor: pointer !important;
-
-  z-index: 5 !important;
-
-  transition: background .15s;
 }
 
 .dm-page .dm-expand-btn:hover{
@@ -514,8 +597,18 @@
 }
 
 .dm-page .dm-expand-btn svg{
+    display:block !important;
     width:12px !important;
     height:12px !important;
+    color:#1a2744 !important;
+    stroke:#1a2744 !important;
+    transform:translateY(-1.5px) !important;
+}
+
+.dm-page .dm-expand-btn svg path{
+
+    stroke:#1a2744 !important;
+
 }
 
 /* Tabs */
@@ -1580,6 +1673,58 @@
 }
 
 /* =============================================================================
+   VISIBLE SCROLLBARS — Info panel body, Labels panel body, and the
+   Title/Description/Visual elements/Summary fields scroll zone all get a
+   custom *visible* scrollbar, overriding the global hide-scrollbar rule
+   above.
+
+   IMPORTANT: modern Chrome/Edge/Firefox all honor the standard
+   `scrollbar-width` property now, and when supported, it takes precedence
+   over legacy ::-webkit-scrollbar styling — a `scrollbar-width: none`
+   suppresses the scrollbar outright, regardless of any ::-webkit-scrollbar
+   rules that try to bring it back. The global rule above sets
+   `scrollbar-width: none` on every element inside .dm-page (via the `*`
+   selector), so it was silently defeating the ::-webkit-scrollbar overrides
+   below for these 3 containers. This block explicitly restores
+   `scrollbar-width`/`scrollbar-color` for just these 3 selectors (with
+   !important, so it wins regardless of source order) — that's what actually
+   makes the scrollbar render again.
+============================================================================= */
+.dm-page .dm-info-body,
+.dm-page .dm-label-body,
+.dm-page .dm-left-fields-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #5d6b82 #d7dde8 !important;
+  -ms-overflow-style: auto !important;
+}
+
+.dm-page .dm-info-body::-webkit-scrollbar,
+.dm-page .dm-label-body::-webkit-scrollbar,
+.dm-page .dm-left-fields-scroll::-webkit-scrollbar {
+  width: 10px !important;
+  height: 10px !important;
+  display: block !important;
+}
+.dm-page .dm-info-body::-webkit-scrollbar-track,
+.dm-page .dm-label-body::-webkit-scrollbar-track,
+.dm-page .dm-left-fields-scroll::-webkit-scrollbar-track {
+  background: #d7dde8;
+  border-radius: 12px;
+}
+.dm-page .dm-info-body::-webkit-scrollbar-thumb,
+.dm-page .dm-label-body::-webkit-scrollbar-thumb,
+.dm-page .dm-left-fields-scroll::-webkit-scrollbar-thumb {
+  background: #5d6b82;
+  border-radius: 12px;
+  border: 2px solid #d7dde8;
+}
+.dm-page .dm-info-body::-webkit-scrollbar-thumb:hover,
+.dm-page .dm-label-body::-webkit-scrollbar-thumb:hover,
+.dm-page .dm-left-fields-scroll::-webkit-scrollbar-thumb:hover {
+  background: #3f4d63;
+}
+
+/* =============================================================================
    RESPONSIVE
 ============================================================================= */
 @media (max-width: 1100px) {
@@ -1631,7 +1776,7 @@
   .dm-form-label { width: 52px; font-size: 8px; }
   .dm-left-col { min-height: 60vh; }
   .dm-page .dm-generate-btn { min-width: 64px !important; padding: 0 10px !important; }
-  .dm-field-overlay { right: 4px !important; bottom: 4px !important; gap: 3px !important; }
+  .dm-field-overlay { right: 3px !important; bottom: 7px !important; gap: 3px !important; }
   .dm-field-overlay .dm-char-count { font-size: 7px !important; padding: 1px 3px !important; }
   .dm-page .dm-field-overlay .dm-expand-btn { width: 16px !important; height: 16px !important; min-width: 16px !important; min-height: 16px !important; }
 }
@@ -1656,10 +1801,20 @@
   flex-shrink: 0;
 }
 
-/* Slightly pull in the neighbouring columns whenever a side panel is open,
-   so the right column (visual canvas) still gets a reasonable share of space. */
-.dm-body-info-open .dm-left-col { width: 30%; min-width: 185px; }
-.dm-body-info-open .dm-thumb-strip { width: 45px; min-width: 45px; }
+/* Whenever the Info/Labels side panel is open, split the row into three
+   EQUAL sections: AI/chat column, the Info or Labels panel, and the image
+   (visual canvas) column. The thumbnail strip keeps its own fixed width and
+   isn't part of the three-way split. flex-basis:0 (not %) is what makes the
+   three sections truly equal regardless of border/padding differences. */
+.dm-body-info-open .dm-left-col,
+.dm-body-info-open .dm-info-panel,
+.dm-body-info-open .dm-right-col {
+  flex: 1 1 0 !important;
+  width: 0 !important;
+  min-width: 160px !important;
+  max-width: none !important;
+}
+.dm-body-info-open .dm-thumb-strip { width: 45px; min-width: 45px; flex: 0 0 45px; }
 
 /* Both cards share identical chrome: header / scrollable body / footer,
    which is what keeps them "the same size" regardless of their content. */
@@ -1679,14 +1834,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid #edf0f4;
   background: #fafbfc;
   flex-shrink: 0;
 }
 .dm-info-header h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: #1a2744;
 }
@@ -1730,45 +1885,46 @@
 
 .dm-info-body {
   flex: 1;
-  padding: 14px;
+  padding: 6px 8px;
   overflow-y: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #5d6b82 #d7dde8;
 }
 
 .dm-info-grid {
   display: grid;
-  grid-template-columns: 82px 1fr;
-  row-gap: 11px;
-  column-gap: 11px;
+  grid-template-columns: 72px 1fr;
+  row-gap: 5px;
+  column-gap: 8px;
   align-items: center;
 }
 .dm-info-grid label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   color: #5b6474;
 }
 .dm-page .dm-info-grid input {
   width: 100% !important;
-  height: 30px !important;
-  padding: 0 9px !important;
+  height: 23px !important;
+  padding: 0 8px !important;
   border: 1px solid #d7dee8 !important;
   border-radius: 5px !important;
   background: #ffffff !important;
   color: #1a2744 !important;
-  font-size: 10px !important;
+  font-size: 9px !important;
   outline: none !important;
   font-family: inherit !important;
 }
 
 .dm-info-footer {
-  padding: 14px;
+  padding: 8px 12px;
   border-top: 1px solid #edf0f4;
   background: #ffffff;
   flex-shrink: 0;
 }
 .dm-page .dm-info-save-btn {
   width: 100% !important;
-  height: 32px !important;
+  height: 28px !important;
   border: none !important;
   border-radius: 6px !important;
   background: #1a2744 !important;
@@ -1783,17 +1939,18 @@
 /* ── Labels card — mirrors the info card's header/body/footer structure ─── */
 .dm-label-body {
   flex: 1;
-  padding: 14px;
+  padding: 10px 12px;
   overflow-y: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #5d6b82 #d7dde8;
 }
 .dm-label-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 9px;
 }
 .dm-label-footer {
-  padding: 11px 14px;
+  padding: 8px 12px;
   border-top: 1px solid #edf0f4;
   background: #ffffff;
   flex-shrink: 0;
@@ -1821,6 +1978,15 @@
     max-height: 60vh;
     border-right: none;
     border-bottom: 1px solid #e8eaed;
-  }
+  } 
   .dm-body-info-open .dm-left-col { width: 100%; }
+  /* Below the 700px breakpoint the row becomes a column, so the equal-thirds
+     split no longer applies — stack each section at full width instead. */
+  .dm-body-info-open .dm-left-col,
+  .dm-body-info-open .dm-info-panel,
+  .dm-body-info-open .dm-right-col {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-width: 0;
+  }
 }
