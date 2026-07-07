@@ -1,0 +1,264 @@
+/* ==========================================================
+   DESIGN PAGE
+========================================================== */
+:root {
+  --v-padding : 0px;
+  --v-carousel-height : 50px;  
+  
+}
+
+
+
+.design{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    gap:0px;
+    padding:var(--v-padding);
+    box-sizing:border-box;
+    background:#0749f1;
+}
+
+
+/* ==========================================================
+   TOP CAROUSEL
+========================================================== */
+
+.carousel-panel{
+    display: flex;
+    width:100%;
+    height:5vh;
+    /*height: 200px;*/
+    padding:var(--v-padding);
+    background:#ffffff;
+    border-radius:0px;
+    border:1px solid #000000;
+    
+
+}
+
+
+.group-btn {
+    grid-template-rows: repeat(1, 2fr);
+    gap: 0px;
+    border: 1px solid #000;
+    background: #fff;
+    padding: 0px;
+    
+}
+
+.group-toggle-btn{
+    width:calc(var(--v-carousel-height) / 2);
+    height: calc(var(--v-carousel-height) / 2);
+    padding: 0;
+    margin: 0;
+}
+
+.group-toggle-btn,
+.group-toggle-btn:hover,
+.group-toggle-btn:focus,
+.group-toggle-btn:active {
+    background: #fff;
+    color: #000;
+    border: 1px solid #000;
+    box-shadow: none;
+    outline: none;
+    transform: none;
+}
+
+
+
+
+.singular-btn{
+    grid-template-columns: repeat(1, 3fr);
+    grid-template-rows: repeat(1, 2fr);
+    gap: 0px;
+    border: 1px solid #000;
+    background: #fff;
+    padding: 0px;
+
+
+}
+
+.singular-toggle-btn{
+    width:calc(var(--v-carousel-height) / 2);
+    height: calc(var(--v-carousel-height) / 2);
+    padding: 0;
+    margin: 0;
+
+}
+
+
+
+
+
+.output-ratio-btn{
+    display:flex;
+    flex:1;
+    justify-content:flex-end;
+    align-items:center;
+    gap:0;
+}
+
+.output-toggle-ratio-btn{
+    width:calc(var(--v-carousel-height) / 2);
+    height: calc(var(--v-carousel-height) / 2);
+    padding: 0;
+    margin: 0;
+}
+
+
+
+
+
+
+
+/* ==========================================================
+   LOWER SECTION
+========================================================== */
+
+.below-panel{
+    flex:1;
+    display:flex;
+    gap:0px;
+    min-height:0;
+}
+
+
+
+.below-panel{
+    display:flex;
+    flex:1;
+}
+
+.layout-50 .left-panel{
+    flex:1;
+}
+
+.layout-50 .design-right-panel{
+    flex:1;
+}
+
+.layout-33 .left-panel{
+    flex:2;
+}
+
+.layout-33 .design-right-panel{
+    flex:1;
+}
+
+
+
+/* ==========================================================
+   LEFT PANEL
+========================================================== */
+
+.left-panel{
+    flex: 1;
+    align-items: stretch;
+
+    display: flex;
+    gap: 0;
+    padding: 1px;
+
+    background: #fcfcfc;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+
+
+
+.topic-panel,
+.ai-panel,
+.basic-panel,
+.detail-panel,
+.interactive-panel,
+.stage-panel{
+    width: 100%;
+    height: 100%;
+
+    border: 1px solid #000;
+    border-radius: 8px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+/* ==========================================================
+   RIGHT PANEL
+========================================================= */
+
+.design-right-panel{
+    flex: 1;
+    width: 100%;
+
+    display: flex;          /* Missing */
+    flex-direction: column;
+
+    min-height: 0;          /* Recommended */
+
+    background:#ffffff;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 0px 10px rgba(0,0,0,0.05);
+}
+
+
+
+
+.generated-visual{
+    flex:1;
+    min-height: 0;
+    border:1px solid #000;
+}
+
+.message-panel{
+    flex:1;
+    min-height: 0;
+    border:1px solid #000;
+}
+
+.controls{
+    flex: 0 0 30px;
+
+    display:flex;
+
+    border:1px solid #000;
+}
+
+
+.control-left-panel{
+    display:flex;
+    align-items:center;
+    gap:4px;
+
+    padding:0 4px;
+
+    border-right:1px solid #000;
+
+    flex-shrink:0;      /* Keep only the width needed by the buttons */
+}
+
+.control-right-panel{
+    flex:1;
+}
+
+
+.generate-btn{
+    flex: 0 0 30px;
+    display: flex;
+    border: 1px solid #000;
+}
+
+.generate-control-btn{
+    flex: 1;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+
+
+    border: 1px solid #000;
+    background: #4218ed;
+}
+

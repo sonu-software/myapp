@@ -490,6 +490,7 @@ overflow:hidden;
 }
 
 .header-left{
+width:75% !important;
 
 display:flex !important;
 align-items:center !important;
@@ -505,9 +506,10 @@ min-width:0;
 }
 
 .header-right{
-
+width:25% !important;
+justify-content: flex-end;
 display:flex !important;
-align-items:center !important;
+align-items:right !important;
 
 flex:0 0 auto !important;
 
@@ -616,6 +618,48 @@ align-items:center !important;
 margin:0 !important;
 padding:0 !important;
 }
+
+
+
+
+
+
+.header-view-dropdown{
+
+flex:0 0 auto;
+
+width:120px;
+height:29.4px;
+
+margin:0;
+padding:0 32px 0 10px;
+
+border:1px solid #dcdfe6;
+border-radius:6.3px;
+
+background:#fafbfc;
+
+font-family:Inter,Segoe UI,sans-serif;
+font-size:11.5px;
+color:#333;
+
+outline:none;
+
+box-sizing:border-box;
+
+appearance:none;
+-webkit-appearance:none;
+-moz-appearance:none;
+
+vertical-align:middle;
+
+line-height:normal;
+
+}
+
+
+
+
 
 .header-search-input{
 
@@ -2022,4 +2066,352 @@ min-height:0;
 overflow-y:auto;
 }
 
+}
+
+
+.app-center{
+
+    flex:1;
+
+    min-width:0;
+    min-height:0;
+
+    overflow:hidden;
+
+    display:flex;
+}
+
+.panel-right{
+
+    flex-direction:row;
+}
+
+.panel-top{
+
+    flex-direction:column;
+}
+
+
+
+.app-right-panel{
+
+    flex-shrink:0;
+
+    background:white;
+}
+
+.panel-right .app-right-panel{
+
+    width:160px;
+
+    height:100%;
+
+    border-left:1px solid #edf0f5;
+}
+
+.panel-top .app-right-panel{
+
+    width:100%;
+
+    height:10vh;
+
+    border-bottom:1px solid #edf0f5;
+}
+
+
+
+/* ===========================
+   Panel Switch
+=========================== */
+
+.panel-switch{
+
+    display:flex;
+    flex-direction:row;
+
+    align-items:center;
+    justify-content:flex-end;
+
+    gap:4px;
+
+    padding:6px;
+
+    flex-wrap:nowrap;
+}
+
+.panel-switch button{
+
+    width:46px;
+    height:22px;
+
+    border:1px solid #dcdfe6;
+    border-radius:5px;
+
+    background:#ffffff;
+
+    color:#4B479E;
+
+    font-size:10px;
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.15s ease;
+
+    white-space:nowrap;
+}
+
+.panel-switch button:hover{
+
+    background:#f4f4fb;
+}
+
+.panel-switch button.active{
+
+    background:#4B479E;
+
+    color:#ffffff;
+
+    border-color:#4B479E;
+}
+
+
+
+
+
+
+/* =============================================================================
+   EXECUTE-CARD PANEL (AppFrame right/top panel)
+   Self-contained: all styling for the execute cards lives here, no
+   dependency on docket.css / DocketMedia's carousel styles.
+   Base rules render the cards as a horizontal strip (used for the Top
+   panel position). The "--vertical" modifiers are applied only when
+   panelPosition === "right", stacking the same cards into full-width rows.
+============================================================================= */
+.app-right-panel {
+  overflow: hidden;
+}
+
+.dm-carousel-new {
+  display: flex;
+  align-items: center;
+  height: 58px;
+  min-height: 58px;
+  background: #fff;
+  width: 100%;
+}
+
+.dm-carousel-track-new {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  height: 100%;
+  scrollbar-width: none;
+}
+.dm-carousel-track-new::-webkit-scrollbar { display: none; }
+
+.dm-carousel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 158px;
+  max-width: 158px;
+  height: calc(100% - 12px);
+  margin: 6px 0;
+  padding: 1px 2px;
+  border: 1.5px solid #c7d3e8;
+  border-radius: 8px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.dm-carousel-item--active {
+  background: #eef4ff;
+  border-color: #4A90E2;
+  border-width: 2px;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.15);
+}
+.dm-carousel-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.dm-carousel-item-topic {
+  font-size: 9px;
+  font-weight: 700;
+  color: #1b2333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-carousel-item-date {
+  font-size: 8px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-carousel-item-stage {
+  font-size: 8px;
+  font-weight: 600;
+  color: #4A90E2;
+  text-transform: capitalize;
+}
+.dm-carousel-item-thumb {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  margin-right: 8px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #dbe2ea;
+  background: #edf1f5;
+  flex-shrink: 0;
+}
+.dm-carousel-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.dm-carousel-item-thumb-empty {
+  width: 100%;
+  height: 100%;
+  background: #edf1f5;
+}
+
+/* ── Right panel: vertical stack instead of horizontal strip ────────────── */
+.dm-carousel-new--vertical {
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.dm-carousel-track-new--vertical {
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  gap: 2px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.dm-carousel-track-new--vertical .dm-carousel-item {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  gap: 2px;
+  padding: 5px;
+  height: auto;
+}
+
+
+
+/* =========================================================
+   FIXED CAROUSEL CONTROL CARD
+========================================================= */
+
+.carousel-control-card{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+
+    width:100%;
+    height:100%;
+
+    padding:6px;
+    gap:6px;
+
+    box-sizing:border-box;
+}
+
+
+/* ==========================
+   RIGHT PANEL
+========================== */
+
+.panel-right .app-right-panel{
+
+    display:flex;
+    flex-direction:column;
+}
+
+.panel-right .carousel-control-card{
+
+    width:calc(100% - 12px);
+
+    height:50px;
+
+    margin:6px;
+}
+
+
+/* ==========================
+   TOP PANEL
+========================== */
+
+.panel-top .app-right-panel{
+
+    display:flex;
+    flex-direction:row;
+
+    align-items:center;
+}
+
+.panel-top .carousel-control-card{
+
+    min-width:158px;
+
+    max-width:158px;
+
+    height:40px;
+
+    margin:6px;
+}
+
+.carousel-control-card button{
+
+    width:100%;
+    height:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:0;
+    margin:0;
+
+    border:1px solid #dfe3eb;
+    border-radius:6px;
+
+    background:#ffffff;
+
+    cursor:pointer;
+
+    transition:.15s ease;
+}
+
+.carousel-control-card button:hover{
+
+    border-color:#4B479E;
+    background:#f5f6fd;
+}
+.carousel-control-card button:hover{
+
+    background:#f5f6fd;
+
+    border-color:#4B479E;
 }

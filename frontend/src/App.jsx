@@ -11,6 +11,7 @@ import Product from "./pages/Product";
 import PlannerPage from "./pages/PlannerPage";
 import Initializing from "./pages/Initializing";
 import Docket from "./pages/Docket";
+import Design from "./pages/Design";
 import DocketMedia from "./pages/DocketMedia";
 import AdminPanel from "./pages/AdminPanel";
 import DocketMediaAdmin from "./pages/DocketMediaAdmin";
@@ -53,9 +54,10 @@ export default function App() {
         <Route path="/business" element={<Business />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/setup-business" element={<BusinessSetup />} />
-        <Route path="/planner" element={<PlannerPage />} />
+        <Route path="/plannerpage" element={<PlannerPage />} />
         <Route path="/initializing" element={<Initializing />} />
         <Route path="/docket" element={<Docket />} />
+        <Route path="/design" element={<Design />} />
         <Route path="/docket/:docketId" element={<Docket />} />
         <Route path="/docket-media/:docketId" element={<DocketMedia />} />
       </Route>

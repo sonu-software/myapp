@@ -75,6 +75,10 @@ export default function AppFrame() {
   const [selectedFilterPersona, setSelectedFilterPersona] = useState("");
   const [selectedFilterOccasion, setSelectedFilterOccasion] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [viewMode, setViewMode] = useState("");
+
+  const [panelPosition, setPanelPosition] = useState("right");
+
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [filterDropdownPos, setFilterDropdownPos] = useState({ top: 0, left: 0 });
 
@@ -101,6 +105,19 @@ export default function AppFrame() {
     discovery: 0, draft: 0, generate: 0, review: 0,
     approve: 0, publish: 0, closed: 0, rejected: 0,
   });
+
+  // ── Execute-card list (right/top panel) ──────────────────────────────────
+  // Same data source as DocketMedia's carousel — reuses the same
+  // /planner/carousel-dockets endpoint and the same filters this file
+  // already builds for the footer stage counts. Display-only: no
+  // pagination, no click-through.
+  const [carouselDockets, setCarouselDockets] = useState([]);
+
+  // Lets the currently open execute (if any) highlight itself in the panel.
+  const activeDocketId = useMemo(() => {
+    const match = location.pathname.match(/^\/docket-media\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
 
   // ── Account load ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -280,6 +297,50 @@ export default function AppFrame() {
       console.error("Failed to load stage counts", err);
     }
   }
+
+  // ── Execute-card list fetch — same endpoint/params as DocketMedia's
+  // carousel, driven by this file's own filter state. Additive only: does
+  // not touch fetchStageCounts or its effect above.
+  async function fetchCarouselDockets() {
+
+    try {
+
+      const params = buildFilterParams();
+
+      const res = await fetch(
+        `${API}/planner/carousel-dockets?${params.toString()}`,
+        { headers: AUTH() }
+      );
+
+      if (res.status === 401) {
+        logout();
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.success) {
+        setCarouselDockets(data.data || []);
+      }
+
+    } catch (err) {
+      console.error("Failed to load carousel dockets", err);
+    }
+  }
+
+  useEffect(() => {
+
+    fetchCarouselDockets();
+
+  }, [
+    startDate,
+    endDate,
+    selectedFilterStage,
+    selectedFilterProduct,
+    selectedFilterPersona,
+    selectedFilterOccasion,
+    searchText,
+  ]);
 
   // ── Create Execute modal: cascading Media Type / Sub Type lookups ────────
   useEffect(() => {
@@ -520,12 +581,76 @@ export default function AppFrame() {
     occasionList
   ]);
 
+
+  const headerDropdownConfig = useMemo(() => {
+
+    if (location.pathname === "/planner") {
+
+      return {
+        defaultValue: "Month",
+        options: [
+          "Month",
+          "Week",
+          "Day"
+        ]
+      };
+
+    }
+
+    if (
+      location.pathname.startsWith("/design") ||
+      location.pathname === "/design"
+    ) {
+
+      return {
+        defaultValue: "Vertical",
+        options: [
+          "Vertical",
+          "Horizontal"
+        ]
+      };
+
+    }
+
+    return {
+      defaultValue: "",
+      options: []
+    };
+
+  }, [location.pathname]);
+
+
+
+  const selectedViewMode = useMemo(() => {
+
+    if (
+      headerDropdownConfig.options.includes(viewMode)
+    ) {
+      return viewMode;
+    }
+
+    return headerDropdownConfig.defaultValue;
+
+  }, [
+    viewMode,
+    headerDropdownConfig
+  ]);
+
+
+
+
+
+
+
+
   const navItems = [
     { label: "Purpose",  route: "/setup-business", icon: <Target size={14.7} /> },
     { label: "Solution", route: "/product",         icon: <Lightbulb size={14.7} /> },
     { label: "Audience", route: "/persona",         icon: <Users size={14.7} /> },
+    { label: "Planner2",  route: "/plannerpage",         icon: <CalendarDays size={14.7} /> },
+    { label: "Execute",  route: "execute",          icon: <Sparkles size={14.7} /> },
     { label: "Planner",  route: "/planner",         icon: <CalendarDays size={14.7} /> },
-    { label: "Execute",  route: "execute",          icon: <Sparkles size={14.7} /> }
+    { label: "Design",  route: "/design",          icon: <Sparkles size={14.7} /> }
   ];
 
   const footerItems = [
@@ -538,6 +663,54 @@ export default function AppFrame() {
     { key: "closed",    label: "Closed",    color: "#166534", icon: <Lock size={12.6} /> },
     { key: "rejected",  label: "Rejected",  color: "#EF4444", icon: <XCircle size={12.6} /> }
   ];
+
+  // ── Execute cards — display-only list, no click-through navigation ───────
+  // Right position stacks the cards vertically (rows) instead of scrolling
+  // them horizontally, via the `--vertical` modifier classes defined in
+  // appFrame.css. Top position keeps the original horizontal layout as-is.
+  const isVerticalPanel = panelPosition === "right";
+
+  const executeCards = (
+    <div className={` ${isVerticalPanel ? ' dm-carousel-new--vertical' : ''}`}>
+      <div className={`dm-carousel-track-new${isVerticalPanel ? ' dm-carousel-track-new--vertical' : ''}`}>
+        {carouselDockets.map((item) => {
+          const image =
+            item.visual_url ||
+            item.uploaded_url ||
+            item.generated_image ||
+            item.image_url ||
+            item.media_url ||
+            item.admin_image_url ||
+            item.visual_image ||
+            item.thumbnail ||
+            null;
+
+          const isActive = String(item.docket_id) === String(activeDocketId);
+
+          return (
+            <div
+              key={item.docket_id}
+              className={`dm-carousel-item${isActive ? ' dm-carousel-item--active' : ''}`}
+            >
+              <div className="dm-carousel-item-thumb">
+                {image ? <img src={image} alt=""/> : <div className="dm-carousel-item-thumb-empty"/>}
+              </div>
+              <div className="dm-carousel-item-info">
+                <div className="dm-carousel-item-topic">{item.title || "Untitled Execute"}</div>
+                <div className="dm-carousel-item-date">
+                  {item.uploaded_date_time
+                    ? new Date(item.uploaded_date_time).toLocaleString()
+                    : "No Date"}
+                </div>
+                <div className="dm-carousel-item-stage">{item.current_stage || item.stage || "discovery"}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="app-shell">
@@ -684,6 +857,30 @@ export default function AppFrame() {
         <header className="app-header-bar">
 
           <div className="header-left">
+
+
+            <div className="header-search-wrap">
+
+              <input
+                type="text"
+                className="header-search-input"
+                placeholder="Search"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+
+              <Search
+                size={14}
+                color="#8a8f98"
+                strokeWidth={2}
+                className="header-search-icon"
+              />
+
+            </div>
+
+
+
+
 
             <div className="header-filter-wrap">
 
@@ -880,26 +1077,36 @@ export default function AppFrame() {
 
           </div>
 
+
+
           <div className="header-right">
 
-            <div className="header-search-wrap">
+          
+            {headerDropdownConfig.options.length > 0 && (
 
-              <input
-                type="text"
-                className="header-search-input"
-                placeholder="Search"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
+              <select
+                className="header-view-dropdown"
+                value={selectedViewMode}
+                onChange={(e) => setViewMode(e.target.value)}
+              >
 
-              <Search
-                size={14}
-                color="#8a8f98"
-                strokeWidth={2}
-                className="header-search-icon"
-              />
+                {headerDropdownConfig.options.map(option => (
 
-            </div>
+                  <option
+                    key={option}
+                    value={option}
+                  >
+                    {option}
+                  </option>
+
+                ))}
+
+              </select>
+
+            )}
+
+
+
 
             <button
               className="header-add-btn"
@@ -909,25 +1116,143 @@ export default function AppFrame() {
               <Plus size={16} color="#ffffff" strokeWidth={2.4} />
             </button>
 
+
+
+
+            <div className="panel-switch">
+                    <button
+                        className={panelPosition === "top" ? "active" : ""}
+                        onClick={() => setPanelPosition("top")}
+                    >
+                        Top
+                    </button>
+
+                    <button
+                        className={panelPosition === "right" ? "active" : ""}
+                        onClick={() => setPanelPosition("right")}
+                    >
+                        Right
+                    </button>
+                </div>
+
+
+
+
+
+
+
+
+
+
           </div>
 
         </header>
 
-        <div className="app-content">
-          <Outlet
-            context={{
-              filters: {
-                startDate,
-                endDate,
-                stage: selectedFilterStage,
-                productId: selectedFilterProduct,
-                personaId: selectedFilterPersona,
-                occasionId: selectedFilterOccasion,
-                search: searchText,
-              },
-            }}
-          />
-        </div>
+
+
+
+
+        <div
+          className={`app-center ${
+              panelPosition === "top"
+                  ? "panel-top"
+                  : "panel-right"
+          }`}
+      >
+
+          {panelPosition === "top" && (
+              <aside className="app-right-panel">
+                <div className="carousel-control-card">
+
+
+                  <button
+                    className="left-arrow"
+                    title="left"
+                  >left
+                  </button>
+
+                  <button
+                    className="right-arrow"
+                    title="right"
+                  >right
+                  </button>
+
+
+                  <button
+                    className="change-right-arrow"
+                    title="change-right"
+                  >change-right
+                  </button>
+
+
+                  <button
+                    className="change-left-arrow"
+                    title="change-left"
+                  >change-left
+                  </button>
+
+
+
+                </div>
+                  {executeCards}
+              </aside>
+          )}
+
+          <div className="app-content">
+              <Outlet
+                  context={{
+                      filters: {
+                          startDate,
+                          endDate,
+                          stage: selectedFilterStage,
+                          productId: selectedFilterProduct,
+                          personaId: selectedFilterPersona,
+                          occasionId: selectedFilterOccasion,
+                          search: searchText,
+                      },
+                  }}
+              />
+          </div>
+
+
+
+          {panelPosition === "right" && (
+              <aside className="app-right-panel">
+                <div className="carousel-control-card">
+                  <button
+                    className="left-arrow"
+                    title="left"
+                  >
+                  </button>
+
+                  <button
+                    className="right-arrow"
+                    title="left"
+                  >
+                  </button>
+
+
+                  <button
+                    className="change-right-arrow"
+                    title="left"
+                  >
+                  </button>
+
+
+                  <button
+                    className="change-left-arrow"
+                    title="left"
+                  >
+                  </button>
+
+                </div>
+                  {executeCards}
+              </aside>
+          )}
+
+      </div>
+
+
 
         <footer className="app-footer-bar">
 

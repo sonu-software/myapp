@@ -87,8 +87,8 @@ html, body {
 .dm-page {
   display: flex;
   flex-direction: column;
-  width: 111.111%;
-  height: 111.111vh;
+  width: 100%;
+  height: 100%;
   background: #f4f4f4;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 9px;
@@ -101,7 +101,7 @@ html, body {
      100vh, meaning nothing overflows the viewport and no page-level
      scrollbar gets triggered. transform-origin stays top-left so the box
      scales down and to the right rather than drifting off-center. */
-  transform: scale(0.9);
+  transform: scale(1);
   transform-origin: top left;
 }
 
