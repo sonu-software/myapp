@@ -54,7 +54,7 @@ export default function App() {
         <Route path="/business" element={<Business />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/setup-business" element={<BusinessSetup />} />
-        <Route path="/plannerpage" element={<PlannerPage />} />
+        <Route path="/planner" element={<PlannerPage />} />
         <Route path="/initializing" element={<Initializing />} />
         <Route path="/docket" element={<Docket />} />
         <Route path="/design" element={<Design />} />
