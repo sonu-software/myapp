@@ -18,12 +18,7 @@ export default function PlannerPage() {
   // of truth for the planner query below — no local filter state, UI, or
   // any other function in this file is modified.
   const outletContext = useOutletContext();
-
-  const appFrameFilters =
-      outletContext?.filters ?? null;
-
-  const setPlannerDateFilter =
-      outletContext?.setPlannerDateFilter;
+  const appFrameFilters = outletContext?.filters ?? null;
 
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
@@ -66,13 +61,10 @@ export default function PlannerPage() {
   const effectiveFilters = useMemo(() => ({
     startDate: appFrameFilters ? appFrameFilters.startDate : startDate,
     endDate:   appFrameFilters ? appFrameFilters.endDate   : endDate,
-    stage: appFrameFilters ? appFrameFilters.stages : selectedFilterStage,
-
-    product: appFrameFilters ? appFrameFilters.products : selectedFilterProduct,
-
-    persona: appFrameFilters ? appFrameFilters.personas : selectedFilterPersona,
-
-    occasion: appFrameFilters ? appFrameFilters.occasions : selectedFilterOccasion,
+    stage:     appFrameFilters ? appFrameFilters.stage     : selectedFilterStage,
+    product:   appFrameFilters ? appFrameFilters.productId : selectedFilterProduct,
+    persona:   appFrameFilters ? appFrameFilters.personaId : selectedFilterPersona,
+    occasion:  appFrameFilters ? appFrameFilters.occasionId : selectedFilterOccasion,
     mediaType: selectedFilterMediaType,
     subType:   selectedFilterSubType,
     search:    (appFrameFilters ? appFrameFilters.search : searchText) || "",
@@ -81,10 +73,10 @@ export default function PlannerPage() {
     // object itself, so this doesn't recompute on every parent render)
     appFrameFilters?.startDate,
     appFrameFilters?.endDate,
-    appFrameFilters?.stages,
-    appFrameFilters?.products,
-    appFrameFilters?.personas,
-    appFrameFilters?.occasions,
+    appFrameFilters?.stage,
+    appFrameFilters?.productId,
+    appFrameFilters?.personaId,
+    appFrameFilters?.occasionId,
     appFrameFilters?.search,
     startDate,
     endDate,
@@ -261,84 +253,76 @@ export default function PlannerPage() {
 
   const formatDate = (date) => {
 
-      if (!date) return "";
+    if (!date) return "";
 
-      if (typeof date === "string")
-          return date;
+    if (typeof date === "string") return date;
 
-      const year = date.getFullYear();
+    const year = date.getFullYear();
 
-      const month = String(
-          date.getMonth() + 1
-      ).padStart(2, "0");
+    const month = String(
+        date.getMonth() + 1
+    ).padStart(2, "0");
 
-      const day = String(
-          date.getDate()
-      ).padStart(2, "0");
+    const day = String(
+        date.getDate()
+    ).padStart(2, "0");
 
-      const hours = String(
-          date.getHours()
-      ).padStart(2, "0");
-
-      const minutes = String(
-          date.getMinutes()
-      ).padStart(2, "0");
-
-      const seconds = String(
-          date.getSeconds()
-      ).padStart(2, "0");
-
-      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-  };
-
-
-
-
-  function buildPlannerFilterParams(filters, monthStart, monthEnd) {
-
-    const params = new URLSearchParams();
-
-    params.append("start_date", formatDate(monthStart));
-    params.append("end_date", formatDate(monthEnd));
-
-    (filters.stage || []).forEach(stage => {
-        params.append("stage", stage.value);
-    });
-
-    (filters.product || []).forEach(product => {
-        params.append("product_id", product.value);
-    });
-
-    (filters.persona || []).forEach(persona => {
-        params.append("persona_id", persona.value);
-    });
-
-    (filters.occasion || []).forEach(occasion => {
-        params.append("occasion_id", occasion.value);
-    });
-
-
-    return params;
-}
+    return `${year}-${month}-${day}`;
+};
 
 
 
 
 
 
-  const loadPlannerExecutes = async (
-      filters,
-      monthStart,
-      monthEnd
-  ) => {
+
+  const loadPlannerExecutes = async (filters) => {
 
     try {
 
-      const params = buildPlannerFilterParams(
-          filters,
-          monthStart,
-          monthEnd
-      );
+      const params = new URLSearchParams();
+
+      if (filters.startDate) {
+          params.append(
+              "start_date",
+              formatDate(filters.startDate)
+          );
+      }
+
+      if (filters.endDate) {
+          params.append(
+              "end_date",
+              formatDate(filters.endDate)
+          );
+      }
+
+      if (filters.stage) {
+          params.append(
+              "stage",
+              filters.stage
+          );
+      }
+
+      if (filters.product) {
+          params.append(
+              "product_id",
+              filters.product
+          );
+      }
+
+      if (filters.persona) {
+          params.append(
+              "persona_id",
+              filters.persona
+          );
+      }
+
+      if (filters.occasion) {
+          params.append(
+              "occasion_id",
+              filters.occasion
+          );
+      }
 
       if (filters.mediaType) {
           params.append(
@@ -451,25 +435,21 @@ useEffect(() => {
       );
 
       const firstDate =
-      `${selectedYear}-${pad(selectedMonth + 1)}-01T00:00:00`;
+        `${selectedYear}-${pad(selectedMonth + 1)}-01`;
 
       const lastDate =
-      `${selectedYear}-${pad(selectedMonth + 1)}-${pad(totalDays)}T23:59:59`;
+        `${selectedYear}-${pad(selectedMonth + 1)}-${pad(totalDays)}`;
 
       // If the user has set an explicit start/end date filter via AppFrame,
       // that wins (it's the more specific ask). Otherwise, scope the request
       // to the calendar month currently being viewed. Every other filter
       // (stage/product/persona/occasion/mediaType/subType/search) always
       // comes from effectiveFilters — the single source of truth.
-      const data = await loadPlannerExecutes(
-
-          effectiveFilters,
-
-          new Date(firstDate),
-
-          new Date(lastDate)
-
-      );
+      const data = await loadPlannerExecutes({
+        ...effectiveFilters,
+        startDate: effectiveFilters.startDate || firstDate,
+        endDate:   effectiveFilters.endDate   || lastDate,
+      });
 
       setAllMonthDockets(data);
     };
@@ -876,31 +856,10 @@ useEffect(() => {
               return (
                 <div
                   key={index}
-
-                  className={`calendar-day${dayObj.day === selectedDay ? " active-day" : ""}`}
-
-                  onClick={() => {
-
-                      setSelectedDay(dayObj.day);
-
-                      if (setPlannerDateFilter) {
-
-                          setPlannerDateFilter(
-                              new Date(
-                                  selectedYear,
-                                  selectedMonth,
-                                  dayObj.day
-                              )
-                          );
-
-                      }
-
-                  }}
-
-                  onContextMenu={(e) =>
-                      openContextMenu(e, dateStr, dayObj.day)
-                  }
-              >
+                  onClick={(e) => openContextMenu(e, dateStr, dayObj.day)}
+                  onContextMenu={(e) => openContextMenu(e, dateStr, dayObj.day)}
+                  className={`calendar-day${dayObj.day === selectedDay ? ' active-day' : ''}`}
+                >
                   <div className="day-number">
                     {String(dayObj.day).padStart(2, '0')}
                   </div>
@@ -935,7 +894,9 @@ useEffect(() => {
                             className="occasion-chip docket-chip"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/docket-media/${item.docket_id}`);
+                              const type = item.tab?.toLowerCase();
+                              if (type === "media") navigate(`/docket-media/${item.docket_id}`);
+                              else navigate(`/docket/${item.docket_id}`);
                             }}
                           >
                             {item.title}
@@ -959,8 +920,7 @@ useEffect(() => {
           </div>
         </div>
 
-{/*
-
+        {/* ── RIGHT PANEL ── */}
         <div className="right-panel">
           <div className="date-display">
             {String(selectedDay).padStart(2, '0')}/
@@ -995,9 +955,6 @@ useEffect(() => {
             ))}
           </div>
         </div>
-
-*/}
-        
       </div>
 
       {/* ── OVERFLOW POPUP ── */}
@@ -1048,7 +1005,9 @@ useEffect(() => {
                     className="overflow-popup-item"
                     onClick={() => {
                       setOverflowPopup(prev => ({ ...prev, visible: false }));
-                      navigate(`/docket-media/${item.docket_id}`);
+                      const type = item.tab?.toLowerCase();
+                      if (type === "media") navigate(`/docket-media/${item.docket_id}`);
+                      else navigate(`/docket/${item.docket_id}`);
                     }}
                   >
                     <span className="overflow-popup-dot" style={{ backgroundColor: '#4B479E' }} />

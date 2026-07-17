@@ -15,7 +15,7 @@ import requests
 # ── Third-party ───────────────────────────────────────────────────────────────
 import boto3
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, Query
 from fastapi.middleware.cors import CORSMiddleware
 from mysql.connector import IntegrityError
 from pydantic import BaseModel
@@ -701,6 +701,11 @@ def add_secondary_user(
         db.close()
 
 
+
+
+
+
+
 @app.get("/network/secondary-users")
 def get_secondary_users(
     user_id: int = Depends(get_current_user),
@@ -775,6 +780,7 @@ def get_secondary_users(
     finally:
         cursor.close()
         db.close()
+
 
 # =============================================================================
 #  BUSINESS SETUP
@@ -2160,16 +2166,6 @@ def get_my_dockets(
 
 
 
-# =============================================================================
-#  corousel in docket page
-# =============================================================================
-
-
-
-from fastapi import Query
-
-
-
 
 def apply_execute_filters(
     query,
@@ -2265,7 +2261,7 @@ def apply_execute_filters(
     if start_date and end_date:
 
         query += """
-            AND DATE(d.uploaded_date_time)
+            AND d.uploaded_date_time
             BETWEEN %s AND %s
         """
 
@@ -2277,7 +2273,7 @@ def apply_execute_filters(
     elif start_date:
 
         query += """
-            AND DATE(d.uploaded_date_time)>= %s
+            AND d.uploaded_date_time >= %s
         """
 
         params.append(start_date)
@@ -2285,7 +2281,7 @@ def apply_execute_filters(
     elif end_date:
 
         query += """
-            AND DATE(d.uploaded_date_time)<= %s
+            AND d.uploaded_date_time <= %s
         """
 
         params.append(end_date)
@@ -2317,27 +2313,252 @@ def apply_execute_filters(
 
 
 
+
+
+# =============================================================================
+#  All Filter Endpoints
+# =============================================================================
+
+def get_all_users(user_id: int, cursor):
+    """
+    Returns all users in the current network.
+    Includes the owner and all secondary users.
+    """
+
+    cursor.execute(
+        """
+        SELECT primary_user_id
+        FROM network
+        WHERE secondary_user_id = %s
+        GROUP BY primary_user_id
+        """,
+        (user_id,)
+    )
+
+
+    network_users = [user_id]
+
+    for r in cursor.fetchall():
+        network_users.append(r["primary_user_id"])
+
+    return network_users
+
+
+
+
+
+@app.get("/appframe/filter-occasion")
+def get_filter_occasion(
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        network_users = get_all_users(user_id, cursor)
+
+        placeholders = ",".join(["%s"] * len(network_users))
+
+        cursor.execute(
+            f"""
+            SELECT
+                o.occasion_id AS id,
+                o.title AS title,
+                u.email AS user,
+                CONCAT(
+                    o.title,
+                    ' -- ',
+                    u.email
+                ) AS display_name
+            FROM occasions o
+            INNER JOIN users u
+                ON u.user_id = o.created_by
+            WHERE o.created_by IN ({placeholders})
+            ORDER BY o.created_by, o.title
+            """,
+            tuple(network_users)
+        )
+
+        occasions = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": {
+                "occasions": occasions
+            }
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+
+@app.get("/appframe/filter-product")
+def get_filter_product(
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        network_users = get_all_users(user_id, cursor)
+
+        placeholders = ",".join(["%s"] * len(network_users))
+
+        cursor.execute(
+            f"""
+            SELECT
+                p.product_id AS id,
+                p.product_name AS title,
+                u.email AS user,
+                CONCAT(
+                    p.product_name,
+                    ' -- ',
+                    u.email
+                ) AS display_name
+            FROM products p
+            INNER JOIN businesses b
+                ON b.business_id = p.business_id
+            INNER JOIN profiles pr
+                ON pr.profile_id = b.profile_id
+            INNER JOIN users u
+                ON u.user_id = pr.user_id
+            WHERE u.user_id IN ({placeholders})
+            ORDER BY u.user_id, p.product_name
+            """,
+            tuple(network_users)
+        )
+
+        products = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": {
+                "products": products
+            }
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+
+@app.get("/appframe/filter-persona")
+def get_filter_persona(
+    user_id: int = Depends(get_current_user)
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        network_users = get_all_users(user_id, cursor)
+
+        placeholders = ",".join(["%s"] * len(network_users))
+
+        cursor.execute(
+            f"""
+            SELECT
+                p.persona_id AS id,
+                p.persona_name AS title,
+                u.email AS user,
+                CONCAT(
+                    p.persona_name,
+                    ' -- ',
+                    u.email
+                ) AS display_name
+            FROM personas p
+            INNER JOIN businesses b
+                ON b.business_id = p.business_id
+            INNER JOIN profiles pr
+                ON pr.profile_id = b.profile_id
+            INNER JOIN users u
+                ON u.user_id = pr.user_id
+            WHERE u.user_id IN ({placeholders})
+            ORDER BY u.user_id, p.persona_name
+            """,
+            tuple(network_users)
+        )
+
+        personas = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": {
+                "personas": personas
+            }
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+
+@app.get("/appframe/filter-stage")
+def get_filter_stage():
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        cursor.execute(
+            """
+            SELECT
+                MIN(s_no) AS stage_id,
+                current_stage AS stage_name
+            FROM process_stage
+            GROUP BY current_stage
+            ORDER BY stage_id
+            """
+        )
+
+        stages = cursor.fetchall()
+
+        return {
+            "success": True,
+            "data": {
+                "stages": stages
+            }
+        }
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+
+
+#############################################################################
+
 @app.get("/planner/carousel-dockets")
 def get_carousel_dockets(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
 
-    stage: Optional[str] = None,
+    occasion_id: list[int] = Query(default=[]),
+    product_id: list[int] = Query(default=[]),
+    persona_id: list[int] = Query(default=[]),
+    stage: list[str] = Query(default=[]),
 
-    product_id: Optional[int] = None,
-    persona_id: Optional[int] = None,
+    start_date: datetime | None = None,
+    end_date: datetime |None = None,
 
-    occasion_id: Optional[int] = None,
+    search: str | None = None,
 
-    media_type: Optional[str] = None,
-    subtype_name: Optional[str] = None,
-
-    search: Optional[str] = None,
-
-    page: int = 1,
-    page_size: int = 10,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
 
     user_id: int = Depends(get_current_user)
+
 ):
 
     db = get_db()
@@ -2350,164 +2571,218 @@ def get_carousel_dockets(
             db
         )
 
-
-
-        cursor.execute(
-            """
-            SELECT primary_user_id
-            FROM network
-            WHERE secondary_user_id = %s
-            LIMIT 1
-            """,
-            (user_id,)
-        )
-
-        mapping = cursor.fetchone()
-
-
-
-
-
+        offset = (page - 1) * page_size
 
         query = """
             SELECT
+
                 d.docket_id,
                 d.title,
-                d.tab,
-                d.planner_date_time,
                 d.uploaded_date_time,
 
-                dma.uploaded_url,
+                COALESCE(ea.stage, 'discovery') AS current_stage,
 
-                COALESCE(ea.stage,'discovery') AS current_stage,
-
-                ea.assigned_to,
-                ea.assigned_by,
-
-
-
-                assigned_to_user.email AS assigned_to_email,
-                assigned_by_user.email AS assigned_by_email,
-
-
-
-
-
-                m.media_name,
-                mt.media_type,
-                ms.subtype_name,
-                p.product_name,
-                pe.persona_name
+                dma.uploaded_url
 
             FROM docket d
 
-            LEFT JOIN media m
-                ON d.media_id = m.media_id
-
-            LEFT JOIN media_type mt
-                ON d.media_type_id = mt.media_type_id
-
-            LEFT JOIN media_subtype ms
-                ON d.media_subtype_id = ms.media_subtype_id
-
-            LEFT JOIN products p
-                ON d.product_id = p.product_id
-
-            LEFT JOIN personas pe
-                ON d.persona_id = pe.persona_id
-
             LEFT JOIN (
-                SELECT x.*
+
+                SELECT
+                    x.docket_id,
+                    x.uploaded_url
+
                 FROM docket_media_admin x
+
                 INNER JOIN (
-                    SELECT docket_id, MAX(admin_media_id) AS latest_id
+
+                    SELECT
+                        docket_id,
+                        MAX(admin_media_id) AS latest_id
+
                     FROM docket_media_admin
+
                     GROUP BY docket_id
-                ) y
-                ON x.admin_media_id = y.latest_id
+
+                ) latest_img
+
+                    ON latest_img.latest_id = x.admin_media_id
+
             ) dma
-            ON dma.docket_id = d.docket_id
+
+                ON dma.docket_id = d.docket_id
 
             LEFT JOIN (
-                SELECT ea1.*
-                FROM execute_assignments ea1
-                WHERE ea1.assignment_id = (
-                    SELECT ea2.assignment_id
-                    FROM execute_assignments ea2
-                    WHERE ea2.execute_id = ea1.execute_id
-                    ORDER BY ea2.created_at DESC
-                    LIMIT 1
-                )
+
+                SELECT
+                    ea.execute_id,
+                    ea.assigned_to,
+                    ea.stage
+
+                FROM execute_assignments ea
+
+                INNER JOIN (
+
+                    SELECT
+                        execute_id,
+                        MAX(assignment_id) AS assignment_id
+
+                    FROM execute_assignments
+
+                    GROUP BY execute_id
+
+                ) latest_assignment
+
+                    ON latest_assignment.assignment_id = ea.assignment_id
+
             ) ea
-            ON ea.execute_id = d.docket_id
 
+                ON ea.execute_id = d.docket_id
 
+            WHERE
 
-
-            LEFT JOIN users assigned_to_user
-                ON ea.assigned_to = assigned_to_user.user_id
-
-            LEFT JOIN users assigned_by_user
-                ON ea.assigned_by = assigned_by_user.user_id
-
-
-            WHERE d.business_id = %s
+                d.business_id = %s
+                AND d.tab = 'media'
         """
 
         params = [business_id]
+        base_query = query
 
+        # ---------------- Occasion ----------------
 
-        offset = (page - 1) * page_size
+        if occasion_id:
 
+            placeholders = ",".join(["%s"] * len(occasion_id))
 
+            query += f"""
+                AND d.occasion_id IN ({placeholders})
+            """
+
+            params.extend(occasion_id)
+
+        # ---------------- Product ----------------
+
+        if product_id:
+
+            placeholders = ",".join(["%s"] * len(product_id))
+
+            query += f"""
+                AND d.product_id IN ({placeholders})
+            """
+
+            params.extend(product_id)
+
+        # ---------------- Persona ----------------
+
+        if persona_id:
+
+            placeholders = ",".join(["%s"] * len(persona_id))
+
+            query += f"""
+                AND d.persona_id IN ({placeholders})
+            """
+
+            params.extend(persona_id)
+
+        # ---------------- Stage ----------------
+
+        if stage:
+
+            placeholders = ",".join(["%s"] * len(stage))
+
+            query += f"""
+                AND COALESCE(ea.stage, 'discovery') IN ({placeholders})
+            """
+
+            params.extend(stage)
+
+        # ---------------- Start Date ----------------
+
+        if start_date:
+
+            query += """
+                AND d.uploaded_date_time >= %s
+            """
+
+            params.append(start_date)
+
+        # ---------------- End Date ----------------
+
+        if end_date:
+
+            query += """
+                AND d.uploaded_date_time <= %s
+            """
+
+            params.append(end_date)
+
+        # ---------------- Search ----------------
+
+        if search and search.strip():
+
+            query += """
+                AND d.title LIKE %s
+            """
+
+            params.append(f"%{search.strip()}%")
+
+        
+
+        # ---------------- Total Count ----------------
+
+        count_query = f"""
+        SELECT COUNT(*) AS total
+        FROM (
+            {query}
+        ) total_records
+        """
+
+        count_params = params.copy()
+
+        cursor.execute(
+            count_query,
+            tuple(count_params)
+        )
+
+        total = cursor.fetchone()["total"]
 
         
 
 
 
-        query, params = apply_execute_filters(
-
-            query=query,
-            params=params,
-
-            mapping=mapping,
-            user_id=user_id,
-
-            product_id=product_id,
-            persona_id=persona_id,
-            occasion_id=occasion_id,
-
-            media_type=media_type,
-            subtype_name=subtype_name,
-
-            search=search,
-
-            start_date=start_date,
-            end_date=end_date,
-
-            stage=stage
-
-        )
-
-
         query += """
-            ORDER BY d.uploaded_date_time DESC
+            ORDER BY
+                d.uploaded_date_time ASC,
+                d.docket_id ASC
+
+            LIMIT %s OFFSET %s
         """
 
-        cursor.execute(query, tuple(params))
+        params.extend([
+            page_size,
+            offset
+        ])
 
-        rows = cursor.fetchall()
+        cursor.execute(
+            query,
+            tuple(params)
+        )
+
+        executes = cursor.fetchall()
 
         return {
             "success": True,
-            "data": rows
+            "page": page,
+            "page_size": page_size,
+            "count": len(executes),
+            "total": total,
+            "data": executes
         }
 
     finally:
+
         cursor.close()
         db.close()
-
-
 
 
 
@@ -3358,7 +3633,7 @@ def get_all_occasions(user_id: int = Depends(get_current_user)):
     cursor = db.cursor(dictionary=True)
 
     try:
-        business_id = require_business_for_network_user(
+        business_id = require_business(
             user_id,
             db
         )
@@ -4114,3 +4389,11 @@ def download_image(key: str):
     )
 
     return {"url": url}
+
+
+
+
+
+
+#########################################################################################
+#########################################################################################

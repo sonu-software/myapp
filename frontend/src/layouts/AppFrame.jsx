@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import Select, { components } from "react-select";
 
 import {
   Target,
@@ -46,11 +47,51 @@ const FILTER_STAGES = [
 
 // ─── Utility ────────────────────────────────────────────────────────────────
 function formatDate(date) {
-  const year  = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day   = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+
+    if (!date) return "";
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
+
+
+
+const ValueContainer = (props) => {
+
+    const count = props.getValue().length;
+
+    const placeholder =
+        props.selectProps.placeholder;
+
+    return (
+
+        <components.ValueContainer {...props}>
+
+            <span
+                style={{
+                    fontSize: 11,
+                    color: "#333"
+                }}
+            >
+                {
+                    count === 0
+                        ? placeholder
+                        : `${placeholder} ${count}`
+                }
+            </span>
+
+        </components.ValueContainer>
+
+    );
+
+};
 
 export default function AppFrame() {
 
@@ -65,22 +106,41 @@ export default function AppFrame() {
   // ── Reference lists (used by the filter dropdown) ────────────────────────
   const [productList, setProductList] = useState([]);
   const [personaList, setPersonaList] = useState([]);
-  const [occasionList, setOccasionList] = useState([]);
+  const [occasionList, setOccasionList] = useState([]);          // Create Execute
 
-  // ── Filter state ──────────────────────────────────────────────────────
+  // ── Filter Lists Data (AppFrame Filter Endpoints) ──────────────────────────────
+  const [filterOccasionList, setFilterOccasionList] = useState([]);
+  const [filterProductList, setFilterProductList] = useState([]);
+  const [filterPersonaList, setFilterPersonaList] = useState([]);
+  const [filterStageList, setFilterStageList] = useState([]);
+
+  // ── Filter state List of selected dropdown──────────────────────────────────────────────────────
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [selectedFilterStage, setSelectedFilterStage] = useState("");
-  const [selectedFilterProduct, setSelectedFilterProduct] = useState("");
-  const [selectedFilterPersona, setSelectedFilterPersona] = useState("");
-  const [selectedFilterOccasion, setSelectedFilterOccasion] = useState("");
+  const [selectedFilterOccasion, setSelectedFilterOccasion] = useState([]);
+  const [selectedFilterProduct, setSelectedFilterProduct] = useState([]);
+  const [selectedFilterPersona, setSelectedFilterPersona] = useState([]);
+  const [selectedFilterStage, setSelectedFilterStage] = useState([]);
+
+  // ── Get selected ──────────────────────────────────────────────────────
+  const [appliedFilters, setAppliedFilters] = useState({
+      startDate: null,
+      endDate: null,
+      occasions: [],
+      products: [],
+      personas: [],
+      stages: [],
+      search: ""
+  });
+  
+
   const [searchText, setSearchText] = useState("");
   const [viewMode, setViewMode] = useState("");
 
   const [panelPosition, setPanelPosition] = useState("right");
 
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [filterDropdownPos, setFilterDropdownPos] = useState({ top: 0, left: 0 });
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false);
 
   const filterBtnRef = useRef(null);
 
@@ -113,12 +173,200 @@ export default function AppFrame() {
   // pagination, no click-through.
   const [carouselDockets, setCarouselDockets] = useState([]);
 
+  // Pagination 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [pageSize] = useState(10);
+
+  const [totalPages, setTotalPages] = useState(1);
+  
+
+
+
+
   // Lets the currently open execute (if any) highlight itself in the panel.
   const activeDocketId = useMemo(() => {
     const match = location.pathname.match(/^\/docket-media\/([^/]+)/);
     return match ? match[1] : null;
   }, [location.pathname]);
 
+
+
+
+  const filterSelectStyles = {
+
+    container: (base) => ({
+        ...base,
+        width: "100%"
+    }),
+
+    control: (base, state) => ({
+        ...base,
+
+        minHeight: 28.35,
+        height: 28.35,
+
+        backgroundColor: "#ffffff",
+
+        border: `1px solid ${
+            state.isFocused
+                ? "#4B479E"
+                : "#dcdfe6"
+        }`,
+
+        borderRadius: 6.3,
+
+        boxShadow: state.isFocused
+            ? "0 0 0 3px rgba(75,71,158,.10)"
+            : "none",
+
+        cursor: "pointer",
+
+        transition: "all .15s ease",
+
+        "&:hover": {
+            borderColor: state.isFocused
+                ? "#4B479E"
+                : "#dcdfe6"
+        }
+    }),
+
+    valueContainer: (base) => ({
+        ...base,
+
+        height: 26,
+
+        padding: "0 8px",
+
+        display: "flex",
+
+        alignItems: "center"
+    }),
+
+    input: (base) => ({
+        ...base,
+        margin: 0,
+        padding: 0
+    }),
+
+    placeholder: (base) => ({
+        ...base,
+
+        color: "#333",
+
+        fontSize: 11,
+
+        margin: 0
+    }),
+
+    indicatorSeparator: () => ({
+        display: "none"
+    }),
+
+    dropdownIndicator: (base) => ({
+        ...base,
+
+        color: "#888",
+
+        padding: 4
+    }),
+
+    menu: (base) => ({
+        ...base,
+
+        marginTop: 4,
+
+        border: "1px solid #dcdfe6",
+
+        borderRadius: 6.3,
+
+        overflow: "hidden",
+
+        boxShadow:
+            "0 8px 20px rgba(226, 13, 13, 0.1)",
+
+        zIndex: 99999
+    }),
+
+    menuList: (base) => ({
+        ...base,
+
+        paddingTop: 4,
+
+        paddingBottom: 4
+    }),
+
+    option: (base, state) => ({
+        ...base,
+
+        backgroundColor:
+            state.isFocused
+                ? "#f6f7fb"
+                : "#fff",
+
+        color: "#333",
+
+        fontSize: 11,
+
+        padding: "8px 10px",
+
+        cursor: "pointer",
+
+        ":active": {
+            background: "#eef0ff"
+        }
+    })
+};
+
+
+
+
+  const CheckboxOption = (props) => (
+
+    <components.Option {...props}>
+
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%"
+            }}
+        >
+
+            <input
+                type="checkbox"
+                checked={props.isSelected}
+                readOnly
+                style={{
+                    width: 14,
+                    height: 14,
+                    margin: 0,
+                    marginRight: 10,
+                    accentColor: "#4B479E",
+                    cursor: "pointer",
+                    flexShrink: 0
+                }}
+            />
+
+            <span
+                style={{
+                    fontSize: 11,
+                    color: "#333",
+                    lineHeight: 1.2
+                }}
+            >
+                {props.label}
+            </span>
+
+        </div>
+
+    </components.Option>
+
+);
+
+
+
+  
   // ── Account load ─────────────────────────────────────────────────────────
   useEffect(() => {
     loadAccount();
@@ -154,43 +402,7 @@ export default function AppFrame() {
   // clipped by any ancestor's `overflow:hidden` — it is positioned with
   // fixed coordinates computed from the button's bounding box, and kept in
   // sync on resize/scroll while open.
-  useEffect(() => {
 
-    if (!showFilterDropdown) return;
-
-    function reposition() {
-      if (!filterBtnRef.current) return;
-      const rect = filterBtnRef.current.getBoundingClientRect();
-      setFilterDropdownPos({
-        top: rect.bottom + 8,
-        left: rect.left
-      });
-    }
-
-    reposition();
-
-    window.addEventListener("resize", reposition);
-    window.addEventListener("scroll", reposition, true);
-
-    return () => {
-      window.removeEventListener("resize", reposition);
-      window.removeEventListener("scroll", reposition, true);
-    };
-
-  }, [showFilterDropdown]);
-
-  function toggleFilterDropdown() {
-
-    if (!showFilterDropdown && filterBtnRef.current) {
-      const rect = filterBtnRef.current.getBoundingClientRect();
-      setFilterDropdownPos({
-        top: rect.bottom + 8,
-        left: rect.left
-      });
-    }
-
-    setShowFilterDropdown(v => !v);
-  }
 
   // ── Reference lists (Products / Personas / Occasions) ────────────────────
   useEffect(() => {
@@ -219,6 +431,11 @@ export default function AppFrame() {
       .then(data => { if (data?.success) setOccasionList(data.data || []); })
       .catch(err => console.error("Failed to load occasions", err));
 
+
+
+
+
+
   }, []);
 
   // ── Stage counts: refetch whenever a filter changes ──────────────────────
@@ -227,55 +444,259 @@ export default function AppFrame() {
     fetchStageCounts();
 
   }, [
-    startDate,
-    endDate,
-    selectedFilterStage,
-    selectedFilterProduct,
-    selectedFilterPersona,
-    selectedFilterOccasion,
-    searchText,
+      appliedFilters
   ]);
 
-  function buildFilterParams() {
+
+
+
+  function get_selected_filters() {
+
+    setCurrentPage(1);
+
+    setAppliedFilters({
+
+        startDate,
+
+        endDate,
+
+        occasions: selectedFilterOccasion,
+
+        products: selectedFilterProduct,
+
+        personas: selectedFilterPersona,
+
+        stages: selectedFilterStage,
+
+        search: searchText
+
+    });
+
+}
+
+
+  function applyPlannerDateFilter(start, end) {
+
+    setStartDate(start);
+
+    setEndDate(end);
+
+}
+
+
+  useEffect(() => {
+
+      get_selected_filters();
+
+  }, [
+      startDate,
+      endDate
+  ]);
+
+
+
+
+
+
+
+
+
+  function buildCarouselFilterParams() {
 
     const params = new URLSearchParams();
 
-    if (startDate) {
-      params.append("start_date", formatDate(startDate));
+    if (appliedFilters.startDate) {
+      params.append("start_date", formatDate(appliedFilters.startDate));
     }
 
-    if (endDate) {
-      params.append("end_date", formatDate(endDate));
+    if (appliedFilters.endDate) {
+      params.append("end_date", formatDate(appliedFilters.endDate));
     }
 
-    if (selectedFilterStage) {
-      params.append("stage", selectedFilterStage);
-    }
+    appliedFilters.stages.forEach(stage => {
+        params.append(
+            "stage",
+            stage.value
+        );
+    });
 
-    if (selectedFilterProduct) {
-      params.append("product_id", selectedFilterProduct);
-    }
+    appliedFilters.products.forEach(product => {
+        params.append(
+            "product_id",
+            product.value
+        );
+    });
 
-    if (selectedFilterPersona) {
-      params.append("persona_id", selectedFilterPersona);
-    }
+    appliedFilters.personas.forEach(persona => {
+        params.append(
+            "persona_id",
+            persona.value
+        );
+    });
 
-    if (selectedFilterOccasion) {
-      params.append("occasion_id", selectedFilterOccasion);
-    }
+    appliedFilters.occasions.forEach(occasion => {
+        params.append(
+            "occasion_id",
+            occasion.value
+        );
+    });
 
-    if (searchText.trim()) {
-      params.append("search", searchText.trim());
+    if (appliedFilters.search.trim()) {
+        params.append(
+            "search",
+            appliedFilters.search.trim()
+        );
     }
 
     return params;
   }
 
+
+
+
+  async function loadFilterLists() {
+
+
+    fetch(`${API}/appframe/filter-occasion`, {
+        headers: AUTH()
+    })
+    .then(res => {
+        if (res.status === 401) {
+            logout();
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data?.success) {
+            setFilterOccasionList(
+              (data.data.occasions || []).map(item => ({
+                  value: item.id,
+                  label: item.display_name,
+                  ...item
+              }))
+            );
+        }
+    })
+    .catch(err =>
+        console.error(
+            "Failed to load filter occasions",
+            err
+        )
+    );
+
+
+
+    fetch(`${API}/appframe/filter-product`, {
+        headers: AUTH()
+    })
+    .then(res => {
+        if (res.status === 401) {
+            logout();
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data?.success) {
+            setFilterProductList(
+                (data.data.products || []).map(item => ({
+                    value: item.id,
+                    label: item.display_name,
+                    ...item
+                }))
+            );
+        }
+    })
+    .catch(err =>
+        console.error(
+            "Failed to load filter products",
+            err
+        )
+    );
+
+
+
+    fetch(`${API}/appframe/filter-persona`, {
+        headers: AUTH()
+    })
+    .then(res => {
+        if (res.status === 401) {
+            logout();
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data?.success) {
+            setFilterPersonaList(
+                (data.data.personas || []).map(item => ({
+                    value: item.id,
+                    label: item.display_name,
+                    ...item
+                }))
+            );
+        }
+    })
+    .catch(err =>
+        console.error(
+            "Failed to load filter personas",
+            err
+        )
+    );
+
+
+
+
+    fetch(`${API}/appframe/filter-stage`, {
+        headers: AUTH()
+    })
+    .then(res => {
+        if (res.status ===401) {
+            logout();
+            return null;
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data?.success) {
+            setFilterStageList(
+                (data.data.stages || []).map(item => ({
+                    value: item.stage_name,
+                    label: item.stage_name,
+                    ...item
+                }))
+            );
+        }
+    })
+    .catch(err =>
+        console.error(
+            "Failed to load filter stages",
+            err
+        )
+    );
+
+  }
+
+
+
+  useEffect(() => {
+      loadFilterLists();
+  }, []);
+
+
+
+
+
+
+
+
+
   async function fetchStageCounts() {
 
     try {
 
-      const params = buildFilterParams();
+      const params = buildCarouselFilterParams();
 
       const res = await fetch(
         `${API}/planner/stage-counts?${params.toString()}`,
@@ -305,12 +726,16 @@ export default function AppFrame() {
 
     try {
 
-      const params = buildFilterParams();
+      const params = buildCarouselFilterParams();
 
-      const res = await fetch(
-        `${API}/planner/carousel-dockets?${params.toString()}`,
-        { headers: AUTH() }
-      );
+        params.append("page", currentPage);
+
+        params.append("page_size", pageSize);
+
+        const res = await fetch(
+            `${API}/planner/carousel-dockets?${params.toString()}`,
+            { headers: AUTH() }
+        );
 
       if (res.status === 401) {
         logout();
@@ -320,7 +745,16 @@ export default function AppFrame() {
       const data = await res.json();
 
       if (data.success) {
-        setCarouselDockets(data.data || []);
+
+          setCarouselDockets(data.data || []);
+
+          setTotalPages(
+              Math.max(
+                  1,
+                  Math.ceil(data.total / pageSize)
+              )
+          );
+
       }
 
     } catch (err) {
@@ -330,17 +764,12 @@ export default function AppFrame() {
 
   useEffect(() => {
 
-    fetchCarouselDockets();
+        fetchCarouselDockets();
 
-  }, [
-    startDate,
-    endDate,
-    selectedFilterStage,
-    selectedFilterProduct,
-    selectedFilterPersona,
-    selectedFilterOccasion,
-    searchText,
-  ]);
+    }, [
+        appliedFilters,
+        currentPage
+    ]);
 
   // ── Create Execute modal: cascading Media Type / Sub Type lookups ────────
   useEffect(() => {
@@ -492,94 +921,208 @@ export default function AppFrame() {
   }
 
   function clearAllFilters() {
+
     setStartDate(null);
+
     setEndDate(null);
-    setSelectedFilterStage("");
-    setSelectedFilterProduct("");
-    setSelectedFilterPersona("");
-    setSelectedFilterOccasion("");
+
+    setSelectedFilterStage([]);
+
+    setSelectedFilterProduct([]);
+
+    setSelectedFilterPersona([]);
+
+    setSelectedFilterOccasion([]);
+
     setSearchText("");
+
+    setAppliedFilters({
+        startDate: null,
+        endDate: null,
+        occasions: [],
+        products: [],
+        personas: [],
+        stages: [],
+        search: ""
+    });
+
     setShowFilterDropdown(false);
-  }
+
+}
 
   // ── Active filter pills ──────────────────────────────────────────────────
   const activeFilters = useMemo(() => {
 
     const pills = [];
 
-    if (selectedFilterStage) {
-      pills.push({
-        key: "stage",
-        label: selectedFilterStage,
-        clear: () => setSelectedFilterStage("")
-      });
-    }
 
-    if (selectedFilterProduct) {
-      const p = productList.find(x => String(x.product_id) === String(selectedFilterProduct));
-      pills.push({
-        key: "product",
-        label: p?.product_name || "Product",
-        clear: () => setSelectedFilterProduct("")
-      });
-    }
-
-    if (selectedFilterPersona) {
-      const p = personaList.find(x => String(x.persona_id) === String(selectedFilterPersona));
-      pills.push({
-        key: "persona",
-        label: p?.persona_name || "Persona",
-        clear: () => setSelectedFilterPersona("")
-      });
-    }
-
-    if (selectedFilterOccasion) {
-      const o = occasionList.find(x => String(x.occasion_id) === String(selectedFilterOccasion));
-      pills.push({
-        key: "occasion",
-        label: o?.title || "Topic",
-        clear: () => setSelectedFilterOccasion("")
-      });
-    }
-
-    if (startDate) {
+    if (appliedFilters.startDate) {
       pills.push({
         key: "startDate",
-        label: `From ${formatDate(startDate)}`,
-        clear: () => setStartDate(null)
+        label: `From ${formatDate(appliedFilters.startDate)}`,
+        clear: () => {
+
+            setStartDate(null);
+
+            setAppliedFilters(prev => ({
+                ...prev,
+                startDate: null
+            }));
+
+        }
       });
     }
 
-    if (endDate) {
+    if (appliedFilters.endDate) {
       pills.push({
         key: "endDate",
-        label: `To ${formatDate(endDate)}`,
-        clear: () => setEndDate(null)
+        label: `To ${formatDate(appliedFilters.endDate)}`,
+        clear: () => {
+
+            setEndDate(null);
+
+            setAppliedFilters(prev => ({
+                ...prev,
+                endDate: null
+            }));
+
+        }
       });
     }
 
-    if (searchText.trim()) {
+
+
+    appliedFilters.occasions.forEach(occasion => {
+
+        pills.push({
+
+            key: `occasion-${occasion.value}`,
+
+            label: occasion.label,
+
+            clear: () => {
+
+                const updated = selectedFilterOccasion.filter(
+                    x => x.value !== occasion.value
+                );
+
+                setSelectedFilterOccasion(updated);
+
+                setAppliedFilters(prev => ({
+                    ...prev,
+                    occasions: updated
+                }));
+
+            }
+
+        });
+
+    });
+
+    
+
+    appliedFilters.products.forEach(product => {
+
+        pills.push({
+
+            key: `product-${product.value}`,
+
+            label: product.label,
+
+            clear: () => {
+
+                const updated = selectedFilterProduct.filter(
+                    x => x.value !== product.value
+                );
+
+                setSelectedFilterProduct(updated);
+
+                setAppliedFilters(prev => ({
+                    ...prev,
+                    products: updated
+                }));
+
+            }
+
+        });
+
+    });
+
+    appliedFilters.personas.forEach(persona => {
+
+        pills.push({
+
+            key: `persona-${persona.value}`,
+
+            label: persona.label,
+
+            clear: () => {
+
+                const updated = selectedFilterPersona.filter(
+                    x => x.value !== persona.value
+                );
+
+                setSelectedFilterPersona(updated);
+
+                setAppliedFilters(prev => ({
+                    ...prev,
+                    personas: updated
+                }));
+
+            }
+
+        });
+
+    });
+
+    
+
+
+    appliedFilters.stages.forEach(stage => {
+        pills.push({
+            key: `stage-${stage.value}`,
+            label: stage.label,
+            clear: () => {
+
+                const updated = selectedFilterStage.filter(
+                    x => x.value !== stage.value
+                );
+
+                setSelectedFilterStage(updated);
+
+                setAppliedFilters(prev => ({
+                    ...prev,
+                    stages: updated
+                }));
+
+            }
+        });
+    });
+
+    
+
+    if (appliedFilters.search.trim()) {
       pills.push({
         key: "search",
-        label: `"${searchText}"`,
-        clear: () => setSearchText("")
+        label: `"${appliedFilters.search}"`,
+        clear: () => {
+
+            setSearchText("");
+
+            setAppliedFilters(prev => ({
+                ...prev,
+                search: ""
+            }));
+
+        }
       });
     }
 
     return pills;
 
   }, [
-    selectedFilterStage,
-    selectedFilterProduct,
-    selectedFilterPersona,
-    selectedFilterOccasion,
-    startDate,
-    endDate,
-    searchText,
-    productList,
-    personaList,
-    occasionList
-  ]);
+          appliedFilters
+      ]);
 
 
   const headerDropdownConfig = useMemo(() => {
@@ -647,9 +1190,9 @@ export default function AppFrame() {
     { label: "Purpose",  route: "/setup-business", icon: <Target size={14.7} /> },
     { label: "Solution", route: "/product",         icon: <Lightbulb size={14.7} /> },
     { label: "Audience", route: "/persona",         icon: <Users size={14.7} /> },
-    { label: "Planner2",  route: "/plannerpage",         icon: <CalendarDays size={14.7} /> },
+    { label: "Planner2",  route: "/planner",         icon: <CalendarDays size={14.7} /> },
     { label: "Execute",  route: "execute",          icon: <Sparkles size={14.7} /> },
-    { label: "Planner",  route: "/planner",         icon: <CalendarDays size={14.7} /> },
+    { label: "Planner",  route: "/plannerpage",         icon: <CalendarDays size={14.7} /> },
     { label: "Design",  route: "/design",          icon: <Sparkles size={14.7} /> }
   ];
 
@@ -689,8 +1232,13 @@ export default function AppFrame() {
 
           return (
             <div
-              key={item.docket_id}
-              className={`dm-carousel-item${isActive ? ' dm-carousel-item--active' : ''}`}
+                key={item.docket_id}
+                className={`dm-carousel-item${
+                    isActive ? ' dm-carousel-item--active' : ''
+                }`}
+                onDoubleClick={() => {
+                    navigate(`/docket-media/${item.docket_id}`);
+                }}
             >
               <div className="dm-carousel-item-thumb">
                 {image ? <img src={image} alt=""/> : <div className="dm-carousel-item-thumb-empty"/>}
@@ -856,6 +1404,7 @@ export default function AppFrame() {
 
         <header className="app-header-bar">
 
+
           <div className="header-left">
 
 
@@ -884,169 +1433,19 @@ export default function AppFrame() {
 
             <div className="header-filter-wrap">
 
+
+
+
               <button
                 ref={filterBtnRef}
                 className={`header-filter-btn ${showFilterDropdown ? "active" : ""}`}
                 title="Filter"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFilterDropdown();
-                }}
+                onClick={() => setShowFilterDropdown(prev => !prev)}
               >
                 <Filter size={15} strokeWidth={3} />
               </button>
 
-              {showFilterDropdown &&
-                createPortal(
-
-                  <>
-
-                    <div
-                      className="header-filter-backdrop"
-                      onClick={() => setShowFilterDropdown(false)}
-                    />
-
-                    <div
-                      className="header-filter-dropdown"
-                      style={{
-                        top: `${filterDropdownPos.top}px`,
-                        left: `${filterDropdownPos.left}px`
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-
-                      <div className="header-filter-dropdown-head">
-
-                        <div className="header-filter-dropdown-title">
-                          <Filter size={13} strokeWidth={2.6} />
-                          <span>Filter Executes</span>
-                        </div>
-
-                        <button
-                          className="header-filter-dropdown-close"
-                          title="Close"
-                          onClick={() => setShowFilterDropdown(false)}
-                        >
-                          <X size={14} strokeWidth={2.4} />
-                        </button>
-
-                      </div>
-
-                      <div className="header-filter-dropdown-body">
-
-                        <div className="header-filter-dropdown-row">
-
-                          <div className="header-filter-field">
-                            <label>Start Date</label>
-                            <DatePicker
-                              selected={startDate}
-                              onChange={setStartDate}
-                              dateFormat="yyyy-MM-dd"
-                              placeholderText="Select start date"
-                              className="header-filter-date-input"
-                            />
-                          </div>
-
-                          <div className="header-filter-field">
-                            <label>End Date</label>
-                            <DatePicker
-                              selected={endDate}
-                              onChange={setEndDate}
-                              dateFormat="yyyy-MM-dd"
-                              placeholderText="Select end date"
-                              className="header-filter-date-input"
-                            />
-                          </div>
-
-                        </div>
-
-                        <div className="header-filter-dropdown-row">
-
-                          <div className="header-filter-field">
-                            <label>Stage</label>
-                            <select
-                              value={selectedFilterStage}
-                              onChange={(e) => setSelectedFilterStage(e.target.value)}
-                            >
-                              <option value="">All Stages</option>
-                              {FILTER_STAGES.map(stage => (
-                                <option key={stage} value={stage}>
-                                  {stage.charAt(0).toUpperCase() + stage.slice(1)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="header-filter-field">
-                            <label>Topic</label>
-                            <select
-                              value={selectedFilterOccasion}
-                              onChange={(e) => setSelectedFilterOccasion(e.target.value)}
-                            >
-                              <option value="">All Topics</option>
-                              {occasionList.map(o => (
-                                <option key={o.occasion_id} value={o.occasion_id}>
-                                  {o.title}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                        </div>
-
-                        <div className="header-filter-dropdown-row">
-
-                          <div className="header-filter-field">
-                            <label>Product</label>
-                            <select
-                              value={selectedFilterProduct}
-                              onChange={(e) => setSelectedFilterProduct(e.target.value)}
-                            >
-                              <option value="">All Products</option>
-                              {productList.map(p => (
-                                <option key={p.product_id} value={p.product_id}>
-                                  {p.product_name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="header-filter-field">
-                            <label>Persona</label>
-                            <select
-                              value={selectedFilterPersona}
-                              onChange={(e) => setSelectedFilterPersona(e.target.value)}
-                            >
-                              <option value="">All Personas</option>
-                              {personaList.map(p => (
-                                <option key={p.persona_id} value={p.persona_id}>
-                                  {p.persona_name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                      <div className="header-filter-dropdown-foot">
-                        <button
-                          className="header-filter-clear-btn"
-                          onClick={clearAllFilters}
-                        >
-                          <RotateCcw size={12} strokeWidth={2.4} />
-                          Clear Filter
-                        </button>
-                      </div>
-
-                    </div>
-
-                  </>,
-
-                  document.body
-                )
-              }
+              
 
             </div>
 
@@ -1135,21 +1534,153 @@ export default function AppFrame() {
                     </button>
                 </div>
 
-
-
-
-
-
-
-
-
-
           </div>
 
         </header>
 
 
 
+
+
+            {showFilterDropdown && (
+                <div className="header-filter-bar">
+
+
+                  <button
+                  className="header-filter-refresh-btn"
+                      onClick={() => {
+                          loadFilterLists();
+                          get_selected_filters();
+                      }}
+                  >
+                      Refresh
+                  </button>
+
+                  <div className="header-filter-field">
+
+                      <DatePicker
+                          className="header-filter-date-input"
+                          selected={startDate}
+                          onChange={setStartDate}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="Start Date"
+
+                          showTimeSelect
+                          timeIntervals={15}
+                          dateFormat="dd/MM/yyyy hh:mm aa"
+                          timeCaption="Time"
+                          
+                      />
+
+                  </div>
+
+                  <div className="header-filter-field">
+
+                      <DatePicker
+                          className="header-filter-date-input"
+                          selected={endDate}
+                          onChange={setEndDate}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="End Date"
+
+                          showTimeSelect
+                          timeIntervals={15}
+                          dateFormat="dd/MM/yyyy hh:mm aa"
+                          timeCaption="Time"
+                      />
+
+                  </div>
+
+                  <div className="header-filter-field">
+
+                      <Select
+                          isMulti
+                          styles={filterSelectStyles}
+                          options={filterOccasionList}
+                          value={selectedFilterOccasion}
+                          onChange={setSelectedFilterOccasion}
+                          placeholder="Topics"
+                          closeMenuOnSelect={false}
+                          hideSelectedOptions={false}
+                          controlShouldRenderValue={false}
+                          components={{
+                              Option: CheckboxOption
+                          }}
+                      />
+
+                  </div>
+
+                  
+
+                  <div className="header-filter-field">
+
+                      <Select
+                          isMulti
+                          styles={filterSelectStyles}
+                          options={filterProductList}
+                          value={selectedFilterProduct}
+                          onChange={setSelectedFilterProduct}
+                          placeholder="Products"
+                          closeMenuOnSelect={false}
+                          hideSelectedOptions={false}
+                          controlShouldRenderValue={false}
+                          components={{
+                              Option: CheckboxOption
+                          }}
+                      />
+
+                  </div>
+
+                  <div className="header-filter-field">
+
+                      <Select
+                          isMulti
+                          styles={filterSelectStyles}
+                          options={filterPersonaList}
+                          value={selectedFilterPersona}
+                          onChange={setSelectedFilterPersona}
+                          placeholder="Personas"
+                          closeMenuOnSelect={false}
+                          hideSelectedOptions={false}
+                          controlShouldRenderValue={false}
+                          components={{
+                              Option: CheckboxOption
+                          }}
+                      />
+
+                  </div>
+
+
+                  <div className="header-filter-field">
+
+                      <Select
+                          isMulti
+                          styles={filterSelectStyles}
+                          options={filterStageList}
+                          value={selectedFilterStage}
+                          onChange={setSelectedFilterStage}
+                          placeholder="Stages"
+                          closeMenuOnSelect={false}
+                          hideSelectedOptions={false}
+                          controlShouldRenderValue={false}
+                          components={{
+                              Option: CheckboxOption
+                          }}
+                      />
+
+                  </div>
+
+
+                  <button
+                  className="header-filter-apply-btn"
+                  onClick={get_selected_filters}
+                  >
+                    Apply
+                  </button>
+
+              
+              </div>
+            )}
 
 
         <div
@@ -1195,23 +1726,74 @@ export default function AppFrame() {
 
                 </div>
                   {executeCards}
+
+
+                <div className="carousel-pagination">
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                      ‹
+                  </button>
+
+                  {Array.from(
+                      { length: totalPages },
+                      (_, index) => {
+
+                          const page = index + 1;
+
+                          return (
+
+                              <button
+                                  key={page}
+                                  className={page === currentPage ? "active" : ""}
+                                  onClick={() => setCurrentPage(page)}
+                              >
+                                  {page}
+                              </button>
+
+                          );
+
+                      }
+                  )}
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                      ›
+                  </button>
+
+              </div>
+
+
+                
+
+
               </aside>
           )}
 
           <div className="app-content">
               <Outlet
-                  context={{
-                      filters: {
-                          startDate,
-                          endDate,
-                          stage: selectedFilterStage,
-                          productId: selectedFilterProduct,
-                          personaId: selectedFilterPersona,
-                          occasionId: selectedFilterOccasion,
-                          search: searchText,
-                      },
-                  }}
-              />
+                context={{
+                    filters: appliedFilters,
+
+                    setPlannerDateFilter: (date) => {
+
+                    const start = new Date(date);
+                    start.setHours(0,0,0,0);
+
+                    const end = new Date(date);
+                    end.setHours(23,59,59,999);
+
+                    applyPlannerDateFilter(start, end);
+
+                }
+                }}
+            />
           </div>
 
 
@@ -1222,31 +1804,75 @@ export default function AppFrame() {
                   <button
                     className="left-arrow"
                     title="left"
-                  >
+                  >left
                   </button>
 
                   <button
                     className="right-arrow"
-                    title="left"
-                  >
+                    title="right"
+                  >right
                   </button>
 
 
                   <button
                     className="change-right-arrow"
-                    title="left"
-                  >
+                    title="change-right"
+                  >change-right
                   </button>
 
 
                   <button
                     className="change-left-arrow"
-                    title="left"
-                  >
+                    title="change-left"
+                  >change-left
                   </button>
 
                 </div>
                   {executeCards}
+
+
+                <div className="carousel-pagination">
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                      ‹
+                  </button>
+
+                  {Array.from(
+                      { length: totalPages },
+                      (_, index) => {
+
+                          const page = index + 1;
+
+                          return (
+
+                              <button
+                                  key={page}
+                                  className={page === currentPage ? "active" : ""}
+                                  onClick={() => setCurrentPage(page)}
+                              >
+                                  {page}
+                              </button>
+
+                          );
+
+                      }
+                  )}
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                      ›
+                  </button>
+
+              </div>
+
+                
               </aside>
           )}
 
