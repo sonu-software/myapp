@@ -246,21 +246,19 @@ function ExecutePanel({
 
                     return (
 
-                        <button
+                        <span
                             key={page}
                             className={
                                 page === currentPage
-                                    ? "active"
-                                    : ""
+                                    ? "pagination-number active"
+                                    : "pagination-number"
                             }
-                            onClick={() =>
-                                loadCarouselDockets(page)
-                            }
+                            onClick={() => loadCarouselDockets(page)}
                         >
 
                             {page}
 
-                        </button>
+                        </span>
 
                     );
 
@@ -1991,6 +1989,7 @@ const goToNextExecute = async () => {
                   setCurrentPage={setCurrentPage}
                   onPreviousExecute={goToPreviousExecute}
                   onNextExecute={goToNextExecute}
+                  loadCarouselDockets={loadCarouselDockets}
               />
 
           )}
@@ -2026,6 +2025,7 @@ const goToNextExecute = async () => {
                   setCurrentPage={setCurrentPage}
                   onPreviousExecute={goToPreviousExecute}
                   onNextExecute={goToNextExecute}
+                  loadCarouselDockets={loadCarouselDockets}
               />
 
           )}

@@ -2590,6 +2590,47 @@ overflow-y:auto;
 }
 
 
+.pagination-number{
+
+    cursor:pointer;
+
+    user-select:none;
+
+    padding:0 6px;
+
+    font-size:12px;
+
+    color:#666;
+
+    transition:.15s;
+
+}
+
+.pagination-number:hover{
+
+    color:#4B479E;
+
+}
+
+.pagination-number.active{
+
+    color:#4B479E;
+
+    font-weight:700;
+
+}
+
+.pagination-dots{
+
+    user-select:none;
+
+    color:#999;
+
+    padding:0 4px;
+
+}
+
+
 
 
 
