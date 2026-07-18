@@ -63,6 +63,21 @@ flex-shrink:0;
 LOGO
 ========================================================= */
 
+
+.button-svg-icon{
+
+    width:16px;
+
+    height:16px;
+
+    display:block;
+
+    object-fit:contain;
+
+    pointer-events:none;
+
+}
+
 .sidebar-logo{
 height:29.4px;
 
@@ -728,6 +743,7 @@ padding:0 !important;
 display:flex !important;
 align-items:center !important;
 justify-content:center !important;
+line-height:0 !important;
 
 border:none !important;
 border-radius:6.3px !important;
@@ -2166,6 +2182,10 @@ overflow-y:auto;
     width:46px;
     height:22px;
 
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
     border:1px solid #dcdfe6;
     border-radius:5px;
 
@@ -2173,14 +2193,11 @@ overflow-y:auto;
 
     color:#4B479E;
 
-    font-size:10px;
-    font-weight:600;
-
     cursor:pointer;
 
     transition:.15s ease;
 
-    white-space:nowrap;
+    padding:0;
 }
 
 .panel-switch button:hover{

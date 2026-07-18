@@ -1930,14 +1930,24 @@ const formatDate = (date) => {
             title="Info"
             onClick={() => setLeftPanel(leftPanel === "info" ? null : "info")}
           >
-            <InfoIconWhite />
+            <img
+                src="/all_svg_icons/docket_i_button.svg"
+                alt="Filter"
+                className="button-svg-icon"
+            />
           </button>
+
           <button
             className="dm-carousel-labels-btn"
             title="Labels"
             onClick={() => setLeftPanel(leftPanel === "labels" ? null : "labels")}
           >
-            <LabelsIcon />
+            <img
+                src="/all_svg_icons/docket_label_button.svg"
+                alt="Filter"
+                className="button-svg-icon"
+            />
+            
           </button>
         </div>
 
@@ -2560,7 +2570,11 @@ const formatDate = (date) => {
                       disabled={!isCurrentOwner}
                       onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
                     >
-                      <SendIcon active={Boolean(userMessage.trim())}/>
+                      <img
+                          src="/all_svg_icons/docket_send.svg"
+                          alt="Filter"
+                          className="button-svg-icon"
+                      />
                     </button>
 
                   </div>
@@ -2591,7 +2605,11 @@ const formatDate = (date) => {
           {/* Designer Feedback Panel */}
           {activeTab === 'designer' && (
             <div className="dm-chat-panel">
-              <div className="dm-chat-label"><PencilIcon/> Designer Feedback</div>
+              <div className="dm-chat-label">
+                <PencilIcon/>
+                 Designer Feedback
+                 </div>
+                 
               <div className="dm-chat-bubbles">
                 {groupedFeedback.length > 0 ? groupedFeedback.map((group, idx) => (
                   <div key={group.admin_media_id}>

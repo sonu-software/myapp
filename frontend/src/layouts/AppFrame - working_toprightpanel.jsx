@@ -94,233 +94,6 @@ const ValueContainer = (props) => {
 };
 
 
-
-function getVisiblePages(currentPage, totalPages) {
-
-    if (totalPages <= 7) {
-
-        return Array.from(
-            { length: totalPages },
-            (_, i) => i + 1
-        );
-
-    }
-
-    if (currentPage <= 4) {
-
-        return [
-            1,
-            2,
-            3,
-            4,
-            5,
-            "...",
-            totalPages
-        ];
-
-    }
-
-    if (currentPage >= totalPages - 3) {
-
-        return [
-            1,
-            "...",
-            totalPages - 4,
-            totalPages - 3,
-            totalPages - 2,
-            totalPages - 1,
-            totalPages
-        ];
-
-    }
-
-    return [
-
-        1,
-
-        "...",
-
-        currentPage - 1,
-
-        currentPage,
-
-        currentPage + 1,
-
-        "...",
-
-        totalPages
-
-    ];
-
-}
-
-
-
-
-
-function ExecutePanel({
-    executeCards,
-    currentPage,
-    totalPages,
-    setCurrentPage,
-    onPreviousExecute,
-    onNextExecute,
-    loadCarouselDockets
-}) {
-    const visiblePages = getVisiblePages(
-          currentPage,
-          totalPages);
-
-    return (
-      
-      
-
-        <aside className="app-right-panel">
-                
-                <div className="carousel-panel-new">
-                  {executeCards}
-
-                </div>
-
-                <div className="carousel-control-card">
-                  <button
-                      className="left-arrow"
-                      title="Previous Page"
-                      disabled={currentPage === 1}
-                      onClick={() => loadCarouselDockets(currentPage - 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_page.svg"
-                      alt="Previous Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
-
-                  <button
-                      className="right-arrow"
-                      title="Next Page"
-                      disabled={currentPage === totalPages}
-                      onClick={() => loadCarouselDockets(currentPage + 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_right_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
-
-
-                  <button
-                    className="change-left-arrow"
-                    title="Previous Execute"
-                    onClick={onPreviousExecute}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_arrow.svg"
-                      alt="Previous Execute"
-                      className="button-svg-icon"
-                  />
-                  </button>
-
-
-                  <button
-                    className="change-right-arrow"
-                    title="Next Execute"
-                    onClick={onNextExecute}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_right_arrow.svg"
-                      alt="Next Execute"
-                      className="button-svg-icon"
-                  />
-                  </button>
-
-
-                  
-
-                </div>
-
-
-                <div className="carousel-pagination">
-
-                  
-                  <button
-                      className="arrow"
-                      disabled={currentPage === 1}
-                      onClick={() => loadCarouselDockets(currentPage - 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                    
-                  </button>
-
-                  {visiblePages.map((page, index) => {
-
-                    if (page === "...") {
-
-                        return (
-
-                            <span
-                                key={`dots-${index}`}
-                                className="pagination-dots"
-                            >
-                                ...
-                            </span>
-
-                        );
-
-                    }
-
-                    return (
-
-                        <span
-                            key={page}
-                            className={
-                                page === currentPage
-                                    ? "pagination-number active"
-                                    : "pagination-number"
-                            }
-                            onClick={() => loadCarouselDockets(page)}
-                        >
-
-                            {page}
-
-                        </span>
-
-                    );
-
-                })}
-
-                  <button
-                      className="arrow"
-                      disabled={currentPage === totalPages}
-                      onClick={() => loadCarouselDockets(currentPage + 1)}
-                  >
-                      <img
-                      src="/all_svg_icons/appframe_right_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
-
-              </div>
-
-                
-              </aside>
-
-    );
-}
-
-
-
-
-
-
-
-
 export default function AppFrame() {
 
   const navigate = useNavigate();
@@ -408,7 +181,6 @@ export default function AppFrame() {
 
   const [totalPages, setTotalPages] = useState(1);
   
-  
 
 
 
@@ -418,91 +190,6 @@ export default function AppFrame() {
     const match = location.pathname.match(/^\/docket-media\/([^/]+)/);
     return match ? match[1] : null;
   }, [location.pathname]);
-
-
-
-
-const goToPreviousExecute = async () => {
-
-    const index = carouselDockets.findIndex(
-        d => String(d.docket_id) === String(activeDocketId)
-    );
-
-    if (index === -1)
-        return;
-
-    // Previous execute exists
-    if (index > 0) {
-
-        navigate(
-            `/docket-media/${carouselDockets[index - 1].docket_id}`
-        );
-
-        return;
-    }
-
-    // First execute on page
-    if (currentPage <= 1)
-        return;
-
-    const previousDockets =
-        await loadCarouselDockets(currentPage - 1);
-
-    if (!previousDockets.length)
-        return;
-
-    navigate(
-        `/docket-media/${
-            previousDockets[
-                previousDockets.length - 1
-            ].docket_id
-        }`
-    );
-
-};
-
-
-
-
-const goToNextExecute = async () => {
-
-    const index = carouselDockets.findIndex(
-        d => String(d.docket_id) === String(activeDocketId)
-    );
-
-    if (index === -1)
-        return;
-
-    // Next execute exists on current page
-    if (index < carouselDockets.length - 1) {
-
-        navigate(
-            `/docket-media/${carouselDockets[index + 1].docket_id}`
-        );
-
-        return;
-    }
-
-    // Last execute on page
-    if (currentPage >= totalPages)
-        return;
-
-    const nextDockets =
-        await loadCarouselDockets(currentPage + 1);
-
-    if (!nextDockets.length)
-        return;
-
-    navigate(
-        `/docket-media/${nextDockets[0].docket_id}`
-    );
-
-};
-
-
-
-
-
 
 
 
@@ -1036,64 +723,55 @@ const goToNextExecute = async () => {
   // ── Execute-card list fetch — same endpoint/params as DocketMedia's
   // carousel, driven by this file's own filter state. Additive only: does
   // not touch fetchStageCounts or its effect above.
-  async function loadCarouselDockets(page) {
+  async function fetchCarouselDockets() {
 
     try {
 
-        const params = buildCarouselFilterParams();
+      const params = buildCarouselFilterParams();
 
-        params.append("page", page);
+        params.append("page", currentPage);
+
         params.append("page_size", pageSize);
 
         const res = await fetch(
             `${API}/planner/carousel-dockets?${params.toString()}`,
-            {
-                headers: AUTH()
-            }
+            { headers: AUTH() }
         );
 
-        if (res.status === 401) {
-            logout();
-            return [];
-        }
+      if (res.status === 401) {
+        logout();
+        return;
+      }
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!data.success)
-            return [];
+      if (data.success) {
 
-        setCarouselDockets(data.data || []);
+          setCarouselDockets(data.data || []);
 
-        setTotalPages(
-            Math.max(
-                1,
-                Math.ceil(data.total / pageSize)
-            )
-        );
+          setTotalPages(
+              Math.max(
+                  1,
+                  Math.ceil(data.total / pageSize)
+              )
+          );
 
-        setCurrentPage(page);
+      }
 
-        return data.data || [];
-
+    } catch (err) {
+      console.error("Failed to load carousel dockets", err);
     }
-    catch (err) {
-
-        console.error(err);
-
-        return [];
-    }
-}
-
-
-
+  }
 
   useEffect(() => {
 
-      loadCarouselDockets(1);
+        fetchCarouselDockets();
 
-  }, [
-      appliedFilters
-  ]);
+    }, [
+        appliedFilters,
+        currentPage
+    ]);
+
   // ── Create Execute modal: cascading Media Type / Sub Type lookups ────────
   useEffect(() => {
 
@@ -1510,67 +1188,13 @@ const goToNextExecute = async () => {
 
 
   const navItems = [
-    { label: "Purpose",  route: "/setup-business", icon: (
-        <img
-            src="/all_svg_icons/appframe_purpose.svg"
-            alt="Purpose"
-            className="button-svg-icon"
-        />
-    ) },
-
-
-    { label: "Solution", route: "/product",         icon: (
-        <img
-            src="/all_svg_icons/appframe_solution.svg"
-            alt="Solution"
-            className="button-svg-icon"
-        />
-    )},
-
-
-    { label: "Audience", route: "/persona",         icon: (
-        <img
-            src="/all_svg_icons/appframe_audience.svg"
-            alt="Audience"
-            className="button-svg-icon"
-        />
-    ) },
-
-
-    { label: "Planner2",  route: "/planner",         icon: (
-        <img
-            src="/all_svg_icons/appframe_planner.svg"
-            alt="Planner"
-            className="button-svg-icon"
-        />
-    )},
-
-
-    { label: "Execute",  route: "execute",          icon: (
-        <img
-            src="/all_svg_icons/appframe_execute.svg"
-            alt="Execute"
-            className="button-svg-icon"
-        />
-    ) },
-
-
-    { label: "Planner",  route: "/planner",         icon: (
-        <img
-            src="/all_svg_icons/appframe_planner.svg"
-            alt="Planner"
-            className="button-svg-icon"
-        />
-    ) },
-
-
-    { label: "Design",  route: "/design",          icon: (
-        <img
-            src="/all_svg_icons/appframe_execute.svg"
-            alt="Design"
-            className="button-svg-icon"
-        />
-    ) }
+    { label: "Purpose",  route: "/setup-business", icon: <Target size={14.7} /> },
+    { label: "Solution", route: "/product",         icon: <Lightbulb size={14.7} /> },
+    { label: "Audience", route: "/persona",         icon: <Users size={14.7} /> },
+    { label: "Planner2",  route: "/planner",         icon: <CalendarDays size={14.7} /> },
+    { label: "Execute",  route: "execute",          icon: <Sparkles size={14.7} /> },
+    { label: "Planner",  route: "/plannerpage",         icon: <CalendarDays size={14.7} /> },
+    { label: "Design",  route: "/design",          icon: <Sparkles size={14.7} /> }
   ];
 
   const footerItems = [
@@ -1722,11 +1346,9 @@ const goToNextExecute = async () => {
                 setMenuOpen(!menuOpen);
               }}
             >
-              <img
-                  src="/all_svg_icons/appframe_profile.svg"
-                  alt="Profile"
-                  className="button-svg-icon"
-              />
+              <div className="account-avatar">
+                {getAvatarInitial(businessName)}
+              </div>
 
               <span>Profile</span>
             </button>
@@ -1821,11 +1443,7 @@ const goToNextExecute = async () => {
                 title="Filter"
                 onClick={() => setShowFilterDropdown(prev => !prev)}
               >
-                <img
-                    src="/all_svg_icons/appframe_filter.svg"
-                    alt="Filter"
-                    className="button-svg-icon"
-                />
+                <Filter size={15} strokeWidth={3} />
               </button>
 
               
@@ -1906,23 +1524,14 @@ const goToNextExecute = async () => {
                         className={panelPosition === "top" ? "active" : ""}
                         onClick={() => setPanelPosition("top")}
                     >
-                      <img
-                      src="/all_svg_icons/appframe_top.svg"
-                      alt="Top View"
-                      className="button-svg-icon"
-                  />
+                        Top
                     </button>
 
                     <button
                         className={panelPosition === "right" ? "active" : ""}
                         onClick={() => setPanelPosition("right")}
                     >
-                      <img
-                      src="/all_svg_icons/appframe_right.svg"
-                      alt="Right View"
-                      className="button-svg-icon"
-                  />
-                      
+                        Right
                     </button>
                 </div>
 
@@ -2084,17 +1693,88 @@ const goToNextExecute = async () => {
       >
 
           {panelPosition === "top" && (
+              <aside className="app-right-panel">
+                <div className="carousel-control-card">
 
-              <ExecutePanel
-                  executeCards={executeCards}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  setCurrentPage={setCurrentPage}
-                  onPreviousExecute={goToPreviousExecute}
-                  onNextExecute={goToNextExecute}
-                  loadCarouselDockets={loadCarouselDockets}
-              />
 
+                  <button
+                    className="left-arrow"
+                    title="left"
+                  >left
+                  </button>
+
+                  <button
+                    className="right-arrow"
+                    title="right"
+                  >right
+                  </button>
+
+
+                  <button
+                    className="change-right-arrow"
+                    title="change-right"
+                  >change
+                  </button>
+
+
+                  <button
+                    className="change-left-arrow"
+                    title="change-left"
+                  >change
+                  </button>
+
+
+
+                </div>
+                  {executeCards}
+
+
+                <div className="carousel-pagination">
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                      ‹
+                  </button>
+
+                  {Array.from(
+                      { length: totalPages },
+                      (_, index) => {
+
+                          const page = index + 1;
+
+                          return (
+
+                              <button
+                                  key={page}
+                                  className={page === currentPage ? "active" : ""}
+                                  onClick={() => setCurrentPage(page)}
+                              >
+                                  {page}
+                              </button>
+
+                          );
+
+                      }
+                  )}
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                      ›
+                  </button>
+
+              </div>
+
+
+                
+
+
+              </aside>
           )}
 
           <div className="app-content">
@@ -2120,17 +1800,81 @@ const goToNextExecute = async () => {
 
 
           {panelPosition === "right" && (
+              <aside className="app-right-panel">
+                <div className="carousel-control-card">
+                  <button
+                    className="left-arrow"
+                    title="left"
+                  >left
+                  </button>
 
-              <ExecutePanel
-                  executeCards={executeCards}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  setCurrentPage={setCurrentPage}
-                  onPreviousExecute={goToPreviousExecute}
-                  onNextExecute={goToNextExecute}
-                  loadCarouselDockets={loadCarouselDockets}
-              />
+                  <button
+                    className="right-arrow"
+                    title="right"
+                  >right
+                  </button>
 
+
+                  <button
+                    className="change-right-arrow"
+                    title="change-right"
+                  >change
+                  </button>
+
+
+                  <button
+                    className="change-left-arrow"
+                    title="change-left"
+                  >change
+                  </button>
+
+                </div>
+                  {executeCards}
+
+
+                <div className="carousel-pagination">
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                      ‹
+                  </button>
+
+                  {Array.from(
+                      { length: totalPages },
+                      (_, index) => {
+
+                          const page = index + 1;
+
+                          return (
+
+                              <button
+                                  key={page}
+                                  className={page === currentPage ? "active" : ""}
+                                  onClick={() => setCurrentPage(page)}
+                              >
+                                  {page}
+                              </button>
+
+                          );
+
+                      }
+                  )}
+
+                  <button
+                      className="arrow"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                      ›
+                  </button>
+
+              </div>
+
+                
+              </aside>
           )}
 
       </div>

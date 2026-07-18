@@ -105,6 +105,20 @@ html, body {
   transform-origin: top left;
 }
 
+.button-svg-icon{
+
+    width:16px;
+
+    height:16px;
+
+    display:block;
+
+    object-fit:contain;
+
+    pointer-events:none;
+
+}
+
 /* =============================================================================
    CAROUSEL
 ============================================================================= */
