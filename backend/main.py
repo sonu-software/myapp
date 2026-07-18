@@ -1531,6 +1531,38 @@ async def chat_with_ai(
             })
 
 
+        
+        # =====================================================
+        # Load custom labels added by the user
+        # =====================================================
+
+        cursor.execute(
+            """
+            SELECT label
+            FROM media_subtype_field_value
+            WHERE docket_id=%s
+            AND field_source='custom'
+            """,
+            (req.docket_id,)
+        )
+
+        custom_rows = cursor.fetchall()
+
+        existing_labels = {
+            f["label"].strip().lower()
+            for f in fields_for_ai
+        }
+
+        for row in custom_rows:
+            label = row["label"].strip()
+
+            if label.lower() not in existing_labels:
+                fields_for_ai.append({
+                    "label": label,
+                    "description": "User-created custom field."
+                })
+
+
 
 
 
@@ -3107,7 +3139,7 @@ def get_docket_fields(docket_id: int, user_id: int = Depends(get_current_user)):
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute(
-            "SELECT label, value, checkbox_clicked, box FROM media_subtype_field_value WHERE docket_id=%s",
+            "SELECT label, value, checkbox_clicked, box ,field_source FROM media_subtype_field_value WHERE docket_id=%s",
             (docket_id,),
         )
         return {"success": True, "data": cursor.fetchall()}
