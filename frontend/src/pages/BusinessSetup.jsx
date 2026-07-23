@@ -455,18 +455,18 @@ export default function BusinessSetup() {
           </div>
 
           <div className="bs-row">
-            <label className="bs-label">Brand / Trade Name *</label>
+            <label className="bs-label">Brand / Trade Name</label>
             <div className={!isEditing ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
               <input name="brandName" value={formData.brandName} onChange={handleInputChange}
                 className="bs-input" disabled={!isEditing} placeholder="e.g. Acme Corp" />
             </div>
           </div>
 
-          <SelectRow label="Business Type *" name="businessType" value={formData.businessType}
+          <SelectRow label="Business Type" name="businessType" value={formData.businessType}
             onChange={handleInputChange} disabled={!isEditing}
             options={[...categories, "Others"]} placeholder="Select Category" />
 
-          <SelectRow label="Business Sub-Category *" name="industry" value={formData.industry}
+          <SelectRow label="Business Sub-Category" name="industry" value={formData.industry}
             onChange={handleInputChange} disabled={!isEditing}
             options={subCategories} placeholder="Select Sub Category" />
 

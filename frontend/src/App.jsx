@@ -57,7 +57,7 @@ export default function App() {
         <Route path="/planner" element={<PlannerPage />} />
         <Route path="/initializing" element={<Initializing />} />
         <Route path="/docket" element={<Docket />} />
-        <Route path="/design" element={<Design />} />
+        <Route path="/design/:docketId" element={<Design />} />
         <Route path="/docket/:docketId" element={<Docket />} />
         <Route path="/docket-media/:docketId" element={<DocketMedia />} />
       </Route>

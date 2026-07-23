@@ -112,10 +112,10 @@
   min-width: 96px;
   max-width: 160px;
   flex-shrink: 0;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  padding: 0 22px 0 2px !important;
+  background: var(--bg-card) !important;
+  border: 1.5px solid var(--border-card) !important;
+  border-radius: var(--radius-btn) !important;
+  padding: 0 34px 0 14px !important;
   color: var(--navy) !important;
   font-family: 'Inter', sans-serif;
   font-size: 15px !important;
@@ -130,11 +130,16 @@
   background-position: right 2px center !important;
 }
 
-.persona-page .product-dropdown:hover { opacity: 0.85; }
+.persona-page .product-dropdown:hover {
+    border-color: var(--navy-light) !important;
+    background-color: var(--bg-input) !important;
+}
 
 .persona-page .product-dropdown:focus {
-  outline: none;
-  opacity: 0.85;
+    outline: none;
+    border-color: var(--navy-light) !important;
+    background-color: #fff !important;
+    box-shadow: 0 0 0 3px var(--indigo-soft);
 }
 
 /* ── Title input ── */
@@ -211,10 +216,11 @@
 }
 
 .persona-page .product-exit-btn {
-  background: transparent !important;
-  border: 1.5px solid transparent !important;
-  color: var(--text-muted) !important;
-  padding: 0 10px !important;
+    background: var(--bg-card) !important;
+    border: 1.5px solid var(--border-card) !important;
+    border-radius: var(--radius-btn) !important;
+    color: var(--text-muted) !important;
+    padding: 0 16px !important;
 }
 
 .persona-page .product-exit-btn:hover {
@@ -352,9 +358,18 @@
   min-height: 0;
 }
 
-.pn-card-body::-webkit-scrollbar { width: 4px; }
-.pn-card-body::-webkit-scrollbar-track { background: transparent; }
-.pn-card-body::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
+.pn-card-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pn-card-body::-webkit-scrollbar-thumb {
+    background: var(--border-card);
+    border-radius: 999px;
+}
+
+.pn-card-body::-webkit-scrollbar-track {
+    background: transparent;
+}
 
 /* =========================
    FIELD ROW
