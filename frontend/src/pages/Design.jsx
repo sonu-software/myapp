@@ -74,6 +74,108 @@ const FieldRow = React.memo(({ field, fieldData, onToggle, onValueChange }) => (
   </div>
 ));
 
+// ─── AI Chat Bubble ──────────────────────────────────────────────────────────
+const SparkleIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/>
+  </svg>
+);
+// ─── Generated Visual Panel icons ───────────────────────────────────────────
+const ClockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="#1f2937" strokeWidth="3"/>
+    <path d="M12 7V12L15 15" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const ExpandIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M12 12L19 5M19 5H14M19 5V10" stroke="#1a2744" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 12L5 19M5 19H10M5 19V14" stroke="#1a2744" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const DownloadIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M12 3v13M7 11l5 5 5-5M3 18h18" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+    <path d="M15 5L5 15M5 5L15 15" stroke="#1a2744" strokeWidth="3" strokeLinecap="round"/>
+  </svg>
+);
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+  </svg>
+);
+const WarnIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3"/>
+    <path d="M12 8V12" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="12" cy="16" r="1" fill="white"/>
+  </svg>
+);
+async function downloadImage(url, docketId) {
+  const parts = url.split(/[?#]/)[0].split("/");
+  const rawName = parts[parts.length - 1] || `execute-${docketId}`;
+  const fileName = /\.[a-z]{2,5}$/i.test(rawName) ? rawName : `${rawName}.png`;
+  const triggerDownload = (href, download = fileName) => {
+    const a = document.createElement("a");
+    a.href = href; a.download = download; a.style.display = "none";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error("fetch failed");
+    const objectUrl = URL.createObjectURL(await res.blob());
+    triggerDownload(objectUrl);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+    return;
+  } catch (err) { console.error("Blob download failed", err); }
+  try {
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          const objectUrl = URL.createObjectURL(blob);
+          triggerDownload(objectUrl);
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+          resolve();
+        }, "image/png");
+      };
+      img.onerror = reject;
+      img.src = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+    });
+    return;
+  } catch (err) { console.error("Canvas download failed", err); }
+  window.open(url, "_blank");
+}
+const Bubble = React.memo(({ bubble }) => (
+  <div className={`docket-bubble-wrapper ${bubble.sender === 'user' ? 'user-message' : 'ai-message'}`}>
+    <div className="docket-bubble">
+      {bubble.isLoading
+        ? <div className="docket-bubble-loading"><span/><span/><span/></div>
+        : bubble.text}
+    </div>
+  </div>
+));
+function buildStructuredPersona(persona) {
+  if (!persona) return null;
+  const grouped = {};
+  persona.segments
+    ?.filter(seg => seg.is_active)
+    .forEach(seg => {
+      if (!grouped[seg.segment_type]) grouped[seg.segment_type] = {};
+      const key = seg.label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      grouped[seg.segment_type][key] = seg.value;
+    });
+  return { persona_name: persona.persona_name, segments: grouped, hashtags: persona.hashtags || [] };
+}
+
 
 
 
@@ -145,6 +247,18 @@ const [selectedStage, setSelectedStage] = useState("");
 const [nextStages, setNextStages] = useState([]);
 
 
+// ─── Network / Assignment ───────────────────────────────────────────────────
+const [networkUsers, setNetworkUsers] = useState([]);
+
+const [assignedUser, setAssignedUser] = useState("");
+
+
+// ─── Submit / Save Toast ────────────────────────────────────────────────────
+const [showSaveToast, setShowSaveToast] = useState(false);
+
+const [saveToastMessage, setSaveToastMessage] = useState("");
+
+
 // ─── Owner ────────────────────────────────────────────────────────────────
 const [isCurrentOwner, setIsCurrentOwner] = useState(true);
 
@@ -160,6 +274,10 @@ const [previewProductImage, setPreviewProductImage] = useState(null);
 const [visualImage, setVisualImage] = useState(null);
 
 const [visualMessage, setVisualMessage] = useState("");
+
+const [isEditMode, setIsEditMode] = useState(false);
+
+const [showCopyToast, setShowCopyToast] = useState(false);
 
 
 // ─── Business ────────────────────────────────────────────────────────────────
@@ -214,6 +332,18 @@ useEffect(() => {
 }, [docketId]);
 
 const chatEndRef = useRef(null);
+
+// ── AI Chatbot: generate/validation state (used by the AI panel only) ───────
+const [canGenerate, setCanGenerate] = useState(false);
+const [generatedPrompt, setGeneratedPrompt] = useState('');
+const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+// ── Generated Visual Panel state (image, zoom, history) ─────────────────────
+const [showImagePreview, setShowImagePreview] = useState(false);
+const [showHistoryModal, setShowHistoryModal] = useState(false);
+const [visualHistoryList, setVisualHistoryList] = useState([]);
+
+const finalPersonaData = useMemo(() => buildStructuredPersona(selectedPersonaData), [selectedPersonaData]);
 
 
 
@@ -481,6 +611,188 @@ const handleFullSave = useCallback(async () => {
 
 
 
+const handleSubmit = useCallback(async () => {
+
+    const [ms, os] = await Promise.all([
+        handleSave("mandatory"),
+        handleSave("optional")
+    ]);
+
+    if (!ms || !os) {
+        setSaveToastMessage("Please fill all required fields.");
+        setShowSaveToast(true);
+        setTimeout(() => setShowSaveToast(false), 3000);
+        return;
+    }
+
+    if (assignedUser || selectedStage) {
+        await fetch(`${API}/execute/assign`, {
+            method: "POST",
+            headers: JSON_AUTH(),
+            body: JSON.stringify({
+                docket_id: Number(docketId),
+                user_id: assignedUser,
+                stage: selectedStage
+            })
+        });
+    }
+
+    setSaveToastMessage("Submitted successfully!");
+    setShowSaveToast(true);
+    setTimeout(() => setShowSaveToast(false), 3000);
+
+    setShowStageDropdown(false);
+    setShowNameDropdown(false);
+
+}, [
+    mandatoryFields,
+    optionalFields,
+    fieldValues,
+    assignedUser,
+    selectedStage,
+    docketId
+]);
+
+
+
+// ───AI Panel (Chatbot)  ────────────────────────────────────────────────────────────────
+
+const refreshStage = async () => {
+    try {
+        const res = await fetch(`${API}/execute/current-stage/${docketId}`, { headers: AUTH() });
+        const data = await res.json();
+        if (data.success) setCurrentStage(data.stage);
+    } catch (err) {
+        console.error(err);
+    }
+};
+
+const handleOpenVisualHistory = useCallback(async () => {
+    try {
+        const res = await fetch(`${API}/admin/docket/${docketId}`, { headers: AUTH() });
+        const data = await res.json();
+        if (data.success) { setVisualHistoryList(data.data.visual_history ?? []); setShowHistoryModal(true); }
+    } catch (err) { console.error(err); }
+}, [docketId]);
+
+const handleSendMessage = useCallback(async () => {
+    if (!userMessage.trim()) return;
+    const fieldNames = [...mandatoryFields.map(f => f.variable_name), ...optionalFields.map(f => f.variable_name)];
+    const userBubble = { id: Date.now(), text: userMessage, type: 'user', sender: 'user' };
+    const loadingId  = Date.now() + 999;
+    setConversationBubbles(prev => [...prev, userBubble, { id: loadingId, text: '...', type: 'ai', sender: 'ai', isLoading: true }]);
+    setUserMessage('');
+    try {
+        const res = await fetch(`${API}/chat`, {
+            method: 'POST', headers: JSON_AUTH(),
+            body: JSON.stringify({
+                docket_id: Number(docketId), message: userBubble.text,
+                mode, mediaType, subType,
+                business: JSON.stringify(businessProfile  ?? {}),
+                product:  JSON.stringify(selectedProductData ?? {}),
+                persona:  JSON.stringify(finalPersonaData ?? {}),
+                execute_title: docketTitle,
+                execute_description: executeDescription,
+                visual_elements: visualElements,
+                summary: summary,
+                fields: fieldNames,
+            }),
+        });
+        setConversationBubbles(prev => prev.filter(b => b.id !== loadingId));
+        if (handleUnauthorized(res)) return;
+        const data = await res.json();
+        if (data.success && data.fields) {
+            setFieldValues(prev => {
+                const updated = { ...prev };
+                Object.entries(data.fields).forEach(([key, value]) => { if (updated[key]) updated[key] = { ...updated[key], value }; });
+                return updated;
+            });
+            setSummary(data.summary || "");
+            setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '✅ Fields updated based on your request.', type: 'ai', sender: 'ai' }]);
+        } else {
+            setConversationBubbles(prev => [...prev, { id: Date.now() + 1, text: '⚠️ AI could not generate field values.', type: 'ai', sender: 'ai' }]);
+        }
+    } catch {
+        setConversationBubbles(prev => [...prev.filter(b => b.id !== loadingId), { id: Date.now() + 1, text: '⚠️ AI server not reachable.', type: 'ai', sender: 'ai' }]);
+    }
+}, [userMessage, mandatoryFields, optionalFields, mode, mediaType, subType, businessProfile, selectedProductData, finalPersonaData, docketId, docketTitle, executeDescription, visualElements, summary]);
+
+const handleGenerate = useCallback(async () => {
+    setIsGeneratingImage(true);
+    setCurrentStage("generate");
+    setSelectedStage("generate");
+
+    const [ms, os] = await Promise.all([handleSave('mandatory'), handleSave('optional')]);
+    if (!ms || !os) { setGeneratedPrompt('Error saving fields.'); setIsGeneratingImage(false); return; }
+
+    const submittedRequest = `${mode} | ${mediaType} | ${subType}`;
+    const finalOutput = {};
+
+    if (mode || mediaType || subType)
+        finalOutput.prompt_information = { mode, media_type: mediaType, media_sub_type: subType };
+
+    if (businessProfile) {
+        const filtered = Object.fromEntries(Object.entries(businessProfile).filter(([,v]) => v !== null && v !== ''));
+        if (Object.keys(filtered).length) finalOutput.business_information = filtered;
+    }
+
+    if (finalPersonaData) finalOutput.persona_information = finalPersonaData;
+
+    if (selectedProductData) {
+        const product = { product_name: selectedProductData.product_name, description: selectedProductData.product_description, hashtags: selectedProductData.hashtags || [] };
+        if (selectedProductData.features?.length) product.features = selectedProductData.features;
+        if (selectedProductData.usps?.length)     product.USP      = selectedProductData.usps;
+        if (selectedProductData.values?.length)   product.values   = selectedProductData.values;
+        if (selectedProductData.images?.length)   product.images   = selectedProductData.images.map(img => img.img_url);
+        finalOutput.product_information = product;
+    }
+
+    const dynamicFields = Object.entries(fieldValues)
+        .filter(([,fd]) => fd.enabled && fd.value.trim())
+        .reduce((acc, [key, fd]) => { acc[key] = fd.value; return acc; }, {});
+    if (Object.keys(dynamicFields).length) finalOutput.creative_context = dynamicFields;
+
+    setGeneratedPrompt(JSON.stringify(finalOutput, null, 2));
+
+    try {
+        setCurrentStage("generate");
+        setSelectedStage("generate");
+
+        await fetch(`${API}/execute/assign`, {
+            method: "POST",
+            headers: JSON_AUTH(),
+            body: JSON.stringify({ docket_id: Number(docketId), user_id: 0, stage: "generate" })
+        });
+
+        await refreshStage();
+
+        const res = await fetch(`${API}/planner/docket/${docketId}/media-result`, {
+            method: 'POST', headers: JSON_AUTH(),
+            body: JSON.stringify({
+                visual_text: JSON.stringify(finalOutput),
+                submitted_request: submittedRequest,
+                selected_logo: selectedLogo,
+                selected_product_image: selectedProductImage
+            }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            fetch(`${API}/planner/docket/${docketId}/visual`, { headers: AUTH() })
+                .then(r => r.json())
+                .then(v => {
+                    if (v.success) {
+                        setVisualImage(v.url);
+                        setVisualMessage(v.message);
+                        setAdminMediaId(v.admin_media_id);
+                        setIsGeneratingImage(false);
+                    }
+                });
+        }
+    } catch (err) { setIsGeneratingImage(false); console.error(err); }
+}, [mode, mediaType, subType, businessProfile, finalPersonaData, selectedProductData, selectedProductImage, selectedLogo, fieldValues, docketId, mandatoryFields, optionalFields]);
+
+
+
 // ───Interaction Panel (FeedBack)  ────────────────────────────────────────────────────────────────
 
 
@@ -536,6 +848,33 @@ const loadFeedback = useCallback(async () => {
     } catch (err) { console.error(err); }
   }, [feedbackText, docketId, adminMediaId, loadFeedback, loadDocketFeedback]);
 
+
+  // ─── Message Panel ───────────────────────────────────────────────────────
+  const handleSaveVisualMessage = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/admin/docket/${docketId}/message`, {
+        method: "POST",
+        headers: JSON_AUTH(),
+        body: JSON.stringify({ message: visualMessage })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsEditMode(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [docketId, visualMessage]);
+
+  const handleCopyMessage = useCallback(() => {
+    navigator.clipboard.writeText(visualMessage || '');
+    setShowCopyToast(true);
+    setTimeout(() => setShowCopyToast(false), 2000);
+  }, [visualMessage]);
+
+  const handleZoomMessage = useCallback(() => {
+    setExpandField({ label: 'Message', value: visualMessage, onChange: setVisualMessage });
+  }, [visualMessage]);
 
 
 
@@ -607,6 +946,9 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
 
 
+
+  // ── AI Chatbot: Generate button becomes active once mode/mediaType/subType are set ──
+  useEffect(() => { setCanGenerate(Boolean(mode && mediaType && subType)); }, [mode, mediaType, subType]);
 
   useEffect(() => {
       if (!mode) { setMediaTypes([]); return; }
@@ -711,12 +1053,17 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
               setAdminMediaId(data.admin_media_id);
           }
         }),
-        
 
-      
-
-  
-
+      fetch(`${API}/planner/docket/${docketId}/chat-history`, { headers })
+        .then(r => r.json()).then(data => {
+          if (!data.success) return;
+          const bubbles = [];
+          data.data.forEach((item, i) => {
+            bubbles.push({ id: Date.now() + i,        text: item.user,                                    sender: 'user', type: 'user' });
+            bubbles.push({ id: Date.now() + i + 1000, text: 'Fields updated based on previous request.', sender: 'ai',   type: 'ai'   });
+          });
+          setConversationBubbles(prev => [...prev, ...bubbles]);
+        }),
 
       fetch(`${API}/execute/current-stage/${docketId}`, { headers })
         .then(r => r.json()).then(data => {
@@ -739,6 +1086,10 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
         }
 
       }),
+
+
+      fetch(`${API}/network/secondary-users?docket_id=${docketId}`, { headers })
+        .then(r => r.json()).then(data => { if (data.success) setNetworkUsers(data.data); }),
 
 
       
@@ -1083,7 +1434,70 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
                 </div>
 
-                <div className="ai-panel" style={panelStyle("ai")}>AI</div>
+                <div className="ai-panel" style={panelStyle("ai")}>
+
+                  <div className="dm-chat-panel">
+                    <div className="dm-chat-label"><SparkleIcon/> Chat with AI</div>
+                    <div className="dm-chat-bubbles">
+                      {conversationBubbles.map(b => <Bubble key={b.id} bubble={b}/>)}
+                      <div ref={chatEndRef}/>
+                    </div>
+                    <div className="dm-chat-footer">
+                      <div className="dm-chat-input-row">
+
+                        <div className="dm-chat-input-wrap">
+
+                          <input
+                            className="dm-chat-input"
+                            placeholder="Type your message"
+                            disabled={!isCurrentOwner}
+                            value={userMessage}
+                            onChange={e => setUserMessage(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                          />
+
+                          <button
+                            className="dm-chat-send"
+                            disabled={!isCurrentOwner}
+                            onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
+                          >
+                            <img
+                                src="/all_svg_icons/docket_send.svg"
+                                alt="Filter"
+                                className="button-svg-icon"
+                            />
+                          </button>
+
+                        </div>
+
+                        <button
+                          className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
+                          onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
+                          disabled={!isCurrentOwner || isGeneratingImage}
+                        >
+                          <SparkleIcon/>
+                          {isGeneratingImage ? 'Generating…' : 'Generate'}
+                          {!canGenerate && (
+                            <div className="dm-tooltip">
+                              <div className="dm-tooltip-title">Please fill:</div>
+                              <ul>
+                                {!mode && <li>Prompt Type</li>}
+                                {mode && !mediaType && <li>Media Type</li>}
+                                {mediaType && !subType && <li>Sub Type</li>}
+                              </ul>
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
 
                 <div
                     className="basic-panel"
@@ -1516,7 +1930,23 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
           <div className="generate-btn">
 
-            <button className="generate-control-btn">Generate</button>
+            <button
+                className="generate-control-btn"
+                onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
+                disabled={!isCurrentOwner || isGeneratingImage}
+            >
+                {isGeneratingImage ? 'Generating…' : 'Generate'}
+                {!canGenerate && (
+                    <div className="dm-tooltip">
+                        <div className="dm-tooltip-title">Please fill:</div>
+                        <ul>
+                            {!mode && <li>Prompt Type</li>}
+                            {mode && !mediaType && <li>Media Type</li>}
+                            {mediaType && !subType && <li>Sub Type</li>}
+                        </ul>
+                    </div>
+                )}
+            </button>
             <button className="generate-control-btn">Pro</button>
             <button className="generate-control-btn">Advance</button>
           </div>
@@ -1525,13 +1955,49 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
           <div className="generated-panel">
 
             <div className="refrence-visual-panel">
-              logo images + product images
+              <div className="dm-thumb-strip">
+                <div className="dm-thumb-logo">
+                  {selectedLogo
+                    ? <img src={selectedLogo} alt="logo"/>
+                    : <div className="dm-thumb-empty-logo"/>
+                  }
+                </div>
 
+                {selectedProductData?.images?.length ? (
+                  selectedProductData.images.map((img, index) => (
+                    <div
+                      key={index}
+                      className={`dm-thumb-img${selectedProductImage === img.img_url ? ' dm-thumb-img--active' : ''}`}
+                      onClick={() => setSelectedProductImage(img.img_url)}
+                      onMouseEnter={() => setPreviewProductImage(img.img_url)}
+                      onMouseLeave={() => setPreviewProductImage(null)}
+                    >
+                      <img src={img.img_url} alt={`Product ${index + 1}`}/>
+                      {selectedProductImage === img.img_url && <div className="dm-thumb-selected-dot"/>}
+                      {previewProductImage === img.img_url && (
+                        <div className="dm-thumb-preview-popup">
+                          <img src={img.img_url} alt="preview"/>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : selectedProductImage ? (
+                  <div className="dm-thumb-img dm-thumb-img--active">
+                    <img src={selectedProductImage} alt="Product"/>
+                    <div className="dm-thumb-selected-dot"/>
+                  </div>
+                ) : null}
+
+                <label className="dm-thumb-upload">
+                  <input type="file" accept="image/*" hidden onChange={handleProductImageUpload}/>
+                  <span>+</span>
+                </label>
+              </div>
             </div>
 
 
             <div className="generated-visual-panel">
-              <button className="icon-btn generated-history-btn">
+              <button className="icon-btn generated-history-btn" onClick={handleOpenVisualHistory} title="Visual history">
                   <img
                       src="/all_svg_icons/design_history.svg"
                       alt="History"
@@ -1539,12 +2005,23 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                   />
               </button>
 
-              
+              {isGeneratingImage ? (
+                <div className="dm-visual-loading">
+                  <div className="dm-spinner"/>
+                  <span>AI is generating your visual…</span>
+                </div>
+              ) : visualImage ? (
+                <img src={visualImage} className="dm-visual-img" alt="Generated visual"/>
+              ) : (
+                <div className="dm-visual-empty">Genrated Visual</div>
+              )}
 
-              Genrated Visual
-
-
-              <button className="icon-btn generated-zoom-btn">
+              <button
+                  className="icon-btn generated-zoom-btn"
+                  title="Expand"
+                  disabled={!visualImage}
+                  onClick={() => visualImage && setShowImagePreview(true)}
+              >
                   <img
                       src="/all_svg_icons/design_image_zoom.svg"
                       alt="Zoom"
@@ -1552,7 +2029,12 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                   />
               </button>
 
-              <button className="icon-btn generated-download-btn">
+              <button
+                  className="icon-btn generated-download-btn"
+                  title="Download"
+                  disabled={!visualImage}
+                  onClick={() => visualImage && downloadImage(visualImage, docketId)}
+              >
                   <img
                       src="/all_svg_icons/design_download.svg"
                       alt="Download"
@@ -1568,9 +2050,25 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
           </div>
 
 
-          <div className="message-panel">Messages
+          <div className="message-panel">
+            <div className="message-panel-content">
+              {isEditMode
+                ? (
+                  <textarea
+                    className="message-panel-textarea"
+                    value={visualMessage}
+                    disabled={!isCurrentOwner}
+                    onChange={e => setVisualMessage(e.target.value)}
+                  />
+                )
+                : (visualMessage || 'Messages')}
+            </div>
 
-            <button className="icon-btn message-copy-btn">
+            <button
+                className="icon-btn message-copy-btn"
+                title="Copy message"
+                onClick={handleCopyMessage}
+            >
                   <img
                       src="/all_svg_icons/design_text_copy.svg"
                       alt="Copy"
@@ -1578,13 +2076,31 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                   />
             </button>
 
-            <button className="icon-btn message-zoom-btn">
+            <button
+                className="icon-btn message-zoom-btn"
+                title="Expand message"
+                onClick={handleZoomMessage}
+            >
                   <img
                       src="/all_svg_icons/design_text_zoom.svg"
                       alt="Zoom"
                       className="button-svg-icon"
                   />
             </button>
+
+            <div className="message-panel-footer">
+              {isEditMode
+                ? <button className="message-save-btn" onClick={handleSaveVisualMessage}>Save</button>
+                : (
+                  <button
+                    className="message-edit-btn"
+                    disabled={!isCurrentOwner}
+                    onClick={() => isCurrentOwner && setIsEditMode(true)}
+                  >
+                    ✏️ Edit
+                  </button>
+                )}
+            </div>
 
           </div>
 
@@ -1595,14 +2111,27 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
                 <button
                     className="generate-control-btn"
-                    onClick={() => setShowStageDropdown(!showStageDropdown)}
+                    onClick={() => { setShowStageDropdown(p => !p); setShowNameDropdown(false); }}
                 >
                     Stages
                 </button>
 
                 {showStageDropdown && (
                     <div className="dropdown-menu">
-                        Test 1
+                        <div className="dropdown-title">Select Stage</div>
+                        <div className="dropdown-current">{currentStage} (current)</div>
+                        {nextStages.map(stage => (
+                            <div
+                                key={stage}
+                                className={`dropdown-item${selectedStage === stage ? ' dropdown-item--active' : ''}`}
+                                onClick={() => { setSelectedStage(stage); setShowStageDropdown(false); }}
+                            >
+                                {stage}
+                            </div>
+                        ))}
+                        {nextStages.length === 0 && (
+                            <div className="dropdown-empty">No next stages available</div>
+                        )}
                     </div>
                 )}
 
@@ -1612,14 +2141,27 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
                 <button
                     className="generate-control-btn"
-                    onClick={() => setShowNameDropdown(!showNameDropdown)}
+                    onClick={() => { setShowNameDropdown(p => !p); setShowStageDropdown(false); }}
                 >
-                    Names
+                    {assignedUser
+                        ? (networkUsers.find(u => u.user_id === assignedUser)?.email?.split('@')[0] || 'Names')
+                        : 'Names'}
                 </button>
 
                 {showNameDropdown && (
                     <div className="dropdown-menu">
-                        Test
+                        <div className="dropdown-title">Assign To</div>
+                        {networkUsers.length > 0 ? networkUsers.map(u => (
+                            <div
+                                key={u.user_id}
+                                className={`dropdown-item${assignedUser === u.user_id ? ' dropdown-item--active' : ''}`}
+                                onClick={() => { setAssignedUser(u.user_id); setShowNameDropdown(false); }}
+                            >
+                                {u.email}
+                            </div>
+                        )) : (
+                            <div className="dropdown-empty">No users in network</div>
+                        )}
                     </div>
                 )}
 
@@ -1627,11 +2169,19 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
 
 
-            <button className="generate-control-btn">
+            <button
+                className="generate-control-btn"
+                onClick={handleSubmit}
+                disabled={!isCurrentOwner}
+            >
                 Submit
             </button>
 
         </div>
+
+        {(showStageDropdown || showNameDropdown) && (
+            <div className="dropdown-backdrop" onClick={() => { setShowStageDropdown(false); setShowNameDropdown(false); }}/>
+        )}
 
 
         </div>
@@ -1684,6 +2234,86 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+    {/* ════════ VISUAL HISTORY MODAL ═══════════════════════════════════════ */}
+      {showHistoryModal && (
+        <div className="dm-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="dm-modal dm-modal--wide" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>Visual Information History</h3>
+              <button className="dm-modal-close" onClick={() => setShowHistoryModal(false)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              {visualHistoryList.length > 0 ? (
+                visualHistoryList.map((item, idx) => (
+                  <div key={item.admin_media_id} className="dm-history-item">
+                    <strong>Version {visualHistoryList.length - idx}</strong>
+                    <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
+                    <img src={item.uploaded_url} alt="visual" style={{ width: '100%', marginTop: 10, borderRadius: 6 }}/>
+                    {item.message && <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>{item.message}</div>}
+                  </div>
+                ))
+              ) : (
+                <div className="dm-empty">No visual history yet.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+    {/* ════════ IMAGE PREVIEW (ZOOM) MODAL ═════════════════════════════════ */}
+      {showImagePreview && visualImage && (
+        <div className="dm-image-preview-overlay" onClick={() => setShowImagePreview(false)}>
+          <img src={visualImage} alt="Preview" className="dm-image-preview" onClick={(e) => e.stopPropagation()}/>
+        </div>
+      )}
+
+    {/* ════════ MESSAGE EXPAND (ZOOM) MODAL ═════════════════════════════════ */}
+      {expandField && (
+        <div className="dm-overlay" onClick={() => setExpandField(null)}>
+          <div className="dm-modal dm-modal--expand" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <h3>{expandField.label}</h3>
+              <button className="dm-modal-close" onClick={() => setExpandField(null)}><CloseIcon/></button>
+            </div>
+            <div className="dm-modal-body">
+              <textarea
+                className="dm-expand-textarea"
+                value={expandField.value}
+                maxLength={expandField.maxLength}
+                disabled={!isCurrentOwner}
+                autoFocus
+                onChange={e => {
+                  const val = e.target.value;
+                  expandField.onChange(val);
+                  setExpandField(f => (f ? { ...f, value: val } : f));
+                }}
+              />
+              {typeof expandField.maxLength === 'number' && (
+                <div className="dm-char-count" style={{ marginTop: 6 }}>
+                  {expandField.value.length}/{expandField.maxLength}
+                </div>
+              )}
+            </div>
+            <div className="dm-modal-footer">
+              <button className="dm-modal-btn dm-modal-btn--save" onClick={() => setExpandField(null)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    {/* ════════ TOASTS ════════════════════════════════════════════════════ */}
+      {showCopyToast && (
+        <div className="dm-toast dm-toast--success">
+          <CheckIcon/> <span>Copied to clipboard!</span>
+        </div>
+      )}
+      {showSaveToast && (
+        <div className={`dm-toast ${saveToastMessage.includes('Please fill') ? 'dm-toast--error' : 'dm-toast--success'}`}>
+          {saveToastMessage.includes('Please fill') ? <WarnIcon/> : <CheckIcon/>}
+          <span>{saveToastMessage}</span>
         </div>
       )}
 
