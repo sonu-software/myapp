@@ -342,6 +342,7 @@ const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 const [showImagePreview, setShowImagePreview] = useState(false);
 const [showHistoryModal, setShowHistoryModal] = useState(false);
 const [visualHistoryList, setVisualHistoryList] = useState([]);
+const [historyPreview, setHistoryPreview] = useState(null); // { url, message, version, time }
 
 const finalPersonaData = useMemo(() => buildStructuredPersona(selectedPersonaData), [selectedPersonaData]);
 
@@ -1935,6 +1936,12 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                 onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
                 disabled={!isCurrentOwner || isGeneratingImage}
             >
+              <img
+                    src="/all_svg_icons/design_generate.svg"
+                    alt="Generate"
+                    className="button-svg-icon"
+                />
+
                 {isGeneratingImage ? 'Generating…' : 'Generate'}
                 {!canGenerate && (
                     <div className="dm-tooltip">
@@ -1947,8 +1954,36 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                     </div>
                 )}
             </button>
-            <button className="generate-control-btn">Pro</button>
-            <button className="generate-control-btn">Advance</button>
+            <button className="generate-control-btn">
+              <img
+                    src="/all_svg_icons/design_pro.svg"
+                    alt="Pro"
+                    className="button-svg-icon"
+                />
+              <img
+                  src="/all_svg_icons/design_generate.svg"
+                  alt="Generate"
+                  className="button-svg-icon"
+              />
+
+                Pro
+
+            </button>
+
+            <button className="generate-control-btn">
+              <img
+                    src="/all_svg_icons/design_advance.svg"
+                    alt="Advance"
+                    className="button-svg-icon"
+                />
+              
+              <img
+                    src="/all_svg_icons/design_generate.svg"
+                    alt="Generate"
+                    className="button-svg-icon"
+                />
+                Advance
+            </button>
           </div>
           
 
@@ -1956,42 +1991,60 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
             <div className="refrence-visual-panel">
               <div className="dm-thumb-strip">
+
+                {/* Fixed Logo */}
                 <div className="dm-thumb-logo">
                   {selectedLogo
-                    ? <img src={selectedLogo} alt="logo"/>
-                    : <div className="dm-thumb-empty-logo"/>
+                    ? <img src={selectedLogo} alt="logo" />
+                    : <div className="dm-thumb-empty-logo" />
                   }
                 </div>
 
-                {selectedProductData?.images?.length ? (
-                  selectedProductData.images.map((img, index) => (
-                    <div
-                      key={index}
-                      className={`dm-thumb-img${selectedProductImage === img.img_url ? ' dm-thumb-img--active' : ''}`}
-                      onClick={() => setSelectedProductImage(img.img_url)}
-                      onMouseEnter={() => setPreviewProductImage(img.img_url)}
-                      onMouseLeave={() => setPreviewProductImage(null)}
-                    >
-                      <img src={img.img_url} alt={`Product ${index + 1}`}/>
-                      {selectedProductImage === img.img_url && <div className="dm-thumb-selected-dot"/>}
-                      {previewProductImage === img.img_url && (
-                        <div className="dm-thumb-preview-popup">
-                          <img src={img.img_url} alt="preview"/>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : selectedProductImage ? (
-                  <div className="dm-thumb-img dm-thumb-img--active">
-                    <img src={selectedProductImage} alt="Product"/>
-                    <div className="dm-thumb-selected-dot"/>
-                  </div>
-                ) : null}
+                {/* Scrollable Product Images */}
+                <div className="dm-thumb-products">
 
+                  {selectedProductData?.images?.length ? (
+                    selectedProductData.images.map((img, index) => (
+                      <div
+                        key={index}
+                        className={`dm-thumb-img${selectedProductImage === img.img_url ? ' dm-thumb-img--active' : ''}`}
+                        onClick={() => setSelectedProductImage(img.img_url)}
+                        onMouseEnter={() => setPreviewProductImage(img.img_url)}
+                        onMouseLeave={() => setPreviewProductImage(null)}
+                      >
+                        <img src={img.img_url} alt={`Product ${index + 1}`} />
+
+                        {selectedProductImage === img.img_url && (
+                          <div className="dm-thumb-selected-dot" />
+                        )}
+
+                        {previewProductImage === img.img_url && (
+                          <div className="dm-thumb-preview-popup">
+                            <img src={img.img_url} alt="preview" />
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : selectedProductImage ? (
+                    <div className="dm-thumb-img dm-thumb-img--active">
+                      <img src={selectedProductImage} alt="Product" />
+                      <div className="dm-thumb-selected-dot" />
+                    </div>
+                  ) : null}
+
+                </div>
+
+                {/* Fixed Upload */}
                 <label className="dm-thumb-upload">
-                  <input type="file" accept="image/*" hidden onChange={handleProductImageUpload}/>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleProductImageUpload}
+                  />
                   <span>+</span>
                 </label>
+
               </div>
             </div>
 
@@ -2088,19 +2141,24 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                   />
             </button>
 
-            <div className="message-panel-footer">
-              {isEditMode
-                ? <button className="message-save-btn" onClick={handleSaveVisualMessage}>Save</button>
-                : (
-                  <button
-                    className="message-edit-btn"
-                    disabled={!isCurrentOwner}
-                    onClick={() => isCurrentOwner && setIsEditMode(true)}
-                  >
-                    ✏️ Edit
-                  </button>
-                )}
-            </div>
+            {isEditMode ? (
+              <button
+                className="icon-btn message-edit-btn"
+                title="Save message"
+                onClick={handleSaveVisualMessage}
+              >
+                Save
+              </button>
+            ) : (
+              <button
+                className="icon-btn message-edit-btn"
+                title="Edit message"
+                disabled={!isCurrentOwner}
+                onClick={() => isCurrentOwner && setIsEditMode(true)}
+              >
+                Edit
+              </button>
+            )}
 
           </div>
 
@@ -2110,9 +2168,15 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
             <div className="dropdown">
 
                 <button
-                    className="generate-control-btn"
+                    className="Bottom-control-btn"
                     onClick={() => { setShowStageDropdown(p => !p); setShowNameDropdown(false); }}
                 >
+
+                  <img
+                  src="/all_svg_icons/design_stage.svg"
+                  alt="Stage"
+                  className="button-svg-icon"
+                  />
                     Stages
                 </button>
 
@@ -2140,9 +2204,15 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
             <div className="dropdown">
 
                 <button
-                    className="generate-control-btn"
+                    className="Bottom-control-btn"
                     onClick={() => { setShowNameDropdown(p => !p); setShowStageDropdown(false); }}
                 >
+                  <img
+                  src="/all_svg_icons/design_name.svg"
+                  alt="Name"
+                  className="button-svg-icon"
+              />
+                  
                     {assignedUser
                         ? (networkUsers.find(u => u.user_id === assignedUser)?.email?.split('@')[0] || 'Names')
                         : 'Names'}
@@ -2170,10 +2240,16 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
 
             <button
-                className="generate-control-btn"
+                className="Bottom-control-btn"
                 onClick={handleSubmit}
                 disabled={!isCurrentOwner}
             >
+              <img
+                  src="/all_svg_icons/design_submit.svg"
+                  alt="Submit"
+                  className="button-svg-icon"
+              />
+              
                 Submit
             </button>
 
@@ -2247,17 +2323,58 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
             </div>
             <div className="dm-modal-body">
               {visualHistoryList.length > 0 ? (
-                visualHistoryList.map((item, idx) => (
-                  <div key={item.admin_media_id} className="dm-history-item">
-                    <strong>Version {visualHistoryList.length - idx}</strong>
-                    <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
-                    <img src={item.uploaded_url} alt="visual" style={{ width: '100%', marginTop: 10, borderRadius: 6 }}/>
-                    {item.message && <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>{item.message}</div>}
-                  </div>
-                ))
+                visualHistoryList.map((item, idx) => {
+                  const versionNum = visualHistoryList.length - idx;
+                  return (
+                    <div key={item.admin_media_id} className="dm-history-item">
+                      <strong>Version {versionNum}</strong>
+                      <div className="dm-history-time">{new Date(item.created_at).toLocaleString()}</div>
+                      <img
+                        src={item.uploaded_url}
+                        alt={`Version ${versionNum}`}
+                        onClick={() => setHistoryPreview({
+                          url: item.uploaded_url,
+                          message: item.message,
+                          version: versionNum,
+                          time: item.created_at,
+                        })}
+                      />
+                      {item.message && <div className="dm-history-item-message">{item.message}</div>}
+                      <div className="dm-history-item-hint">Click image to view full message</div>
+                    </div>
+                  );
+                })
               ) : (
                 <div className="dm-empty">No visual history yet.</div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+    {/* ════════ VISUAL HISTORY VERSION PREVIEW (image + message) ═══════════ */}
+      {historyPreview && (
+        <div className="dm-overlay" onClick={() => setHistoryPreview(null)}>
+          <div className="dm-modal dm-modal--preview" onClick={e => e.stopPropagation()}>
+            <div className="dm-modal-header">
+              <div className="dm-preview-header-text">
+                <h3>Version {historyPreview.version}</h3>
+                <span className="dm-preview-time">{new Date(historyPreview.time).toLocaleString()}</span>
+              </div>
+              <button className="dm-modal-close" onClick={() => setHistoryPreview(null)}><CloseIcon/></button>
+            </div>
+
+            <div className="dm-preview-image-wrap">
+              <img src={historyPreview.url} alt={`Version ${historyPreview.version}`} className="dm-preview-image"/>
+            </div>
+
+            <div className="dm-preview-message">
+              <div className="dm-preview-message-label">Message</div>
+              <div className="dm-preview-message-text">
+                {historyPreview.message
+                  ? historyPreview.message
+                  : <span className="dm-preview-message-empty">No message was left for this version.</span>}
+              </div>
             </div>
           </div>
         </div>
