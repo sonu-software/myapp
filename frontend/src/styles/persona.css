@@ -215,14 +215,6 @@
   color: var(--navy) !important;
 }
 
-.persona-page .product-exit-btn {
-    background: var(--bg-card) !important;
-    border: 1.5px solid var(--border-card) !important;
-    border-radius: var(--radius-btn) !important;
-    color: var(--text-muted) !important;
-    padding: 0 16px !important;
-}
-
 .persona-page .product-exit-btn:hover {
   color: #ef4444 !important;
 }

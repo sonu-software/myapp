@@ -148,7 +148,7 @@ body:has(.lp-page) {
   box-sizing: border-box;
 }
 
-.lp-tab:hover { color: #555; }
+.lp-tab:hover { color: #ffffff; }
 
 .lp-tab--active {
   background: #ffffff;
@@ -244,7 +244,7 @@ body:has(.lp-page) {
   border-radius: 3px;
   transition: color 0.2s;
 }
-.lp-eye:hover { color: #555; }
+.lp-eye:hover { color: #ffffff; }
 
 /* ── MESSAGES ── */
 .lp-msg {
@@ -371,6 +371,6 @@ body:has(.lp-page) {
 }
 
 .lp-forgot-btn:hover {
-  color: #163a61;
+  color: #ffffff;
   text-decoration: underline;
 }

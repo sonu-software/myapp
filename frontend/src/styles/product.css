@@ -1046,25 +1046,6 @@
   color: var(--indigo) !important;
 }
 
-.product-page .product-exit-btn {
-    height: 36px !important;
-    padding: 0 16px !important;
-
-    background: #ffffff !important;
-    border: 1.5px solid var(--border) !important;
-    border-radius: 10px !important;
-
-    color: var(--text-secondary) !important;
-
-    transition: all .2s ease !important;
-}
-
-.product-page .product-exit-btn:hover {
-    background: #faf9ff !important;
-    border-color: var(--indigo-light) !important;
-    color: var(--indigo) !important;
-}
-
 /* =========================
    RESPONSIVE — TABLET
 ========================= */

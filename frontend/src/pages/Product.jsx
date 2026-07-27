@@ -105,7 +105,7 @@ export default function Product() {
           show: true, type: "success", title: "Product Saved",
           message: "Your product has been saved successfully.",
           confirmLabel: "OK", cancelLabel: null,
-          onConfirm: () => navigate("/initializing", { replace: true })
+          onConfirm: () => navigate("/planner", { replace: true })
         });
       } else {
         setPopup({
@@ -154,15 +154,6 @@ export default function Product() {
     });
   };
 
-  const handleExit = () => {
-    setPopup({
-      show: true, type: "warning", title: "Exit Page",
-      message: "You are about to exit this page. Any unsaved changes will be lost.",
-      confirmLabel: "Exit", cancelLabel: "Stay",
-      onConfirm: () => navigate(-1)
-    });
-  };
-
   const handleCardClick = (id) => {
     setExpandedCard((prev) => (prev === id ? null : id));
   };
@@ -192,7 +183,7 @@ export default function Product() {
           </div>
         </div>
 
-        {/* ── Header Right: Duplicate + Exit ── */}
+        {/* ── Header Right: Duplicate ── */}
         <div className="product-header-right">
           <button className="product-action-btn product-duplicate-btn" onClick={handleDuplicate}>
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
@@ -201,13 +192,6 @@ export default function Product() {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
             Duplicate
-          </button>
-          <button className="product-action-btn product-exit-btn" onClick={handleExit}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-            Exit
           </button>
         </div>
       </div>

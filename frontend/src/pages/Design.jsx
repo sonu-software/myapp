@@ -312,6 +312,8 @@ const feedbackBottomRef = useRef(null);
 
 const feedbackContainerRef = useRef(null);
 
+const layoutDropdownRef = useRef(null);
+
 
 // ── Chat ──────────────────────────────────────────────────────────────────
 const [userMessage, setUserMessage] = useState('');
@@ -1193,6 +1195,8 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
   const [layout, setLayout] = useState("50");
 
+  const [showLayoutDropdown, setShowLayoutDropdown] = useState(false);
+
 
 
   // ─────────────────────────────────────────────
@@ -1209,6 +1213,108 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
     display: activePanel[panel] ? "flex" : "none",
     
   });
+
+
+  const loadOverviewLayout = () => {
+
+    const alreadyOpen =
+        activePanel.topic &&
+        activePanel.ai &&
+        !activePanel.basic;
+
+    if(alreadyOpen){
+
+        setActivePanel({
+            topic:false,
+            ai:false,
+            basic:false,
+            detail:false,
+            interactive:false,
+            stage:false,
+        });
+
+    }
+
+    else{
+
+        setActivePanel({
+            topic:true,
+            ai:true,
+            basic:false,
+            detail:false,
+            interactive:false,
+            stage:false,
+        });
+
+    }
+
+};
+
+const loadPlannerLayout = () => {
+
+    const alreadyOpen =
+        activePanel.topic &&
+        activePanel.ai &&
+        activePanel.basic;
+
+    if(alreadyOpen){
+
+        setActivePanel({
+            topic:false,
+            ai:false,
+            basic:false,
+            detail:false,
+            interactive:false,
+            stage:false,
+        });
+
+    }
+
+    else{
+
+        setActivePanel({
+            topic:true,
+            ai:true,
+            basic:true,
+            detail:false,
+            interactive:false,
+            stage:false,
+        });
+
+    }
+
+};
+
+
+useEffect(() => {
+
+    function handleOutsideClick(event){
+
+        if(
+            layoutDropdownRef.current &&
+            !layoutDropdownRef.current.contains(event.target)
+        ){
+
+            setShowLayoutDropdown(false);
+
+        }
+
+    }
+
+    document.addEventListener("mousedown",handleOutsideClick);
+
+    return ()=>{
+
+        document.removeEventListener(
+            "mousedown",
+            handleOutsideClick
+        );
+
+    };
+
+},[]);
+
+
 
 
   return (
@@ -1233,19 +1339,111 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
           <div className="carousel-panel">
 
-            <div className="group-btn">
+            <div 
+            className="group-btn"
+            ref={layoutDropdownRef}
+            >
 
-              <button
-                className="group-toggle-btn"
-                title="enable-ai-basic-btn"
-              >X</button>
+            <button
+              className="layout-dropdown-btn"
+              onClick={() => setShowLayoutDropdown(prev => !prev)}
+            >
+              <img
+                    src="/all_svg_icons/design_layout.svg"
+                    alt="Layout"
+                    className="button-svg-icon"
+                />
+                Layouts
 
-              <button
-                className="group-toggle-btn"
-                title="enable-topic-ai-btn"
-              >Y</button>
+              <img
+                    src="/all_svg_icons/design_dropdown_arrow.svg"
+                    alt="Dropdown Arrow"
+                    className="button-svg-icon"
+                />
+            </button>
 
-            </div>
+            {showLayoutDropdown && (
+
+              <div className="layout-dropdown-menu">
+
+                  <div className="layout-dropdown-title">
+                      READY-MADE COMBOS
+                  </div>
+
+                  <div className="layout-cards">
+
+                      <button
+                          className="layout-card"
+                          onClick={loadOverviewLayout}
+                      >
+
+                          <img
+                              src="/all_svg_icons/design_overview_layout.svg"
+                              className="layout-card-image"
+                          />
+
+                          <div className="layout-card-title">
+                              Overview
+                          </div>
+
+                          <div className="layout-card-icons">
+
+                              <img
+                                  src="/all_svg_icons/design_topic.svg"
+                                  className="layout-mini-icon"
+                              />
+
+                              <img
+                                  src="/all_svg_icons/design_ai.svg"
+                                  className="layout-mini-icon"
+                              />
+
+                          </div>
+
+                      </button>
+
+                      <button
+                          className="layout-card"
+                          onClick={loadPlannerLayout}
+                      >
+
+                          <img
+                              src="/all_svg_icons/design_planner_layout.svg"
+                              className="layout-card-image"
+                          />
+
+                          <div className="layout-card-title">
+                              Planner
+                          </div>
+
+                          <div className="layout-card-icons">
+
+                              <img
+                                  src="/all_svg_icons/design_topic.svg"
+                                  className="layout-mini-icon"
+                              />
+
+                              <img
+                                  src="/all_svg_icons/design_ai.svg"
+                                  className="layout-mini-icon"
+                              />
+
+                              <img
+                                  src="/all_svg_icons/design_basic.svg"
+                                  className="layout-mini-icon"
+                              />
+
+                          </div>
+
+                      </button>
+
+                  </div>
+
+              </div>
+
+              )}
+
+          </div>
 
 
             <div className="singular-btn">
@@ -1324,13 +1522,24 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                 className="output-toggle-ratio-btn"
                 title="33-percent-btn"
                 onClick={() => setLayout("33")}
-              >33%</button>
+              >
+                <img
+                    src="/all_svg_icons/design_33_layout.svg"
+                    alt="33% Layout"
+                    className="button-svg-icon"
+                />
+                33%</button>
 
               <button
                 className="output-toggle-ratio-btn"
                 title="50-percent-btn"
                 onClick={() => setLayout("50")}
-              >50%</button>
+              ><img
+                    src="/all_svg_icons/design_50_layout.svg"
+                    alt="50% Layout"
+                    className="button-svg-icon"
+                />
+                50%</button>
 
             </div>
 
@@ -1359,61 +1568,61 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
                       <div className="topic-card-grid">
 
-                          <label>Topic</label>
+                          <div className="topic-card-field">
+                              <label>Topic</label>
 
-                          <input
-                              type="text"
-                              value={docketTitle || ""}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={docketTitle || ""}>
+                                  {docketTitle || ""}
+                              </div>
+                          </div>
 
-                          <label>Date</label>
+                          <div className="topic-card-field">
+                              <label>Date</label>
 
-                          <input
-                              type="text"
-                              value={formattedDateTime}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={formattedDateTime || ""}>
+                                  {formattedDateTime}
+                              </div>
+                          </div>
 
-                          <label>Stage</label>
+                          <div className="topic-card-field">
+                              <label>Stage</label>
 
-                          <input
-                              type="text"
-                              value={currentStage}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={currentStage || ""}>
+                                  {currentStage}
+                              </div>
+                          </div>
 
-                          <label>Media</label>
+                          <div className="topic-card-field">
+                              <label>Media</label>
 
-                          <input
-                              type="text"
-                              value={mediaType}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={mediaType || ""}>
+                                  {mediaType}
+                              </div>
+                          </div>
 
-                          <label>Sub Type</label>
+                          <div className="topic-card-field">
+                              <label>Sub Type</label>
 
-                          <input
-                              type="text"
-                              value={subType}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={subType || ""}>
+                                  {subType}
+                              </div>
+                          </div>
 
-                          <label>Product</label>
+                          <div className="topic-card-field">
+                              <label>Product</label>
 
-                          <input
-                              type="text"
-                              value={selectedProductData?.product_name || ""}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={selectedProductData?.product_name || ""}>
+                                  {selectedProductData?.product_name || ""}
+                              </div>
+                          </div>
 
-                          <label>Persona</label>
+                          <div className="topic-card-field">
+                              <label>Persona</label>
 
-                          <input
-                              type="text"
-                              value={selectedPersonaData?.persona_name || ""}
-                              readOnly
-                          />
+                              <div className="topic-field-value" title={selectedPersonaData?.persona_name || ""}>
+                                  {selectedPersonaData?.persona_name || ""}
+                              </div>
+                          </div>
 
                       </div>
 
@@ -1476,24 +1685,7 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
 
                         </div>
 
-                        <button
-                          className={`dm-generate-btn${canGenerate ? ' dm-generate-btn--on' : ''}`}
-                          onClick={isCurrentOwner && canGenerate && !isGeneratingImage ? handleGenerate : undefined}
-                          disabled={!isCurrentOwner || isGeneratingImage}
-                        >
-                          <SparkleIcon/>
-                          {isGeneratingImage ? 'Generating…' : 'Generate'}
-                          {!canGenerate && (
-                            <div className="dm-tooltip">
-                              <div className="dm-tooltip-title">Please fill:</div>
-                              <ul>
-                                {!mode && <li>Prompt Type</li>}
-                                {mode && !mediaType && <li>Media Type</li>}
-                                {mediaType && !subType && <li>Sub Type</li>}
-                              </ul>
-                            </div>
-                          )}
-                        </button>
+                        
                       </div>
                     </div>
                   </div>
@@ -2156,7 +2348,12 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
                 disabled={!isCurrentOwner}
                 onClick={() => isCurrentOwner && setIsEditMode(true)}
               >
-                Edit
+
+                <img
+                      src="/all_svg_icons/design_edit.svg"
+                      alt="Edit"
+                      className="button-svg-icon"
+                  />
               </button>
             )}
 

@@ -36,38 +36,33 @@ function getAvatarColor(email = "") {
 }
 
 // ─── Field Row component ──────────────────────────────────────────────────────
-function FieldRow({ label, name, value, onChange, placeholder, disabled, type = "text" }) {
+function FieldRow({ label, name, value, onChange, placeholder, type = "text" }) {
   return (
     <div className="bs-row">
       <label className="bs-label">{label}</label>
-      <div className={disabled ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
-        <input
-          name={name} type={type} value={value}
-          onChange={onChange} className="bs-input"
-          disabled={disabled} placeholder={placeholder}
-        />
-      </div>
+      <input
+        name={name} type={type} value={value}
+        onChange={onChange} className="bs-input"
+        placeholder={placeholder}
+      />
     </div>
   );
 }
 
-function SelectRow({ label, name, value, onChange, disabled, options, placeholder }) {
+function SelectRow({ label, name, value, onChange, options, placeholder }) {
   return (
     <div className="bs-row">
       <label className="bs-label">{label}</label>
-      <div className={disabled ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
-        <select name={name} value={value} onChange={onChange}
-          className="bs-input" disabled={disabled}>
-          <option value="">{placeholder}</option>
-          {options.map(o => <option key={o} value={o}>{o}</option>)}
-        </select>
-      </div>
+      <select name={name} value={value} onChange={onChange} className="bs-input">
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
     </div>
   );
 }
 
 // ─── Hashtag Input component ──────────────────────────────────────────────────
-function HashtagInput({ tags, onChange, disabled }) {
+function HashtagInput({ tags, onChange }) {
   const [inputVal,    setInputVal]    = useState("");
   const [limitToast,  setLimitToast]  = useState(false);
   const inputRef  = useRef(null);
@@ -111,23 +106,21 @@ function HashtagInput({ tags, onChange, disabled }) {
   return (
     <div className="bs-hashtag-outer">
       <div
-        className={`bs-hashtag-wrap ${disabled ? "bs-hashtag-wrap--disabled" : ""} ${limitToast ? "bs-hashtag-wrap--limit" : ""}`}
-        onClick={() => !disabled && inputRef.current?.focus()}
+        className={`bs-hashtag-wrap ${limitToast ? "bs-hashtag-wrap--limit" : ""}`}
+        onClick={() => inputRef.current?.focus()}
       >
         <div className="bs-hashtag-scroll">
           {tags.map(tag => (
             <span key={tag} className="bs-hashtag-chip">
               <span className="bs-hashtag-hash">#</span>{tag}
-              {!disabled && (
-                <button
-                  type="button"
-                  className="bs-hashtag-remove"
-                  onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-                >✕</button>
-              )}
+              <button
+                type="button"
+                className="bs-hashtag-remove"
+                onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
+              >✕</button>
             </span>
           ))}
-          {!disabled && tags.length < 5 && (
+          {tags.length < 5 && (
             <input
               ref={inputRef}
               type="text"
@@ -137,28 +130,22 @@ function HashtagInput({ tags, onChange, disabled }) {
               onChange={e => setInputVal(e.target.value)}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
-              disabled={disabled}
             />
-          )}
-          {disabled && tags.length === 0 && (
-            <span className="bs-hashtag-empty">No hashtags added</span>
           )}
         </div>
       </div>
 
       {/* ── Below-box row: remaining count (left) + limit toast (right) ── */}
-      {!disabled && (
-        <div className="bs-hashtag-footer">
-          <span className={`bs-hashtag-remaining ${remaining === 0 ? "bs-hashtag-remaining--zero" : ""}`}>
-            {remaining === 0 ? "Max reached" : `${remaining} remaining`}
+      <div className="bs-hashtag-footer">
+        <span className={`bs-hashtag-remaining ${remaining === 0 ? "bs-hashtag-remaining--zero" : ""}`}>
+          {remaining === 0 ? "Max reached" : `${remaining} remaining`}
+        </span>
+        {limitToast && (
+          <span className="bs-hashtag-toast">
+            ⚠ Max 5 hashtags allowed
           </span>
-          {limitToast && (
-            <span className="bs-hashtag-toast">
-              ⚠ Max 5 hashtags allowed
-            </span>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -169,7 +156,6 @@ function HashtagInput({ tags, onChange, disabled }) {
 export default function BusinessSetup() {
   const navigate = useNavigate();
 
-  const [isEditing,    setIsEditing]    = useState(true);
   const [loading,      setLoading]      = useState(true);
   const [hasBusiness,  setHasBusiness]  = useState(false);
   const [categories,   setCategories]   = useState([]);
@@ -220,7 +206,6 @@ export default function BusinessSetup() {
           }
           if (b.logo_url) setLogoPreview(b.logo_url);
           setHasBusiness(true);
-          setIsEditing(false);
         }
       } catch (err) { console.error("Error loading business:", err); }
       finally { setLoading(false); }
@@ -364,7 +349,6 @@ export default function BusinessSetup() {
       setPopup({ show: true, type: "warning", title: "Agreement Required", message: "Please agree to both the Terms & Conditions and Privacy Policy before saving." });
       return;
     }
-    if (!isEditing) return;
 
     const payload = {
       business_name: formData.brandName, business_type: formData.businessType,
@@ -394,7 +378,6 @@ export default function BusinessSetup() {
         setPopup({ show: true, type: "warning", title: "Save Failed", message: data.detail || "Failed to save business profile." });
         return;
       }
-      setIsEditing(false);
       setHasBusiness(true);
       setPopup({ show: true, type: "success", title: "Business Profile Saved", message: "Your business profile has been saved successfully." });
     } catch (err) {
@@ -424,11 +407,6 @@ export default function BusinessSetup() {
       {/* ── HEADER ── */}
       <div className="bs-header">
         <div className="bs-header-spacer" />
-        <button type="button" className="bs-edit-btn"
-          onClick={() => setIsEditing(e => !e)}
-          title={isEditing ? "Close editing" : "Edit profile"}>
-          {isEditing ? "Close" : "Edit"}
-        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="bs-form">
@@ -456,55 +434,48 @@ export default function BusinessSetup() {
 
           <div className="bs-row">
             <label className="bs-label">Brand / Trade Name</label>
-            <div className={!isEditing ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
-              <input name="brandName" value={formData.brandName} onChange={handleInputChange}
-                className="bs-input" disabled={!isEditing} placeholder="e.g. Acme Corp" />
-            </div>
+            <input name="brandName" value={formData.brandName} onChange={handleInputChange}
+              className="bs-input" placeholder="e.g. Acme Corp" />
           </div>
 
           <SelectRow label="Business Type" name="businessType" value={formData.businessType}
-            onChange={handleInputChange} disabled={!isEditing}
+            onChange={handleInputChange}
             options={[...categories, "Others"]} placeholder="Select Category" />
 
           <SelectRow label="Business Sub-Category" name="industry" value={formData.industry}
-            onChange={handleInputChange} disabled={!isEditing}
+            onChange={handleInputChange}
             options={subCategories} placeholder="Select Sub Category" />
 
           <FieldRow label="Year of Establishment" name="yearEstablished"
             value={formData.yearEstablished} onChange={handleInputChange}
-            disabled={!isEditing} placeholder="e.g. 2010" />
+            placeholder="e.g. 2010" />
         </div>
 
         {/* BUSINESS DESCRIPTION */}
         <div className="bs-section">
           <div className="bs-desc-header">
             <h2 className="bs-section-title">BUSINESS DESCRIPTION</h2>
-            <label className={`bs-upload-btn ${!isEditing ? "bs-upload-btn--disabled" : ""}`}>
+            <label className="bs-upload-btn">
               ⬆ Upload from File
               <input type="file" accept=".txt,.doc,.docx,.pdf,.md"
-                onChange={handleDescriptionUpload} disabled={!isEditing} hidden />
+                onChange={handleDescriptionUpload} hidden />
             </label>
           </div>
 
           <div className="bs-textarea-container">
-            <div className={!isEditing ? "bs-tooltip-wrap bs-tooltip-wrap--full" : "bs-textarea-wrap"}
-              data-tooltip="Click Edit to modify">
-              <textarea name="description" value={formData.description}
-                onChange={handleInputChange} className="bs-textarea"
-                disabled={!isEditing} rows={8}
-                placeholder="Describe your business — what you do, your mission, your values, and what sets you apart." />
-            </div>
+            <textarea name="description" value={formData.description}
+              onChange={handleInputChange} className="bs-textarea"
+              rows={8}
+              placeholder="Describe your business — what you do, your mission, your values, and what sets you apart." />
           </div>
 
           {formData.description && (
             <div className="bs-desc-meta">
               <span>{formData.description.length} characters</span>
-              {isEditing && (
-                <button type="button" className="bs-desc-clear"
-                  onClick={() => setFormData(prev => ({ ...prev, description: "" }))}>
-                  Clear
-                </button>
-              )}
+              <button type="button" className="bs-desc-clear"
+                onClick={() => setFormData(prev => ({ ...prev, description: "" }))}>
+                Clear
+              </button>
             </div>
           )}
 
@@ -513,12 +484,10 @@ export default function BusinessSetup() {
               <span>Uploaded File:</span>
               <a href={formData.descriptionFileUrl} target="_blank"
                 rel="noopener noreferrer" className="bs-file-link">View File</a>
-              {isEditing && (
-                <button type="button" className="bs-desc-remove"
-                  onClick={() => setFormData(prev => ({ ...prev, descriptionFileUrl: "" }))}>
-                  ✕
-                </button>
-              )}
+              <button type="button" className="bs-desc-remove"
+                onClick={() => setFormData(prev => ({ ...prev, descriptionFileUrl: "" }))}>
+                ✕
+              </button>
             </div>
           )}
         </div>
@@ -529,33 +498,30 @@ export default function BusinessSetup() {
         <div className="bs-section">
           <div className="bs-logo-header">
             <h2 className="bs-section-title">BUSINESS DETAILS</h2>
-            <label className={`bs-upload-btn ${!isEditing ? "bs-upload-btn--disabled" : ""}`}>
+            <label className="bs-upload-btn">
               ⬆ Upload Logo
-              <input type="file" accept="image/*" onChange={handleLogoUpload}
-                disabled={!isEditing} hidden />
+              <input type="file" accept="image/*" onChange={handleLogoUpload} hidden />
             </label>
           </div>
 
           {logoPreview && (
             <div className="bs-logo-preview">
               <button type="button" className="bs-remove-logo"
-                onClick={() => setLogoPreview(null)} disabled={!isEditing}>✕</button>
+                onClick={() => setLogoPreview(null)}>✕</button>
               <img src={logoPreview} alt="Logo Preview" />
             </div>
           )}
 
           <div className="bs-row">
             <label className="bs-label">Logo Placement</label>
-            <div className={!isEditing ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
-              <select name="logoPlacement" value={formData.logoPlacement}
-                onChange={handleInputChange} className="bs-input" disabled={!isEditing}>
-                <option value="">Select Placement</option>
-                <option value="LEFT_TOP">Left Top</option>
-                <option value="LEFT_BOTTOM">Left Bottom</option>
-                <option value="RIGHT_TOP">Right Top</option>
-                <option value="RIGHT_BOTTOM">Right Bottom</option>
-              </select>
-            </div>
+            <select name="logoPlacement" value={formData.logoPlacement}
+              onChange={handleInputChange} className="bs-input">
+              <option value="">Select Placement</option>
+              <option value="LEFT_TOP">Left Top</option>
+              <option value="LEFT_BOTTOM">Left Bottom</option>
+              <option value="RIGHT_TOP">Right Top</option>
+              <option value="RIGHT_BOTTOM">Right Bottom</option>
+            </select>
           </div>
 
           <h3 className="bs-subsection">OWNER / PRIMARY CONTACT</h3>
@@ -566,7 +532,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
         </div>
 
@@ -582,7 +548,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
         </div>
 
@@ -598,7 +564,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
         </div>
 
@@ -612,7 +578,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
 
           {/* ── HASHTAGS ── */}
@@ -623,19 +589,11 @@ export default function BusinessSetup() {
                 {hashtags.length}/5
               </span>
             </label>
-            <div className={!isEditing ? "bs-tooltip-wrap" : ""} data-tooltip="Click Edit to modify">
-              <HashtagInput
-                tags={hashtags}
-                onChange={setHashtags}
-                disabled={!isEditing}
-              />
-            </div>
+            <HashtagInput tags={hashtags} onChange={setHashtags} />
           </div>
-          {isEditing && (
-            <p className="bs-hashtag-tip">
-              Press <kbd>Enter</kbd>, <kbd>Space</kbd> or <kbd>,</kbd> to add · <kbd>Backspace</kbd> to remove last
-            </p>
-          )}
+          <p className="bs-hashtag-tip">
+            Press <kbd>Enter</kbd>, <kbd>Space</kbd> or <kbd>,</kbd> to add · <kbd>Backspace</kbd> to remove last
+          </p>
         </div>
 
         {/* ══ ROW 4  ── PREFERENCES (hidden)  |  LEGAL ══ */}
@@ -649,7 +607,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
         </div>
 
@@ -662,7 +620,7 @@ export default function BusinessSetup() {
           ].map(([label, name, placeholder]) => (
             <FieldRow key={name} label={label} name={name}
               value={formData[name]} onChange={handleInputChange}
-              disabled={!isEditing} placeholder={placeholder} />
+              placeholder={placeholder} />
           ))}
         </div>
 
@@ -780,9 +738,9 @@ export default function BusinessSetup() {
               ["agreePrivacy", "I agree to the Privacy Policy"],
             ].map(([name, label]) => (
               <label key={name}
-                className={`bs-agreement-tab ${formData[name] ? "bs-checked" : ""} ${!isEditing ? "bs-disabled" : ""}`}>
+                className={`bs-agreement-tab ${formData[name] ? "bs-checked" : ""}`}>
                 <input type="checkbox" name={name} checked={formData[name]}
-                  onChange={handleInputChange} disabled={!isEditing} hidden />
+                  onChange={handleInputChange} hidden />
                 <span className="bs-agreement-icon">{formData[name] ? "✓" : ""}</span>
                 <span className="bs-agreement-label">{label}</span>
               </label>
@@ -792,10 +750,10 @@ export default function BusinessSetup() {
 
         {/* ══ SAVE & CLEAR ══ */}
         <div className="bs-actions">
-          <button type="button" className="bs-clear-all-btn" disabled={!isEditing} onClick={handleClearAll}>
+          <button type="button" className="bs-clear-all-btn" onClick={handleClearAll}>
             Clear all
           </button>
-          <button type="submit" className="bs-save-btn" disabled={!isEditing}>
+          <button type="submit" className="bs-save-btn">
             Save
           </button>
         </div>
@@ -815,7 +773,7 @@ export default function BusinessSetup() {
               if (popup.type === "success") {
                 sessionStorage.setItem("showInit", "true");
                 sessionStorage.setItem("refreshAccount", "true");
-                navigate("/initializing", { replace: true });
+                navigate("/planner", { replace: true });
               } else {
                 setPopup(p => ({ ...p, show: false }));
               }

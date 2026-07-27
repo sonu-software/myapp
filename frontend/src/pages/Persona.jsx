@@ -513,20 +513,6 @@ export default function Persona() {
     setInfoPopup({ show: true, type: "success", title: "Persona Duplicated", message: `A copy has been created as "${copyName}". Save it to keep it.` });
   };
 
-  /* ── Exit without saving ── */
-  const handleExit = () => {
-    setConfirmModal({
-      show: true,
-      variant: "warning",
-      title: "Exit Without Saving?",
-      message: "Any unsaved changes to this persona will be lost.",
-      confirmLabel: "Exit",
-      cancelLabel: "Stay",
-      confirmClass: "ai-popup-confirm-btn--warning",
-      onConfirm: () => { setConfirmModal({ show: false }); navigate("/home", { replace: true }); },
-    });
-  };
-
   /* ── Clear all fields ── */
   const handleClearAll = () => {
     setConfirmModal({
@@ -580,7 +566,7 @@ export default function Persona() {
       if (!res.ok) { setInfoPopup({ show: true, type: "warning", title: "Save Failed", message: result.detail || "Failed to save persona" }); return; }
       fetchPersonas();
       if (navigateAfter) {
-        navigate("/home", { replace: true });
+        navigate("/planner", { replace: true });
       } else {
         setInfoPopup({ show: true, type: "success", title: "Persona Saved", message: "Your persona has been saved successfully." });
       }
@@ -614,13 +600,6 @@ export default function Persona() {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
             Duplicate
-          </button>
-          <button className="product-action-btn product-exit-btn" onClick={handleExit} title="Exit without saving">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-            Exit
           </button>
         </div>
       </div>

@@ -415,14 +415,9 @@ export default function AppFrame() {
 
   // Lets the currently open execute (if any) highlight itself in the panel.
   const activeDocketId = useMemo(() => {
-
-    const match = location.pathname.match(
-        /^\/(docket-media|design)\/([^/]+)/
-    );
-
-    return match ? match[2] : null;
-
-}, [location.pathname]);
+    const match = location.pathname.match(/^\/docket-media\/([^/]+)/);
+    return match ? match[1] : null;
+  }, [location.pathname]);
 
 
 
@@ -522,8 +517,8 @@ const goToNextExecute = async () => {
     control: (base, state) => ({
         ...base,
 
-        minHeight: 28.35,
-        height: 28.35,
+        minHeight: 36,
+        height: 36,
 
         backgroundColor: "#ffffff",
 
@@ -553,7 +548,7 @@ const goToNextExecute = async () => {
     valueContainer: (base) => ({
         ...base,
 
-        height: 26,
+        height: 36,
 
         padding: "0 8px",
 
@@ -1515,7 +1510,7 @@ const goToNextExecute = async () => {
 
 
   const navItems = [
-    { label: "Purpose",  route: "/setup-business", icon: (
+    { label: "Business",  route: "/setup-business", icon: (
         <img
             src="/all_svg_icons/appframe_purpose.svg"
             alt="Purpose"
@@ -1524,7 +1519,7 @@ const goToNextExecute = async () => {
     ) },
 
 
-    { label: "Solution", route: "/product",         icon: (
+    { label: "Product", route: "/product",         icon: (
         <img
             src="/all_svg_icons/appframe_solution.svg"
             alt="Solution"
@@ -1619,16 +1614,7 @@ const goToNextExecute = async () => {
                     isActive ? ' dm-carousel-item--active' : ''
                 }`}
                 onDoubleClick={() => {
-                    if (location.pathname.startsWith("/design")) {
-
-    navigate(`/design/${item.docket_id}`);
-
-}
-else {
-
-    navigate(`/docket-media/${item.docket_id}`);
-
-} 
+                    navigate(`/docket-media/${item.docket_id}`);
                 }}
             >
               <div className="dm-carousel-item-thumb">
@@ -1665,7 +1651,7 @@ else {
 
         <div
           className="sidebar-logo"
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/planner")}
         >
           <img
             src="/white_visualgrab_logo.png"
@@ -1685,90 +1671,32 @@ else {
                 className={`sidebar-item ${active ? "active" : ""}`}
                 onClick={async () => {
 
-    // ===========================
-    // DESIGN PAGE
-    // ===========================
-    if (item.route === "/design") {
+                  if (item.route !== "execute") {
+                    navigate(item.route);
+                    return;
+                  }
 
-        // If an execute is already open,
-        // open the same execute in Design.
-        if (activeDocketId) {
-            navigate(`/design/${activeDocketId}`);
-            return;
-        }
+                  try {
 
-        // Otherwise open the default execute.
-        try {
+                    const res = await fetch(
+                      `${API}/execute/default`,
+                      { headers: AUTH() }
+                    );
 
-            const res = await fetch(
-                `${API}/execute/default`,
-                { headers: AUTH() }
-            );
+                    const data = await res.json();
 
-            const data = await res.json();
+                    if (data.success && data.docket_id) {
+                      navigate(`/docket-media/${data.docket_id}`);
+                    } else {
+                      alert(data.message || "No execute found");
+                    }
 
-            if (data.success && data.docket_id) {
-                navigate(`/design/${data.docket_id}`);
-            }
-            else {
-                alert(data.message || "No execute found");
-            }
+                  } catch (err) {
+                    console.error(err);
+                    navigate("/planner");
+                  }
 
-        } catch (err) {
-
-            console.error(err);
-            navigate("/planner");
-
-        }
-
-        return;
-    }
-
-    // ===========================
-    // EXECUTE PAGE
-    // ===========================
-    if (item.route === "execute") {
-
-        // If an execute is already open,
-        // open the same execute in Execute page.
-        if (activeDocketId) {
-            navigate(`/docket-media/${activeDocketId}`);
-            return;
-        }
-
-        // Otherwise open the default execute.
-        try {
-
-            const res = await fetch(
-                `${API}/execute/default`,
-                { headers: AUTH() }
-            );
-
-            const data = await res.json();
-
-            if (data.success && data.docket_id) {
-                navigate(`/docket-media/${data.docket_id}`);
-            }
-            else {
-                alert(data.message || "No execute found");
-            }
-
-        } catch (err) {
-
-            console.error(err);
-            navigate("/planner");
-
-        }
-
-        return;
-    }
-
-    // ===========================
-    // ALL OTHER PAGES
-    // ===========================
-    navigate(item.route);
-
-}}
+                }}
               >
                 <div className="sidebar-icon">
                   {item.icon}
@@ -1939,7 +1867,7 @@ else {
             {headerDropdownConfig.options.length > 0 && (
 
               <select
-                className="header-view-dropdown"
+                className = "header-view-dropdown header-view-dropdown-offset"
                 value={selectedViewMode}
                 onChange={(e) => setViewMode(e.target.value)}
               >
