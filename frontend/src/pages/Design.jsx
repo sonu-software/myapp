@@ -1,6 +1,6 @@
 import React, {useState,useEffect,useMemo,useRef,useCallback} from "react";
 
-import { useParams } from "react-router-dom";
+import { useParams, useOutletContext } from "react-router-dom";
 
 import "../styles/design.css";
 
@@ -39,6 +39,17 @@ const formatDate = (date) => {
 
 
 
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function resizeTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  const newH = Math.min(el.scrollHeight, TEXTAREA_MAX_H);
+  el.style.height = `${newH}px`;
+  el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_H ? 'auto' : 'hidden';
+}
+
+
+
 
 // ─── Detail Panel (Labels) ───────────────────────────────────────────────────────
 const AutoTextarea = ({ value, onChange, placeholder = 'Enter info...' }) => {
@@ -62,12 +73,20 @@ const FieldRow = React.memo(({ field, fieldData, onToggle, onValueChange }) => (
   <div className="docket-field-row">
     <div className="docket-field-left">
       <input type="checkbox" className="docket-field-checkbox"
-        checked={fieldData?.enabled ?? false}
-        onChange={e => onToggle(field.variable_name, e.target.checked)}
+        checked={fieldValues[field.variable_name]?.enabled || false}
+        onChange={(e) =>
+            setFieldValues(prev => ({
+                ...prev,
+                [field.variable_name]: {
+                    ...prev[field.variable_name],
+                    enabled: e.target.checked
+                }
+            }))
+        }
       />
       <label className="docket-field-label-text">{field.label}</label>
       {field.isCustom && (
-        <button className="docket-delete-btn" onClick={() => onValueChange(field, null)}>×</button>
+        <button className="docket-delete-btn" onClick={() => handleDeleteCustomField(field)}>×</button>
       )}
     </div>
     <AutoTextarea value={fieldData?.value ?? ''} onChange={val => onValueChange(field.variable_name, val)} />
@@ -184,7 +203,14 @@ function buildStructuredPersona(persona) {
 export default function Design() {
 
   const { docketId } = useParams();
+  
   console.log("Design docketId:", docketId);
+
+
+  const {
+      activePanel,
+      setActivePanel
+  } = useOutletContext();
 
   // ─── Information ────────────────────────────────────────────────────────────────
 const [mode, setMode] = useState("");
@@ -1184,15 +1210,6 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
 
 
-  const [activePanel, setActivePanel] = useState({
-    topic: false,
-    ai: false,
-    basic: false,
-    detail: false,
-    interactive: false,
-    stage: false,
-  });
-
   const [layout, setLayout] = useState("50");
 
   const [showLayoutDropdown, setShowLayoutDropdown] = useState(false);
@@ -1764,7 +1781,7 @@ useEffect(() => {
                                 onClick={handleFullSave}
                                 disabled={!isCurrentOwner}
                             >
-                                Save Changes
+                                Save
                             </button>
 
                         </div>
@@ -1824,41 +1841,44 @@ useEffect(() => {
                                 >
 
                                     <div className="docket-field-left">
+                                      <input
+                                          type="checkbox"
+                                          className="docket-field-checkbox"
+                                          checked={fieldValues[field.variable_name]?.enabled || false}
+                                                                                    onChange={(e) =>
+                                              setFieldValues(prev => ({
+                                                  ...prev,
+                                                  [field.variable_name]: {
+                                                      ...prev[field.variable_name],
+                                                      enabled: e.target.checked
+                                                  }
+                                              }))
+                                          }
+                                      />
 
-                                        <input
-                                            type="checkbox"
-                                            className="docket-field-checkbox"
-                                            checked={
-                                                fieldValues[field.variable_name]?.enabled ||
-                                                false
-                                            }
-                                            onChange={(e) =>
-                                                setFieldValues(prev => ({
-                                                    ...prev,
-                                                    [field.variable_name]: {
-                                                        ...prev[field.variable_name],
-                                                        enabled: e.target.checked
-                                                    }
-                                                }))
-                                            }
-                                        />
+                                      <div className="docket-field-label-container">
 
-                                        <label className="docket-field-label-text">
-                                            {field.label}
-                                        </label>
+                                          <label className="docket-field-label-text">
+                                              {field.label}
+                                          </label>
 
-                                        {field.isCustom && (
+                                          {field.label_description && (
+                                              <div className="docket-field-description">
+                                                  {field.label_description}
+                                              </div>
+                                          )}
 
-                                            <button
-                                                className="docket-delete-btn"
-                                                onClick={() => handleDeleteCustomField(field)}
-                                            >
-                                                ×
-                                            </button>
+                                      </div>
 
-                                        )}
-
-                                    </div>
+                                      {field.isCustom && (
+                                          <button
+                                              className="docket-delete-btn"
+                                              onClick={() => handleDeleteCustomField(field)}
+                                          >
+                                              ×
+                                          </button>
+                                      )}
+                                  </div>
 
                                     <textarea
                                         className="docket-field-textarea"
@@ -1881,19 +1901,20 @@ useEffect(() => {
 
                                             el.style.height = "auto";
 
-                                            const lineH = 20;
+                                            const style = window.getComputedStyle(el);
 
-                                            const pad = 16;
+                                            const lineHeight = parseFloat(style.lineHeight);
 
-                                            const maxH = lineH * 3 + pad;
+                                            const padding =
+                                                parseFloat(style.paddingTop) +
+                                                parseFloat(style.paddingBottom);
 
-                                            const newH =
-                                                Math.min(el.scrollHeight, maxH);
+                                            const maxHeight = lineHeight * 3 + padding;
 
-                                            el.style.height = `${newH}px`;
+                                            el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
 
                                             el.style.overflowY =
-                                                el.scrollHeight > maxH
+                                                el.scrollHeight > maxHeight
                                                     ? "auto"
                                                     : "hidden";
 
@@ -1997,22 +2018,22 @@ useEffect(() => {
 
                                             el.style.height = "auto";
 
-                                            const lineH = 20;
+                                            const style = window.getComputedStyle(el);
 
-                                            const pad = 16;
+                                            const lineHeight = parseFloat(style.lineHeight);
 
-                                            const maxH = lineH * 3 + pad;
+                                            const padding =
+                                                parseFloat(style.paddingTop) +
+                                                parseFloat(style.paddingBottom);
 
-                                            const newH =
-                                                Math.min(el.scrollHeight, maxH);
+                                            const maxHeight = lineHeight * 3 + padding;
 
-                                            el.style.height = `${newH}px`;
+                                            el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
 
                                             el.style.overflowY =
-                                                el.scrollHeight > maxH
+                                                el.scrollHeight > maxHeight
                                                     ? "auto"
                                                     : "hidden";
-
                                         }}
                                     />
 

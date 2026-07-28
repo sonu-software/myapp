@@ -331,6 +331,15 @@ export default function AppFrame() {
   const [email, setEmail] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const [activePanel, setActivePanel] = useState({
+      topic: false,
+      ai: false,
+      basic: false,
+      detail: false,
+      interactive: false,
+      stage: false,
+  });
+
   // ── Reference lists (used by the filter dropdown) ────────────────────────
   const [productList, setProductList] = useState([]);
   const [personaList, setPersonaList] = useState([]);
@@ -517,13 +526,14 @@ const goToNextExecute = async () => {
     container: (base) => ({
         ...base,
         width: "100%"
+        
     }),
 
     control: (base, state) => ({
         ...base,
 
-        minHeight: 28.35,
-        height: 28.35,
+        minHeight: 36,
+        height: 36,
 
         backgroundColor: "#ffffff",
 
@@ -553,7 +563,7 @@ const goToNextExecute = async () => {
     valueContainer: (base) => ({
         ...base,
 
-        height: 26,
+        height: 34,
 
         padding: "0 8px",
 
@@ -609,6 +619,7 @@ const goToNextExecute = async () => {
 
     menuList: (base) => ({
         ...base,
+        overflowX: "hidden",
 
         paddingTop: 4,
 
@@ -617,6 +628,11 @@ const goToNextExecute = async () => {
 
     option: (base, state) => ({
         ...base,
+        whiteSpace: "normal",
+        wordBreak: "break-word",
+        overflowWrap: "anywhere",
+        display: "flex",
+        alignItems: "flex-start",
 
         backgroundColor:
             state.isFocused
@@ -2026,6 +2042,7 @@ else {
                           className="header-filter-date-input"
                           selected={startDate}
                           onChange={setStartDate}
+                          
                           dateFormat="yyyy-MM-dd"
                           placeholderText="Start Date"
 
@@ -2033,7 +2050,7 @@ else {
                           timeIntervals={15}
                           dateFormat="dd/MM/yyyy hh:mm aa"
                           timeCaption="Time"
-                          
+                          onKeyDown={(e) => e.preventDefault()}
                       />
 
                   </div>
@@ -2046,11 +2063,11 @@ else {
                           onChange={setEndDate}
                           dateFormat="yyyy-MM-dd"
                           placeholderText="End Date"
-
                           showTimeSelect
                           timeIntervals={15}
                           dateFormat="dd/MM/yyyy hh:mm aa"
                           timeCaption="Time"
+                          onKeyDown={(e) => e.preventDefault()}
                       />
 
                   </div>
@@ -2064,6 +2081,7 @@ else {
                           value={selectedFilterOccasion}
                           onChange={setSelectedFilterOccasion}
                           placeholder="Topics"
+                          isSearchable={false}
                           closeMenuOnSelect={false}
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
@@ -2085,6 +2103,7 @@ else {
                           value={selectedFilterProduct}
                           onChange={setSelectedFilterProduct}
                           placeholder="Products"
+                          isSearchable={false}
                           closeMenuOnSelect={false}
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
@@ -2104,6 +2123,7 @@ else {
                           value={selectedFilterPersona}
                           onChange={setSelectedFilterPersona}
                           placeholder="Personas"
+                          isSearchable={false}
                           closeMenuOnSelect={false}
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
@@ -2124,6 +2144,7 @@ else {
                           value={selectedFilterStage}
                           onChange={setSelectedFilterStage}
                           placeholder="Stages"
+                          isSearchable={false}
                           closeMenuOnSelect={false}
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
@@ -2174,19 +2195,22 @@ else {
                 context={{
                     filters: appliedFilters,
 
+                    activePanel,
+                    setActivePanel,
+
                     setPlannerDateFilter: (date) => {
 
-                    const start = new Date(date);
-                    start.setHours(0,0,0,0);
+                        const start = new Date(date);
+                        start.setHours(0,0,0,0);
 
-                    const end = new Date(date);
-                    end.setHours(23,59,59,999);
+                        const end = new Date(date);
+                        end.setHours(23,59,59,999);
 
-                    applyPlannerDateFilter(start, end);
-
-                }
+                        applyPlannerDateFilter(start, end);
+                    }
                 }}
             />
+
           </div>
 
 
@@ -2297,12 +2321,15 @@ else {
                       selected={newUploadedDateTime}
                       popperPlacement="bottom-end"
                       onChange={(date) => setNewUploadedDateTime(date)}
+                      readOnly
+                      onKeyDown={(e) => e.preventDefault()}
                       showTimeSelect
                       dateFormat="MMM d, yyyy h:mm aa"
                       timeFormat="hh:mm aa"
                       timeIntervals={15}
                       className="ce-modal-date-input"
                       placeholderText="Select upload time"
+                      onKeyDown={(e) => e.preventDefault()}
                     />
                   </div>
 
