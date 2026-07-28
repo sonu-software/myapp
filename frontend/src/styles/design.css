@@ -1477,7 +1477,7 @@
     max-width:100%;
     box-sizing:border-box;
 
-    padding:3px 5px;
+    padding:3px 2px;
 
     border:1px solid #d1d5db;
     border-radius:5px;
@@ -1508,7 +1508,7 @@
 .docket-field-textarea:focus{ border-color:#4A90E2; }
 
 .docket-field-textarea::-webkit-scrollbar{
-    width:6px;
+    width:3px;
 }
 .docket-field-textarea::-webkit-scrollbar-track{
     background:#d7dde8;
