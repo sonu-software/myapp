@@ -67,7 +67,7 @@ export default function Login() {
 
       sessionStorage.setItem("showInit", "true");
 
-      navigate("/initializing", { replace: true });
+      navigate("/planner", { replace: true });
 
     } catch {
       setMessage("Network connection lost");

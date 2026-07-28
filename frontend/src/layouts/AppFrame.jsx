@@ -1665,7 +1665,7 @@ else {
 
         <div
           className="sidebar-logo"
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/planner")}
         >
           <img
             src="/white_visualgrab_logo.png"
