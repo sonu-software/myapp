@@ -1368,7 +1368,7 @@ def get_media_fields(
 
         cursor.execute(
             """
-            SELECT default_value_id AS id, label, variable_name, box
+            SELECT default_value_id AS id, label, label_description, variable_name, box
             FROM media_subtype_default_value
             WHERE media_subtype_id=%s
             ORDER BY default_value_id ASC
