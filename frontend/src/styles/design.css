@@ -835,6 +835,16 @@
 
 
 
+
+.topic-datepicker-wrapper {
+    width: 100%;
+}
+
+.topic-datepicker-wrapper .topic-field-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* ==========================================================
    AI Panel
    (shared dm-chat-panel chrome — also used inside .interactive-panel

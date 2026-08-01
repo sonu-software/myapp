@@ -64,33 +64,27 @@ function formatDate(date) {
 
 
 const ValueContainer = (props) => {
-
     const count = props.getValue().length;
-
-    const placeholder =
-        props.selectProps.placeholder;
+    const placeholder = props.selectProps.placeholder;
 
     return (
-
         <components.ValueContainer {...props}>
-
-            <span
+            <div
                 style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
                     fontSize: 11,
                     color: "#333"
                 }}
             >
-                {
-                    count === 0
-                        ? placeholder
-                        : `${placeholder} ${count}`
-                }
-            </span>
-
+                {count === 0
+                    ? placeholder
+                    : `${placeholder} ${count}`}
+            </div>
         </components.ValueContainer>
-
     );
-
 };
 
 
@@ -177,7 +171,7 @@ function ExecutePanel({
 
         <aside className="app-right-panel">
                 
-                <div className="carousel-panel-new">
+                <div className="carousel-panel-new scrollbar">
                   {executeCards}
 
                 </div>
@@ -380,6 +374,9 @@ export default function AppFrame() {
   const [showTopicDropdown, setShowTopicDropdown] = useState(false);
 
   const filterBtnRef = useRef(null);
+  // Ref for the whole filter panel (Topics/Products/Personas/Stages row) —
+  // used to close it on outside click, same pattern as the profile menu.
+  const filterBarRef = useRef(null);
 
   // ── Create Execute modal state ────────────────────────────────────────
   const [showCreateExecuteModal, setShowCreateExecuteModal] = useState(false);
@@ -387,6 +384,20 @@ export default function AppFrame() {
   const [newMode, setNewMode] = useState("");
   const [newMediaType, setNewMediaType] = useState("");
   const [newSubType, setNewSubType] = useState("");
+
+  const [showCreateSubtypeModal, setShowCreateSubtypeModal] = useState(false);
+
+  const [customSubtype, setCustomSubtype] = useState("");
+  const [customSubtypeDescription, setCustomSubtypeDescription] = useState("");
+
+  const [customLabels, setCustomLabels] = useState([
+      {
+          label: "",
+          description: ""
+      }
+  ]);
+
+
   const [newProductId, setNewProductId] = useState("");
   const [newPersonaId, setNewPersonaId] = useState("");
   const [newOccasionId, setNewOccasionId] = useState("");
@@ -563,13 +574,15 @@ const goToNextExecute = async () => {
     valueContainer: (base) => ({
         ...base,
 
-        height: 34,
+        height: "100%",
 
-        padding: "0 8px",
+        padding: "0 10px",
 
         display: "flex",
 
-        alignItems: "center"
+        alignItems: "center",
+
+        justifyContent: "flex-start",
     }),
 
     input: (base) => ({
@@ -600,6 +613,16 @@ const goToNextExecute = async () => {
         padding: 4
     }),
 
+    // Portalled menu (rendered into document.body — see menuPortalTarget on
+    // each <Select> below) needs its own z-index bumped here; the wrapper
+    // react-select creates around the portal picks this up so the dropdown
+    // always renders above the header bar instead of being clipped/covered
+    // by it.
+    menuPortal: (base) => ({
+        ...base,
+        zIndex: 999999
+    }),
+
     menu: (base) => ({
         ...base,
 
@@ -614,7 +637,7 @@ const goToNextExecute = async () => {
         boxShadow:
             "0 8px 20px rgba(226, 13, 13, 0.1)",
 
-        zIndex: 99999
+        zIndex: 999999
     }),
 
     menuList: (base) => ({
@@ -732,11 +755,46 @@ const goToNextExecute = async () => {
 
   }, [menuOpen]);
 
-  // ── Filter dropdown: keep it aligned to its trigger button ───────────────
-  // The dropdown is portaled to <body> (see render below) so it can't be
-  // clipped by any ancestor's `overflow:hidden` — it is positioned with
-  // fixed coordinates computed from the button's bounding box, and kept in
-  // sync on resize/scroll while open.
+  // ── Filter panel outside-click ───────────────────────────────────────────
+  // Closes the whole Topics/Products/Personas/Stages filter row when the
+  // user clicks anywhere outside it (and outside the filter toggle button).
+  // The react-select menus below are portalled to document.body, so a click
+  // inside one of them no longer lands inside filterBarRef — we explicitly
+  // ignore clicks that land in a `.rf-select__menu-portal` (or an open
+  // react-datepicker popper) so picking a checkbox option doesn't slam the
+  // whole panel shut.
+  useEffect(() => {
+
+    function handleOutsideFilterClick(e) {
+
+        const clickedPortalledPopup = e.target.closest(
+            ".rf-select__menu-portal, .react-datepicker-popper"
+        );
+
+        if (clickedPortalledPopup) {
+            return;
+        }
+
+        if (
+            filterBarRef.current &&
+            !filterBarRef.current.contains(e.target) &&
+            filterBtnRef.current &&
+            !filterBtnRef.current.contains(e.target)
+        ) {
+            setShowFilterDropdown(false);
+        }
+
+    }
+
+    if (showFilterDropdown) {
+        document.addEventListener("mousedown", handleOutsideFilterClick);
+    }
+
+    return () => {
+        document.removeEventListener("mousedown", handleOutsideFilterClick);
+    };
+
+  }, [showFilterDropdown]);
 
 
   // ── Reference lists (Products / Personas / Occasions) ────────────────────
@@ -1135,25 +1193,8 @@ const goToNextExecute = async () => {
   }, [newMode]);
 
   useEffect(() => {
-
-    if (!newMediaType) {
-      setCreateSubTypes([]);
-      return;
-    }
-
-    fetch(
-      `${API}/media-subtypes?mode=${newMode}&mediaType=${newMediaType}`,
-      { headers: AUTH() }
-    )
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setCreateSubTypes(data.data);
-        }
-      })
-      .catch(err => console.error("Failed to load media sub types", err));
-
-  }, [newMediaType]);
+    loadMediaSubTypes();
+}, [newMediaType]);
 
   function resetCreateExecuteForm() {
     setNewDocketTitle("");
@@ -1167,6 +1208,118 @@ const goToNextExecute = async () => {
     setNewVisualElements("");
     setNewUploadedDateTime(new Date());
   }
+
+
+ // ── Create new subtype through user ────────
+
+  async function loadMediaSubTypes() {
+
+    if (!newMediaType) {
+        setCreateSubTypes([]);
+        return;
+    }
+
+    const res = await fetch(
+        `${API}/media-subtypes?mode=${newMode}&mediaType=${newMediaType}`,
+        {
+            headers: AUTH()
+        }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+        setCreateSubTypes(data.data);
+    }
+}
+
+
+
+  async function handleCreateSubtype() {
+
+    if (!customSubtype.trim()) {
+        alert("Please enter subtype.");
+        return;
+    }
+
+    if (customLabels.length === 0) {
+        alert("Please add at least one label.");
+        return;
+    }
+
+    for (const item of customLabels) {
+
+        if (!item.label.trim()) {
+            alert("Label cannot be empty.");
+            return;
+        }
+
+    }
+
+    try {
+
+        const res = await fetch(`${API}/create-media-subtype`, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`
+            },
+
+            body: JSON.stringify({
+
+                mode: newMode,
+
+                media_type: newMediaType,
+
+                subtype: customSubtype,
+
+                description: customSubtypeDescription,
+
+                labels: customLabels.map(label => ({
+                    label: label.label,
+                    description: label.description
+                }))
+
+            })
+
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            alert(data.detail || "Unable to create subtype.");
+            return;
+        }
+
+        await loadMediaSubTypes();
+
+        setNewSubType(customSubtype);
+
+        setShowCreateSubtypeModal(false);
+
+        setCustomSubtype("");
+
+        setCustomSubtypeDescription("");
+
+        setCustomLabels([
+            {
+                label: "",
+                description: ""
+            }
+        ]);
+
+    }
+    catch (err) {
+
+        console.error(err);
+
+        alert("Something went wrong.");
+
+    }
+
+}
 
   async function handleCreateExecute() {
 
@@ -1289,8 +1442,6 @@ const goToNextExecute = async () => {
         stages: [],
         search: ""
     });
-
-    setShowFilterDropdown(false);
 
 }
 
@@ -1613,7 +1764,7 @@ const goToNextExecute = async () => {
 
   const executeCards = (
     <div className={` ${isVerticalPanel ? ' dm-carousel-new--vertical' : ''}`}>
-      <div className={`dm-carousel-track-new${isVerticalPanel ? ' dm-carousel-track-new--vertical' : ''}`}>
+      <div className={`dm-carousel-track-new${isVerticalPanel ? ' dm-carousel-track-new--vertical scrollbar' : ''}`}>
         {carouselDockets.map((item) => {
           const image =
             item.visual_url ||
@@ -1922,7 +2073,7 @@ else {
 
             <div className="header-filters-box">
 
-              <div className="header-active-filters">
+              <div className="header-active-filters scrollbar">
                 {activeFilters.length > 0 ? (
                   activeFilters.map(f => (
                     <div key={f.key} className="header-filter-pill">
@@ -2023,7 +2174,7 @@ else {
 
 
             {showFilterDropdown && (
-                <div className="header-filter-bar">
+                <div className="header-filter-bar" ref={filterBarRef}>
 
 
                   <button
@@ -2040,16 +2191,17 @@ else {
 
                       <DatePicker
                           className="header-filter-date-input"
+                          wrapperClassName="header-filter-date-wrapper"
                           selected={startDate}
                           onChange={setStartDate}
-                          
-                          dateFormat="yyyy-MM-dd"
                           placeholderText="Start Date"
 
                           showTimeSelect
                           timeIntervals={15}
                           dateFormat="dd/MM/yyyy hh:mm aa"
                           timeCaption="Time"
+                          popperPlacement="bottom-start"
+                          popperProps={{ strategy: "fixed" }}
                           onKeyDown={(e) => e.preventDefault()}
                       />
 
@@ -2059,14 +2211,16 @@ else {
 
                       <DatePicker
                           className="header-filter-date-input"
+                          wrapperClassName="header-filter-date-wrapper"
                           selected={endDate}
                           onChange={setEndDate}
-                          dateFormat="yyyy-MM-dd"
                           placeholderText="End Date"
                           showTimeSelect
                           timeIntervals={15}
                           dateFormat="dd/MM/yyyy hh:mm aa"
                           timeCaption="Time"
+                          popperPlacement="bottom-start"
+                          popperProps={{ strategy: "fixed" }}
                           onKeyDown={(e) => e.preventDefault()}
                       />
 
@@ -2076,6 +2230,10 @@ else {
 
                       <Select
                           isMulti
+                          classNamePrefix="rf-select"
+                          menuPlacement="top"
+                          menuPosition="fixed"
+                          menuPortalTarget={document.body}
                           styles={filterSelectStyles}
                           options={filterOccasionList}
                           value={selectedFilterOccasion}
@@ -2086,7 +2244,8 @@ else {
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
                           components={{
-                              Option: CheckboxOption
+                              Option: CheckboxOption,
+                              ValueContainer
                           }}
                       />
 
@@ -2098,6 +2257,10 @@ else {
 
                       <Select
                           isMulti
+                          classNamePrefix="rf-select"
+                          menuPlacement="top"
+                          menuPosition="fixed"
+                          menuPortalTarget={document.body}
                           styles={filterSelectStyles}
                           options={filterProductList}
                           value={selectedFilterProduct}
@@ -2108,7 +2271,8 @@ else {
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
                           components={{
-                              Option: CheckboxOption
+                              Option: CheckboxOption,
+                              ValueContainer
                           }}
                       />
 
@@ -2118,6 +2282,10 @@ else {
 
                       <Select
                           isMulti
+                          classNamePrefix="rf-select"
+                          menuPlacement="top"
+                          menuPosition="fixed"
+                          menuPortalTarget={document.body}
                           styles={filterSelectStyles}
                           options={filterPersonaList}
                           value={selectedFilterPersona}
@@ -2128,7 +2296,8 @@ else {
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
                           components={{
-                              Option: CheckboxOption
+                              Option: CheckboxOption,
+                              ValueContainer
                           }}
                       />
 
@@ -2139,6 +2308,10 @@ else {
 
                       <Select
                           isMulti
+                          classNamePrefix="rf-select"
+                          menuPlacement="top"
+                          menuPosition="fixed"
+                          menuPortalTarget={document.body}
                           styles={filterSelectStyles}
                           options={filterStageList}
                           value={selectedFilterStage}
@@ -2149,7 +2322,8 @@ else {
                           hideSelectedOptions={false}
                           controlShouldRenderValue={false}
                           components={{
-                              Option: CheckboxOption
+                              Option: CheckboxOption,
+                              ValueContainer
                           }}
                       />
 
@@ -2190,7 +2364,7 @@ else {
 
           )}
 
-          <div className="app-content">
+          <div className="app-content scrollbar">
               <Outlet
                 context={{
                     filters: appliedFilters,
@@ -2300,7 +2474,7 @@ else {
                 </button>
               </div>
 
-              <div className="ce-modal-body">
+              <div className="ce-modal-body scrollbar">
 
                 <div className="ce-modal-section">
 
@@ -2411,9 +2585,26 @@ else {
                       <label>{newMode === "message" ? "Message Sub Type" : "Visual Sub Type"}</label>
                       <select
                         value={newSubType}
-                        onChange={(e) => setNewSubType(e.target.value)}
+                        onChange={(e) => {
+
+                            if (e.target.value === "CREATE_CUSTOM_SUBTYPE") {
+
+                                setShowCreateSubtypeModal(true);
+                                setNewSubType("");
+
+                                return;
+                            }
+
+                            setNewSubType(e.target.value);
+
+                        }}
                       >
                         <option value="">Select Sub Type</option>
+
+                        <option value="CREATE_CUSTOM_SUBTYPE">
+                            + Create Your Own Subtype
+                        </option>
+
                         {createSubTypes.map((s) => (
                           <option key={s.subtype_name} value={s.subtype_name}>
                             {s.subtype_name}
@@ -2515,6 +2706,235 @@ else {
           document.body
         )
       }
+
+      {showCreateSubtypeModal &&
+    createPortal(
+
+        <div
+            className="ce-overlay"
+            onClick={() => setShowCreateSubtypeModal(false)}
+        >
+
+            <div
+                className="ce-modal"
+                onClick={(e) => e.stopPropagation()}
+            >
+
+                {/* ================= HEADER ================= */}
+
+                <div className="ce-modal-header">
+
+                    <div className="ce-modal-header-left">
+
+                        <div className="ce-modal-header-icon">
+                            <Sparkles size={14} strokeWidth={2.4} />
+                        </div>
+
+                        <h3>Create Subtype</h3>
+
+                    </div>
+
+                    <button
+                        className="ce-modal-close"
+                        onClick={() => setShowCreateSubtypeModal(false)}
+                    >
+                        <X size={16} />
+                    </button>
+
+                </div>
+
+                {/* ================= BODY ================= */}
+
+                <div className="ce-modal-body scrollbar">
+
+                    <div className="ce-modal-section">
+
+                        <div className="ce-modal-section-title">
+                            Subtype Details
+                        </div>
+
+                        <div className="ce-modal-group">
+                            <label>Subtype</label>
+
+                            <input
+                                type="text"
+                                placeholder="Enter subtype name"
+                                value={customSubtype}
+                                onChange={(e) =>
+                                    setCustomSubtype(e.target.value)
+                                }
+                            />
+                        </div>
+
+                        <div className="ce-modal-group">
+                            <label>Subtype Description</label>
+
+                            <textarea
+                                rows={3}
+                                placeholder="Enter subtype description..."
+                                value={customSubtypeDescription}
+                                onChange={(e) =>
+                                    setCustomSubtypeDescription(
+                                        e.target.value
+                                    )
+                                }
+                            />
+                        </div>
+
+                    </div>
+
+                    <div className="ce-modal-divider" />
+
+                    <div className="ce-modal-section">
+
+                        <div className="ce-modal-section-title">
+                            Labels
+                        </div>
+
+                        {customLabels.map((item, index) => (
+
+                            <div
+                                key={index}
+                                style={{
+                                    border: "1px solid #e5e7eb",
+                                    borderRadius: 8,
+                                    padding: 14,
+                                    marginBottom: 14
+                                }}
+                            >
+
+                                <div className="ce-modal-group">
+
+                                    <label>
+                                        Label {index + 1}
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        placeholder="Enter label"
+                                        value={item.label}
+                                        onChange={(e) => {
+
+                                            const updated = [...customLabels];
+
+                                            updated[index].label =
+                                                e.target.value;
+
+                                            setCustomLabels(updated);
+
+                                        }}
+                                    />
+
+                                </div>
+
+                                <div className="ce-modal-group">
+
+                                    <label>
+                                        Label Description
+                                    </label>
+
+                                    <textarea
+                                        rows={2}
+                                        placeholder="Enter description"
+                                        value={item.description}
+                                        onChange={(e) => {
+
+                                            const updated = [...customLabels];
+
+                                            updated[index].description =
+                                                e.target.value;
+
+                                            setCustomLabels(updated);
+
+                                        }}
+                                    />
+
+                                </div>
+
+                                {customLabels.length > 1 && (
+
+                                    <button
+                                        type="button"
+                                        className="ce-modal-btn ce-modal-btn--cancel"
+                                        style={{
+                                            marginTop: 10
+                                        }}
+                                        onClick={() => {
+
+                                            setCustomLabels(
+                                                customLabels.filter(
+                                                    (_, i) => i !== index
+                                                )
+                                            );
+
+                                        }}
+                                    >
+                                        Delete Label
+                                    </button>
+
+                                )}
+
+                            </div>
+
+                        ))}
+
+                        <button
+                            type="button"
+                            className="ce-modal-btn ce-modal-btn--save"
+                            style={{
+                                width: "100%"
+                            }}
+                            onClick={() =>
+
+                                setCustomLabels([
+                                    ...customLabels,
+                                    {
+                                        label: "",
+                                        description: ""
+                                    }
+                                ])
+
+                            }
+                        >
+                            + Add More Label
+                        </button>
+
+                    </div>
+
+                </div>
+
+                {/* ================= FOOTER ================= */}
+
+                <div className="ce-modal-footer">
+
+                    <button
+                        className="ce-modal-btn ce-modal-btn--cancel"
+                        onClick={() =>
+                            setShowCreateSubtypeModal(false)
+                        }
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        className="ce-modal-btn ce-modal-btn--save"
+                        onClick={handleCreateSubtype}
+                    >
+                        Save Subtype
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>,
+
+        document.body
+    )
+}
+
+
+
 
     </div>
   );

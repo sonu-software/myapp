@@ -2,9 +2,6 @@ import React, {useState,useEffect,useMemo,useRef,useCallback} from "react";
 
 import { useParams, useOutletContext } from "react-router-dom";
 
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-
 import "../styles/design.css";
 
 
@@ -24,37 +21,20 @@ function handleUnauthorized(res) {
 
 
 
-// ─── Date & Time Formatting Function ─────────────────────────
+// ─── Date Formatting Function ────────────────────────────────────────────────────────────────
 const formatDate = (date) => {
-    if (!date) return null;
 
-    const d = date instanceof Date
-        ? date
-        : new Date(date);
+  const year = date.getFullYear();
 
-    const year = d.getFullYear();
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, '0');
 
-    const month = String(
-        d.getMonth() + 1
-    ).padStart(2, "0");
+  const day = String(
+    date.getDate()
+  ).padStart(2, '0');
 
-    const day = String(
-        d.getDate()
-    ).padStart(2, "0");
-
-    const hours = String(
-        d.getHours()
-    ).padStart(2, "0");
-
-    const minutes = String(
-        d.getMinutes()
-    ).padStart(2, "0");
-
-    const seconds = String(
-        d.getSeconds()
-    ).padStart(2, "0");
-
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  return `${year}-${month}-${day}`;
 };
 
 
@@ -624,45 +604,19 @@ const handleManualImageUpload = async (event) => {
 
 const handleFullSave = useCallback(async () => {
 
-    const payload = {
-    title: docketTitle,
-
-    product_id: selectedProductId || null,
-
-    persona_id: selectedPersonaId || null,
-
-    occasion_id: selectedOccasionId || null,
-
-    uploaded_date_time: formatDate(uploadedDateTime),
-
-    execute_description: executeDescription,
-
-    visual_elements: visualElements,
-
-    summary
-};
-
-console.log(payload);
-
-const res = await fetch(
-    `${API}/planner/docket/${docketId}`,
-    {
-        method: "PUT",
-        headers: JSON_AUTH(),
-        body: JSON.stringify(payload)
-    }
-);
-
-const data = await res.json();
-
-console.log(data);
-
-if (!data.success) {
-    alert(JSON.stringify(data.detail, null, 2));
-    return;
-}
-
-
+    await fetch(
+        `${API}/planner/docket/${docketId}`,
+        {
+            method: "PUT",
+            headers: JSON_AUTH(),
+            body: JSON.stringify({
+                title: docketTitle,
+                execute_description: executeDescription,
+                visual_elements: visualElements,
+                summary
+            })
+        }
+    );
 
     const [ms, os] = await Promise.all([
         handleSave("mandatory"),
@@ -681,13 +635,7 @@ if (!data.success) {
     optionalFields,
     fieldValues,
     docketId,
-
     docketTitle,
-    selectedProductId,
-    selectedPersonaId,
-    selectedOccasionId,
-    uploadedDateTime,
-
     executeDescription,
     visualElements,
     summary
@@ -1080,13 +1028,8 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
           console.log("Planner Response:", d);
           console.log("occasion_title =", d.occasion_title);
           console.log("Keys =", Object.keys(d));
-
           setDocketTitle(d.title);
           setTopic(d.occasion_title || "");
-          setSelectedOccasionId(d.occasion_id || "");
-          setSelectedProductId(d.product_id || "");
-          setSelectedPersonaId(d.persona_id || "");
-
           setExecuteDescription(d.execute_description || '');
           setVisualElements(d.visual_elements || '');
           setSummary(d.summary || '');
@@ -1653,63 +1596,28 @@ useEffect(() => {
                           <div className="topic-card-field">
                               <label>Title</label>
 
-                              <input
-                                    className="topic-field-input"
-                                    value={docketTitle}
-                                    onChange={(e)=>setDocketTitle(e.target.value)}
-                                    disabled={!isCurrentOwner}
-                                />
+                              <div className="topic-field-value" title={docketTitle || ""}>
+                                  {docketTitle || ""}
+                              </div>
                           </div>
 
                           <div className="topic-card-field">
                               <label>Topic</label>
 
-                              <select
-                                className="topic-field-input"
-                                value={selectedOccasionId}
-                                onChange={(e)=>setSelectedOccasionId(e.target.value)}
-                                disabled={!isCurrentOwner}
-                            >
-                                <option value="">Select Topic</option>
-
-                                {occasionList.map(o=>(
-                                    <option
-                                        key={o.occasion_id}
-                                        value={o.occasion_id}
-                                    >
-                                        {o.title}
-                                    </option>
-                                ))}
-                            </select>
+                              <div
+                                  className="topic-field-value" title={topic || ""}>
+                                  {topic || ""}
+                              </div>
 
                           </div>
 
                           <div className="topic-card-field">
-                            <label>Date</label>
+                              <label>Date</label>
 
-                            <DatePicker
-    selected={
-        uploadedDateTime
-            ? new Date(uploadedDateTime)
-            : null
-    }
-    onChange={(date) => {
-        setUploadedDateTime(date);
-    }}
-    showTimeSelect
-    timeIntervals={15}
-    dateFormat="MMM d, yyyy h:mm aa"
-    timeFormat="hh:mm aa"
-    timeCaption="Time"
-    popperPlacement="bottom-start"
-    popperProps={{ strategy: "fixed" }}
-    placeholderText="Select date & time"
-    className="topic-field-input"
-    wrapperClassName="topic-datepicker-wrapper"
-    disabled={!isCurrentOwner}
-    onKeyDown={(e) => e.preventDefault()}
-/>
-                        </div>
+                              <div className="topic-field-value" title={formattedDateTime || ""}>
+                                  {formattedDateTime}
+                              </div>
+                          </div>
 
                           <div className="topic-card-field">
                               <label>Stage</label>
@@ -1738,41 +1646,17 @@ useEffect(() => {
                           <div className="topic-card-field">
                               <label>Product</label>
 
-                              <select
-                                  className="topic-field-input"
-                                  value={selectedProductId}
-                                  onChange={(e)=>setSelectedProductId(e.target.value)}
-                                  disabled={!isCurrentOwner}
-                              >
-                                  {productList.map(product=>(
-                                      <option
-                                          key={product.product_id}
-                                          value={product.product_id}
-                                      >
-                                          {product.product_name}
-                                      </option>
-                                  ))}
-                              </select>
+                              <div className="topic-field-value" title={selectedProductData?.product_name || ""}>
+                                  {selectedProductData?.product_name || ""}
+                              </div>
                           </div>
 
                           <div className="topic-card-field">
                               <label>Persona</label>
 
-                              <select
-                                  className="topic-field-input"
-                                  value={selectedPersonaId}
-                                  onChange={(e)=>setSelectedPersonaId(e.target.value)}
-                                  disabled={!isCurrentOwner}
-                              >
-                                  {personaList.map(persona=>(
-                                      <option
-                                          key={persona.persona_id}
-                                          value={persona.persona_id}
-                                      >
-                                          {persona.persona_name}
-                                      </option>
-                                  ))}
-                              </select>
+                              <div className="topic-field-value" title={selectedPersonaData?.persona_name || ""}>
+                                  {selectedPersonaData?.persona_name || ""}
+                              </div>
                           </div>
 
                       </div>

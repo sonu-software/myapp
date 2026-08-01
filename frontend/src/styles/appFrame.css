@@ -1,4 +1,13 @@
 /* =========================================================
+ROOT VARIABLES
+========================================================= */
+
+:root{
+--border-card:#dcdfe6;
+--navy-light:#4B479E;
+}
+
+/* =========================================================
 GLOBAL RESET
 ========================================================= */
 
@@ -586,7 +595,7 @@ transform:none !important;
 flex:0 0 auto !important;
 
 width:auto !important;
-height:100% !important;
+height:36px !important;
 
 margin:0 !important;
 padding:0 10.5px !important;
@@ -917,18 +926,73 @@ color:#1f2430;
 transform:none !important;
 }
 
-/* =========================================================
-SCROLLBAR
-========================================================= */
+/* ================================================
+   REUSABLE SCROLLBAR
+   ================================================ */
 
-.app-content::-webkit-scrollbar{
-width:6.3px;
-height:6.3px;
+.scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-card) transparent;
 }
 
-.app-content::-webkit-scrollbar-thumb{
-background:rgba(0,0,0,.15);
-border-radius:0;
+.scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--navy-light);
+}
+
+/* react-select menu lists (Topics / Products / Personas / Stages) and the
+   react-datepicker time list can't take the .scrollbar class directly since
+   they're rendered by the library, so the same look is mirrored onto them
+   here. */
+.rf-select__menu-list,
+.react-datepicker__time-list{
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-card) transparent;
+}
+
+.rf-select__menu-list::-webkit-scrollbar,
+.react-datepicker__time-list::-webkit-scrollbar{
+  width: 4px;
+}
+
+.rf-select__menu-list::-webkit-scrollbar-track,
+.react-datepicker__time-list::-webkit-scrollbar-track{
+  background: transparent;
+}
+
+.rf-select__menu-list::-webkit-scrollbar-thumb,
+.react-datepicker__time-list::-webkit-scrollbar-thumb{
+  background: var(--border-card);
+  border-radius: 10px;
+}
+
+.rf-select__menu-list::-webkit-scrollbar-thumb:hover,
+.react-datepicker__time-list::-webkit-scrollbar-thumb:hover{
+  background: var(--navy-light);
+}
+
+/* The Topics / Products / Personas / Stages menus are now portalled to
+   document.body (see menuPortalTarget on each <Select> in AppFrame.jsx) so
+   they can never be clipped by, or rendered underneath, the header bar or
+   any other ancestor. react-select wraps the portalled menu in a node with
+   this class — the inline `menuPortal` style already sets the z-index in
+   JS, this is just a CSS-level safety net so it always wins regardless of
+   load order. */
+.rf-select__menu-portal{
+  z-index:999999 !important;
 }
 
 /* =========================================================
@@ -1079,11 +1143,10 @@ gap:10.85px;
 }
 
 .header-filter-dropdown-row{
-
-display:grid;
-grid-template-columns:1fr 1fr;
-
-gap:8.75px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    align-items:start;
 }
 
 /* ===========================================================
@@ -1091,16 +1154,26 @@ gap:8.75px;
 =========================================================== */
 
 .header-filter-field{
-
     display:flex;
-
-    align-items:center;
-
+    flex-direction:column;
+    justify-content:center;
     width:150px;
-    height:36px;
-
     flex:0 0 150px;
+    height:36px;
+    box-sizing:border-box;
+}
 
+.header-filter-field > *{
+    width:100%;
+}
+
+.header-filter-field select,
+.header-filter-field .react-datepicker-wrapper,
+.header-filter-field .react-datepicker__input-container,
+.header-filter-field .react-datepicker__input-container input{
+    width:100%;
+    height:36px;
+    min-height:36px;
     box-sizing:border-box;
 }
 
@@ -1133,6 +1206,9 @@ gap:8.75px;
     border:1px solid #dcdfe6;
     border-radius:6.3px;
 
+    caret-color: transparent;
+    cursor: pointer;
+
     background:#ffffff;
 
     font-family:Inter,Segoe UI,sans-serif;
@@ -1147,6 +1223,33 @@ gap:8.75px;
 
     box-sizing:border-box;
 
+}
+
+.header-filter-date-wrapper,
+.react-datepicker-wrapper{
+    display:block;
+    width:100%;
+    height:36px;
+    margin:0;
+    padding:0;
+    line-height:normal;
+}
+
+.react-datepicker__input-container{
+    display:block;
+    width:100%;
+    height:36px;
+    margin:0;
+    padding:0;
+}
+
+.react-datepicker__input-container input{
+    display:block;
+    width:100%;
+    height:36px;
+    margin:0;
+    box-sizing:border-box;
+    vertical-align:middle;
 }
 
 .header-filter-field select:focus,
@@ -1242,26 +1345,6 @@ overflow:hidden;
 
     overflow-x:auto;
     overflow-y:hidden;
-
-    scrollbar-width:thin;
-    scrollbar-color:#b8bfd2 transparent;
-}
-
-.header-active-filters::-webkit-scrollbar{
-    height:6px;
-}
-
-.header-active-filters::-webkit-scrollbar-track{
-    background:transparent;
-}
-
-.header-active-filters::-webkit-scrollbar-thumb{
-    background:#b8bfd2;
-    border-radius:999px;
-}
-
-.header-active-filters::-webkit-scrollbar-thumb:hover{
-    background:#9ca3af;
 }
 
 .header-filters-empty{
@@ -2365,38 +2448,7 @@ overflow-y:auto;
 
     overflow-x:hidden;
     overflow-y:auto;
-
-    scrollbar-width:thin;
-    scrollbar-color:#b9c2d0 transparent;
 }
-
-
-.dm-carousel-track-new--vertical::-webkit-scrollbar{
-
-    width:6px;
-}
-
-.dm-carousel-track-new--vertical::-webkit-scrollbar-track{
-
-    background:transparent;
-}
-
-.dm-carousel-track-new--vertical::-webkit-scrollbar-thumb{
-
-    background:#b9c2d0;
-
-    border-radius:999px;
-}
-
-.dm-carousel-track-new--vertical::-webkit-scrollbar-thumb:hover{
-
-    background:#9ea9bc;
-}
-
-
-
-
-
 
 
 .dm-carousel-track-new--vertical .dm-carousel-item {
@@ -2533,39 +2585,7 @@ overflow-y:auto;
 
     overflow-x:auto;
     overflow-y:hidden;
-
-    scrollbar-width:thin;
 }
-
-.panel-top .carousel-panel-new{
-
-    scrollbar-width:thin;
-    scrollbar-color:#b9c2d0 transparent;
-}
-
-.panel-top .carousel-panel-new::-webkit-scrollbar{
-
-    height:4px;
-}
-
-.panel-top .carousel-panel-new::-webkit-scrollbar-track{
-
-    background:transparent;
-}
-
-.panel-top .carousel-panel-new::-webkit-scrollbar-thumb{
-
-    background:#b9c2d0;
-
-    border-radius:999px;
-}
-
-.panel-top .carousel-panel-new::-webkit-scrollbar-thumb:hover{
-
-    background:#9ea9bc;
-}
-
-
 
 .panel-right .carousel-panel-new{
 
@@ -2669,6 +2689,7 @@ overflow-y:auto;
 
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 
+    position: relative;
     z-index: 10;
 }
 
@@ -2845,6 +2866,8 @@ overflow-y:auto;
     background:#f7f8fd;
 
     border-color:#4B479E;
+
+    color: #ffffff;
 
 }
 

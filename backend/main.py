@@ -363,6 +363,20 @@ class SaveFieldValuesRequest(BaseModel):
 
 
 
+class CreateSubtypeLabel(BaseModel):
+    label: str
+    description: str = ""
+
+
+class CreateMediaSubtypeRequest(BaseModel):
+    mode: str
+    media_type: str
+    subtype: str
+    description: str = ""
+    labels: List[CreateSubtypeLabel]
+
+
+
 
 class UpdateDocketRequest(BaseModel):
     title: str
@@ -2062,13 +2076,14 @@ def get_docket(docket_id: int, user_id: int = Depends(get_current_user)):
         cursor.execute(
             """
             SELECT d.*, m.media_name, mt.media_type, ms.subtype_name,
-                   p.product_name, pe.persona_name
+                   p.product_name, pe.persona_name, o.title AS occasion_title
             FROM docket d
             LEFT JOIN media m ON d.media_id = m.media_id
             LEFT JOIN media_type mt ON d.media_type_id = mt.media_type_id
             LEFT JOIN media_subtype ms ON d.media_subtype_id = ms.media_subtype_id
             LEFT JOIN products p ON d.product_id = p.product_id
             LEFT JOIN personas pe ON d.persona_id = pe.persona_id
+            LEFT JOIN occasions o ON d.occasion_id = o.occasion_id
             WHERE d.docket_id = %s
             """,
             (docket_id,),
@@ -3133,6 +3148,207 @@ def save_docket_fields(
         db.close()
 
 
+
+
+# =============================================================================
+#  Adding new subtype through user
+# =============================================================================
+
+import re
+
+
+def generate_variable_name(label: str) -> str:
+
+    label = label.lower().strip()
+
+    label = re.sub(r"[^a-z0-9]+", "_", label)
+
+    label = re.sub(r"_+", "_", label)
+
+    return label.strip("_")
+
+
+
+@app.post("/create-media-subtype")
+def create_media_subtype(
+    req: CreateMediaSubtypeRequest,
+    user_id: int = Depends(get_current_user)
+):
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        # -----------------------------------------
+        # Find media
+        # -----------------------------------------
+
+        cursor.execute(
+            """
+            SELECT media_id
+            FROM media
+            WHERE media_name=%s
+            """,
+            (req.mode,)
+        )
+
+        media = cursor.fetchone()
+
+        if not media:
+            raise HTTPException(400, "Invalid mode")
+
+        # -----------------------------------------
+        # Find media type
+        # -----------------------------------------
+
+        cursor.execute(
+            """
+            SELECT media_type_id
+            FROM media_type
+            WHERE media_id=%s
+            AND media_type=%s
+            """,
+            (
+                media["media_id"],
+                req.media_type
+            )
+        )
+
+        media_type = cursor.fetchone()
+
+        if not media_type:
+            raise HTTPException(400, "Invalid media type")
+
+        media_type_id = media_type["media_type_id"]
+
+        # -----------------------------------------
+        # Duplicate subtype check
+        # -----------------------------------------
+
+        cursor.execute(
+            """
+            SELECT media_subtype_id
+            FROM media_subtype
+            WHERE media_type_id=%s
+            AND LOWER(subtype_name)=LOWER(%s)
+            """,
+            (
+                media_type_id,
+                req.subtype
+            )
+        )
+
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=400,
+                detail="Subtype already exists."
+            )
+
+        # -----------------------------------------
+        # Insert subtype
+        # -----------------------------------------
+
+        cursor.execute(
+            """
+            INSERT INTO media_subtype
+            (
+                media_type_id,
+                subtype_name,
+                description,
+                user_id
+            )
+            VALUES
+            (
+                %s,
+                %s,
+                %s,
+                %s
+            )
+            """,
+            (
+                media_type_id,
+                req.subtype.strip(),
+                req.description,
+                user_id
+            )
+        )
+
+        media_subtype_id = cursor.lastrowid
+
+        # -----------------------------------------
+        # Insert labels
+        # -----------------------------------------
+
+        for item in req.labels:
+
+            variable_name = generate_variable_name(item.label)
+
+            cursor.execute(
+                """
+                INSERT INTO
+                media_subtype_default_value
+                (
+                    media_subtype_id,
+                    box,
+                    label,
+                    label_description,
+                    variable_name
+                )
+                VALUES
+                (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+                )
+                """,
+                (
+                    media_subtype_id,
+                    "mandatory",
+                    item.label.strip(),
+                    item.description,
+                    variable_name
+                )
+            )
+
+        db.commit()
+
+        return {
+            "success": True,
+            "media_subtype_id": media_subtype_id,
+            "subtype_name": req.subtype,
+            "message": "Subtype created successfully."
+        }
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception as e:
+
+        db.rollback()
+
+        print("CREATE SUBTYPE ERROR:", e)
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create subtype."
+        )
+
+    finally:
+
+        cursor.close()
+        db.close()
+
+
+
+
+
+
+
+# =============================================================================
 @app.get("/planner/docket/{docket_id}/fields")
 def get_docket_fields(docket_id: int, user_id: int = Depends(get_current_user)):
     db = get_db()
@@ -4336,15 +4552,23 @@ def update_docket(
         cursor.execute(
             """
             UPDATE docket
-            SET
-                title=%s,
-                execute_description=%s,
-                visual_elements=%s,
-                summary=%s
-            WHERE docket_id=%s
+                SET
+                    title=%s,
+                    product_id=%s,
+                    persona_id=%s,
+                    occasion_id=%s,
+                    uploaded_date_time=%s,
+                    execute_description=%s,
+                    visual_elements=%s,
+                    summary=%s
+                WHERE docket_id=%s
             """,
             (
                 req.title,
+                req.product_id,
+                req.persona_id,
+                req.occasion_id,
+                req.uploaded_date_time,
                 req.execute_description,
                 req.visual_elements,
                 req.summary,
@@ -4380,23 +4604,21 @@ def update_docket(
 
 
 
-
-
-
-
-
-
-
-
-
         db.commit()
 
         return {"success": True}
 
     except Exception as e:
         db.rollback()
-        print("UPDATE DOCKET ERROR:", e)
-        return {"success": False}
+        import traceback
+
+        print("UPDATE DOCKET ERROR")
+        traceback.print_exc()
+
+        return {
+            "success": False,
+            "message": str(e)
+        }
 
     finally:
         cursor.close()
