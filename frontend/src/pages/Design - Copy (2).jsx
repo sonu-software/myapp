@@ -801,86 +801,6 @@ const handleSendMessage = useCallback(async () => {
     }
 }, [userMessage, mandatoryFields, optionalFields, mode, mediaType, subType, businessProfile, selectedProductData, finalPersonaData, docketId, docketTitle, executeDescription, visualElements, summary]);
 
-
-const handlePro = useCallback(async () => {
-
-    if (!docketId) return;
-
-    try {
-
-        const res = await fetch(
-            `${API}/execute/assign-pro/${docketId}`,
-            {
-                method: "POST",
-                headers: JSON_AUTH()
-            }
-        );
-
-        if (handleUnauthorized(res)) return;
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-
-            console.error("Pro assignment failed:", data);
-
-            setSaveToastMessage(
-                data.detail || "Failed to assign Pro user."
-            );
-
-            setShowSaveToast(true);
-
-            setTimeout(
-                () => setShowSaveToast(false),
-                3000
-            );
-
-            return;
-        }
-
-        console.log(
-            "Pro user assigned:",
-            data
-        );
-
-        // Update frontend owner state
-        setAssignedUser(
-            String(data.assigned_user_id)
-        );
-
-        setSaveToastMessage(
-            `Assigned to Pro user: ${data.assigned_user_email}`
-        );
-
-        setShowSaveToast(true);
-
-        setTimeout(
-            () => setShowSaveToast(false),
-            3000
-        );
-
-    } catch (err) {
-
-        console.error(
-            "Pro assignment error:",
-            err
-        );
-
-        setSaveToastMessage(
-            "Unable to assign Pro user."
-        );
-
-        setShowSaveToast(true);
-
-        setTimeout(
-            () => setShowSaveToast(false),
-            3000
-        );
-    }
-
-}, [docketId]);
-
-
 const handleGenerate = useCallback(async () => {
     setIsGeneratingImage(true);
     setCurrentStage("generate");
@@ -1391,7 +1311,6 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
             ai:false,
             basic:false,
             detail:false,
-            summary:false,
             interactive:false,
             stage:false,
         });
@@ -1624,6 +1543,18 @@ useEffect(() => {
               
               </button>
 
+              <button
+                className="icon-btn singular-toggle-btn"
+                title="ai-toggle-btn"
+                onClick={() => showPanel("ai")}
+              >
+                <img
+                    src="/all_svg_icons/design_ai.svg"
+                    alt="AI"
+                    className="button-svg-icon"
+                />
+              
+              </button>
 
               <button
                 className="icon-btn singular-toggle-btn"
@@ -1638,23 +1569,6 @@ useEffect(() => {
               
               </button>
 
-
-
-              <button
-                className="icon-btn singular-toggle-btn"
-                title="ai-toggle-btn"
-                onClick={() => showPanel("ai")}
-              >
-                <img
-                    src="/all_svg_icons/design_ai.svg"
-                    alt="AI"
-                    className="button-svg-icon"
-                />
-              
-              </button>
-
-              
-
               <button
                 className="icon-btn singular-toggle-btn"
                 title="detail-toggle-btn"
@@ -1665,19 +1579,6 @@ useEffect(() => {
                     alt="Detail"
                     className="button-svg-icon"
                 />
-              </button>
-
-
-              <button
-                  className="icon-btn singular-toggle-btn"
-                  title="summary-toggle-btn"
-                  onClick={() => showPanel("summary")}
-              >
-                  <img
-                      src="/all_svg_icons/design_summary.svg"
-                      alt="Summary"
-                      className="button-svg-icon"
-                  />
               </button>
 
               <button
@@ -2021,50 +1922,6 @@ useEffect(() => {
 
                     </div>
 
-                </div>
-
-
-
-
-                <div
-                    className="summary-panel"
-                    style={panelStyle("summary")}
-                >
-                    <div className="summary-card">
-
-                        <div className="summary-header">
-                            <h3>Summary</h3>
-                        </div>
-
-                        <div className="summary-body">
-
-                            <div className="summary-field">
-                                <label>Summary</label>
-
-                                <textarea
-                                    rows={10}
-                                    value={summary}
-                                    onChange={(e) => setSummary(e.target.value)}
-                                    disabled={!isCurrentOwner}
-                                    placeholder="Enter summary..."
-                                />
-                            </div>
-
-                        </div>
-
-                        <div className="summary-footer">
-
-                            <button
-                                className="summary-save-btn"
-                                onClick={handleFullSave}
-                                disabled={!isCurrentOwner}
-                            >
-                                Save
-                            </button>
-
-                        </div>
-
-                    </div>
                 </div>
 
                 
@@ -2444,24 +2301,20 @@ useEffect(() => {
                     </div>
                 )}
             </button>
-            <button
-                className="generate-control-btn"
-                onClick={handlePro}
-                disabled={!isCurrentOwner}
-            >
-                <img
+            <button className="generate-control-btn">
+              <img
                     src="/all_svg_icons/design_pro.svg"
                     alt="Pro"
                     className="button-svg-icon"
                 />
-
-                <img
-                    src="/all_svg_icons/design_generate.svg"
-                    alt="Generate"
-                    className="button-svg-icon"
-                />
+              <img
+                  src="/all_svg_icons/design_generate.svg"
+                  alt="Generate"
+                  className="button-svg-icon"
+              />
 
                 Pro
+
             </button>
 
             <button className="generate-control-btn">

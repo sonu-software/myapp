@@ -646,45 +646,6 @@ padding:0 !important;
 
 
 
-
-
-.header-view-dropdown{
-
-flex:0 0 auto;
-
-width:120px;
-height:29.4px;
-
-margin:0;
-padding:0 32px 0 10px;
-
-border:1px solid #dcdfe6;
-border-radius:6.3px;
-
-background:#fafbfc;
-
-font-family:Inter,Segoe UI,sans-serif;
-font-size:11.5px;
-color:#333;
-
-outline:none;
-
-box-sizing:border-box;
-
-appearance:none;
--webkit-appearance:none;
--moz-appearance:none;
-
-vertical-align:middle;
-
-line-height:normal;
-
-}
-
-
-
-
-
 .header-search-input{
 
 flex:0 0 auto !important;
@@ -837,11 +798,6 @@ cursor:default;
 transition:.15s ease;
 
 min-width:0;
-}
-
-.footer-card:hover{
-border-color:rgba(0,0,0,.12);
-background:#fafbfd;
 }
 
 .footer-card-icon{
@@ -1151,15 +1107,19 @@ gap:10.85px;
 
 /* ===========================================================
    FILTER FIELD
+   Was a hard-coded 120px per field, leaving the Apply button to
+   soak up all the remaining row width. Fields now share the row
+   equally (flex:1) so they read as evenly sized, while the Apply
+   button (below) is pinned to a fixed, smaller width.
 =========================================================== */
 
 .header-filter-field{
     display:flex;
     flex-direction:column;
     justify-content:center;
-    width:150px;
-    flex:0 0 150px;
-    height:36px;
+    flex:1 1 0;
+    min-width:88px;
+    height:30px;
     box-sizing:border-box;
 }
 
@@ -1172,8 +1132,8 @@ gap:10.85px;
 .header-filter-field .react-datepicker__input-container,
 .header-filter-field .react-datepicker__input-container input{
     width:100%;
-    height:36px;
-    min-height:36px;
+    height:30px;
+    min-height:30px;
     box-sizing:border-box;
 }
 
@@ -1199,9 +1159,9 @@ gap:10.85px;
 
     width:100%;
 
-    height:36px;
+    height:30px;
 
-    padding:0 8.75px;
+    padding:0 7.5px;
 
     border:1px solid #dcdfe6;
     border-radius:6.3px;
@@ -1229,7 +1189,7 @@ gap:10.85px;
 .react-datepicker-wrapper{
     display:block;
     width:100%;
-    height:36px;
+    height:30px;
     margin:0;
     padding:0;
     line-height:normal;
@@ -1238,7 +1198,7 @@ gap:10.85px;
 .react-datepicker__input-container{
     display:block;
     width:100%;
-    height:36px;
+    height:30px;
     margin:0;
     padding:0;
 }
@@ -1246,7 +1206,7 @@ gap:10.85px;
 .react-datepicker__input-container input{
     display:block;
     width:100%;
-    height:36px;
+    height:30px;
     margin:0;
     box-sizing:border-box;
     vertical-align:middle;
@@ -1269,27 +1229,24 @@ gap:10.85px;
 
 
 
-
-
-
 .header-filter-field .react-datepicker-wrapper{
 
     width:100%;
-    height:36px;
+    height:30px;
 
 }
 
 .header-filter-field .react-datepicker__input-container{
 
     width:100%;
-    height:36px;
+    height:30px;
 
 }
 
 .header-filter-field .react-datepicker__input-container input{
 
     width:100%;
-    height:36px;
+    height:30px;
 
 }
 /* ---- footer ---- */
@@ -2229,6 +2186,9 @@ overflow-y:auto;
     height:100%;
 
     border-left:1px solid #edf0f5;
+
+    display:flex;
+    flex-direction:column;
 }
 
 .panel-top .app-right-panel{
@@ -2237,7 +2197,7 @@ overflow-y:auto;
     align-items:center;
 
     width:100%;
-    min-height:72px;
+    min-height:52px;
 
     overflow:hidden;
 }
@@ -2276,7 +2236,7 @@ overflow-y:auto;
 
     background:#ffffff;
 
-    color:#4B479E;
+    color:#000000;
 
     cursor:pointer;
 
@@ -2299,7 +2259,20 @@ overflow-y:auto;
     border-color:#4B479E;
 }
 
+/* The Top View / Right View icons are loaded as external .svg files via
+   <img>, so a plain CSS `color` on the button has no effect on them — the
+   image renders with whatever color is baked into the file. `filter` is
+   used instead to force the icon to solid black when the button isn't
+   selected, and solid white when it is (matching the button's own
+   background/text color above). */
+.panel-switch button .button-svg-icon{
+    filter:brightness(0);
+    transition:filter .15s ease;
+}
 
+.panel-switch button.active .button-svg-icon{
+    filter:brightness(0) invert(1);
+}
 
 
 
@@ -2320,8 +2293,8 @@ overflow-y:auto;
   display: flex;
   align-items: center;
 
-  height: 58px;
-  min-height: 58px;
+  height: 46px;
+  min-height: 46px;
 
   background: #fff;
 
@@ -2332,8 +2305,8 @@ overflow-y:auto;
 .dm-carousel-track-new {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 8px;
+  gap: 6px;
+  padding: 0 6px;
 
   width: max-content;
   min-width: 100%;
@@ -2354,13 +2327,13 @@ overflow-y:auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-width: 158px;
-  max-width: 158px;
+  min-width: 116px;
+  max-width: 116px;
   height: calc(100% - 12px);
   margin: 6px 0;
   padding: 1px 2px;
   border: 1.5px solid #c7d3e8;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   flex-shrink: 0;
 }
@@ -2399,11 +2372,11 @@ overflow-y:auto;
   text-transform: capitalize;
 }
 .dm-carousel-item-thumb {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  margin-right: 8px;
-  border-radius: 5px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  margin-right: 6px;
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid #dbe2ea;
   background: #edf1f5;
@@ -2464,64 +2437,136 @@ overflow-y:auto;
 
 /* =========================================================
    FIXED CAROUSEL CONTROL CARD
+   Title bar: prev-execute arrow / "All executes" label / next-execute
+   arrow. Both buttons are sized to fit their icon (the label soaks up
+   the remaining space) instead of splitting the row evenly the way the
+   old 4-button layout did.
 ========================================================= */
 
 .carousel-control-card{
 
-    display:grid;
+    display:flex;
 
-    grid-template-columns:1fr 1fr;
-    grid-template-rows:1fr 1fr;
+    flex-direction:row;
+
+    align-items:stretch;
+    justify-content:stretch;
 
     width:100%;
     height:100%;
 
-    padding:6px;
-    gap:6px;
+    padding:0;
+    gap:0;
+
+    border:1px solid #dfe3eb;
+    border-radius:6px;
+
+    overflow:hidden;
 
     box-sizing:border-box;
+}
+
+/* Higher specificity than ".carousel-control-card button" below, so the
+   prev/next-execute buttons keep a compact fixed width instead of
+   stretching to share the row equally with the title label. */
+.carousel-control-card .change-left-arrow,
+.carousel-control-card .change-right-arrow{
+
+    flex:0 0 22px !important;
+
+    width:22px;
+    min-width:22px;
+}
+
+.carousel-control-title{
+
+    flex:1 1 auto;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    min-width:0;
+
+    font-size:11px;
+    font-weight:700;
+
+    color:#1f2430;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
 
 /* ==========================
    RIGHT PANEL
+   Vertical stacking order: control card ("All executes") on top,
+   pagination directly beneath it, then the scrollable card list
+   filling the remaining height. DOM order in AppFrame.jsx is
+   control-card -> carousel-panel-new (cards) -> pagination, so
+   `order` is used here (scoped to .panel-right only) to reposition
+   the pagination row visually without touching the JSX.
 ========================== */
-
-.panel-right .app-right-panel{
-
-    display:flex;
-    flex-direction:column;
-}
 
 .panel-right .carousel-control-card{
 
+    flex-shrink:0;
+
     width:calc(100% - 12px);
 
-    height:50px;
+    height:34px;
 
     margin:6px;
+
+    order:1;
 }
 
+.panel-right .carousel-pagination{
+
+    flex-shrink:0;
+
+    height:32px;
+
+    width:calc(100% - 12px);
+
+    margin:6px;
+
+    border-top:1px solid #edf0f5;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:flex-start;
+
+    overflow:hidden;
+
+    order:2;
+}
+
+.panel-right .carousel-panel-new{
+
+    flex:1;
+
+    min-height:0;
+
+    overflow:hidden;
+
+    display:flex;
+
+    order:3;
+}
 
 /* ==========================
    TOP PANEL
 ========================== */
 
-.panel-top .app-right-panel{
-
-    display:flex;
-    flex-direction:row;
-
-    align-items:stretch;
-
-    overflow:hidden;
-}
-
 .panel-top .carousel-control-card{
 
-    flex:0 0 160px;
+    flex:0 0 150px;
 
-    height:auto;
+    height:28px;
 
     margin:6px;
 }
@@ -2537,42 +2582,6 @@ overflow-y:auto;
     border-left:1px solid #edf0f5;
 }
 
-.carousel-control-card button{
-
-    width:100%;
-    height:100%;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    padding:0;
-    margin:0;
-
-    border:1px solid #dfe3eb;
-    border-radius:6px;
-
-    background:#ffffff;
-
-    cursor:pointer;
-
-    transition:.15s ease;
-}
-
-.carousel-control-card button:hover{
-
-    border-color:#4B479E;
-    background:#f5f6fd;
-}
-.carousel-control-card button:hover{
-
-    background:#f5f6fd;
-
-    border-color:#4B479E;
-}
-
-
-
 .panel-top .carousel-panel-new{
 
     flex:1 1 auto;
@@ -2587,27 +2596,58 @@ overflow-y:auto;
     overflow-y:hidden;
 }
 
-.panel-right .carousel-panel-new{
+.carousel-control-card button{
 
-    flex:1;
+    flex:1 1 0;
+    min-width:0;
 
-    min-height:0;
-
-    overflow:hidden;
+    width:100%;
+    height:100%;
 
     display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:0;
+    margin:0;
+
+    border:none;
+    border-radius:0;
+
+    background:#ffffff;
+
+    cursor:pointer;
+
+    transition:.15s ease;
 }
 
-
-
-.panel-right .carousel-pagination{
-
-    flex-shrink:0;
-
-    border-top:1px solid #edf0f5;
-
-    margin:6px;
+.carousel-control-card .change-left-arrow{
+    border-right:1px solid #dfe3eb;
 }
+
+.carousel-control-card .change-right-arrow{
+    border-left:1px solid #dfe3eb;
+}
+
+.carousel-control-card button:hover{
+
+    background:#f5f6fd;
+}
+
+.carousel-control-card button:disabled{
+
+    opacity:.45;
+
+    cursor:default;
+
+    background:#f4f4fb;
+}
+
+.carousel-control-card button:disabled:hover{
+
+    background:#f4f4fb;
+}
+
 
 
 .pagination-dots{
@@ -2653,9 +2693,15 @@ overflow-y:auto;
 
 .pagination-number.active{
 
-    color:#4B479E;
+    background:#4B479E;
+
+    color:#ffffff;
 
     font-weight:700;
+
+    padding:2px 7px;
+
+    border-radius:5px;
 
 }
 
@@ -2672,16 +2718,15 @@ overflow-y:auto;
 
 
 
-
 .header-filter-bar{
     width: 100%;
-    height: 52px;
+    height: 42px;
 
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 
-    padding: 0 10px;
+    padding: 0 8px;
 
     background: #ffffff;
 
@@ -2696,10 +2741,6 @@ overflow-y:auto;
 
 
 
-
-
-
-
 .header-filter-select-wrapper{
     position:relative;
     width:100%;
@@ -2709,14 +2750,14 @@ overflow-y:auto;
 .header-filter-topic-select{
 
     width:100%;
-    height:36px;
+    height:30px;
 
     border:1px solid #dcdfe6;
     border-radius:6.3px;
 
     background:#ffffff;
 
-    padding:0 8.75px;
+    padding:0 7.5px;
 
     display:flex;
     align-items:center;
@@ -2817,18 +2858,17 @@ overflow-y:auto;
    FILTER ACTION BUTTONS
 =========================================================== */
 
-.header-filter-refresh-btn,
 .header-filter-apply-btn{
 
-    height:36px;
+    height:30px;
 
-    padding:0 18px;
+    padding:0 14px;
 
     border:none;
 
-    border-radius:8px;
+    border-radius:7px;
 
-    font-size:12px;
+    font-size:11px;
     font-weight:600;
 
     cursor:pointer;
@@ -2849,16 +2889,56 @@ overflow-y:auto;
 
 }
 
-/* Refresh */
+/* Apply button: was left to soak up the row's remaining width by
+   default; now pinned to a fixed, smaller size so the fields above
+   (now flex:1) get the extra room instead. */
+.header-filter-apply-btn{
+
+    flex:0 0 108px;
+
+    width:108px;
+
+}
+
+/* Refresh — icon-only button, sized to match the other 30px filter
+   controls instead of the old text pill. */
 
 .header-filter-refresh-btn{
+
+    flex-shrink:0 !important;
+
+    width:30px;
+    height:30px;
+
+    padding:0;
+
+    border:1px solid #d7dbeb;
+
+    border-radius:7px;
 
     background:#ffffff;
 
     color:#4B479E;
 
-    border:1px solid #d7dbeb;
+    cursor:pointer;
 
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    box-sizing:border-box;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        border-color .18s ease,
+        transform .12s ease;
+}
+
+.header-filter-refresh-btn svg{
+    width:13px !important;
+    height:13px !important;
+    flex-shrink:0;
 }
 
 .header-filter-refresh-btn:hover{
@@ -2866,8 +2946,6 @@ overflow-y:auto;
     background:#f7f8fd;
 
     border-color:#4B479E;
-
-    color: #ffffff;
 
 }
 
@@ -2880,7 +2958,7 @@ overflow-y:auto;
     color:white;
 
     box-shadow:
-        0 6px 14px rgba(75,71,158,.18);
+        0 4px 10px rgba(75,71,158,.18);
 
 }
 
@@ -2910,11 +2988,11 @@ overflow-y:auto;
     display:flex;
 
     align-items:center;
-    justify-content:center;
+    justify-content:flex-start;
 
     gap:3px;
 
-    padding:6px;
+    padding:6px 10px 6px 4px;
 
     background:#ffffff;
 }
@@ -3016,6 +3094,310 @@ overflow-y:auto;
 
 }
 
-.header-view-dropdown-offset{
-    margin-top:6px;
+/* =========================================================
+REACT-DATEPICKER — COMPACT CALENDAR POPUP
+Overrides the library's default (large) calendar + time-list popup
+used by the Start Date / End Date fields so it matches the rest of
+the compact UI. Only cosmetic — no change to react-datepicker props
+or behaviour in the JSX.
+========================================================= */
+
+/* Portal target: react-datepicker's <DatePicker portalId="datepicker-portal">
+   moves the whole popup out to a node appended directly under <body>,
+   escaping any ancestor's stacking context / overflow:hidden / transform.
+   Without this, a z-index on .react-datepicker-popper only wins against
+   siblings that share the SAME stacking context — it does nothing against
+   an ancestor stacking context with a lower z-index than some other card's
+   ancestor, which is what was letting the "August 2026" background card
+   show through. If the JSX isn't passing portalId yet, add it:
+     <DatePicker ... portalId="datepicker-portal" />
+*/
+#datepicker-portal{
+    position:relative;
+    z-index:999999;
 }
+
+.react-datepicker-popper{
+    z-index:999999 !important;
+    isolation:isolate !important;
+}
+
+.react-datepicker{
+
+    position:relative !important;
+    z-index:1 !important;
+
+    font-family:Inter,Segoe UI,sans-serif !important;
+
+    background:#ffffff !important;
+    opacity:1 !important;
+
+    border:1px solid #dcdfe6 !important;
+    border-radius:8px !important;
+
+    box-shadow:0 12px 28px rgba(16,24,40,.18), 0 2px 8px rgba(16,24,40,.08);
+
+    overflow:hidden;
+
+    display:flex !important;
+    align-items:stretch !important;
+
+    /* Fixed to match the calendar side's natural content height (header +
+       6 week rows at our compact sizing). Without this, the flex row's
+       height is driven by whichever child is tallest — and the time list,
+       left unbounded, wants to be tall enough to show all 96 slots at
+       once, which is what was stretching the whole popup out. Capping the
+       row here forces the time list (flex:1 + overflow-y:auto below) to
+       scroll within this height instead of growing past it. */
+    height:196px !important;
+    max-height:196px !important;
+}
+
+.react-datepicker__triangle{
+    display:none !important;
+}
+
+/* ---- left side: month calendar ---- */
+
+.react-datepicker__month-container{
+    float:none !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+
+    height:100% !important;
+
+    background:#ffffff !important;
+}
+
+.react-datepicker__header{
+
+    flex-shrink:0 !important;
+
+    padding:6px 4px 4px !important;
+
+    background:#fafbfd !important;
+
+    border-bottom:1px solid #edf0f5 !important;
+}
+
+.react-datepicker .react-datepicker__header .react-datepicker__current-month{
+
+    position:relative !important;
+    z-index:1 !important;
+
+    font-size:11px !important;
+    font-weight:700 !important;
+
+    color:#1f2430 !important;
+
+    text-shadow:none !important;
+
+    padding-bottom:2px;
+}
+
+.react-datepicker__navigation{
+
+    top:6px !important;
+
+    width:20px !important;
+    height:20px !important;
+}
+
+.react-datepicker__navigation-icon::before{
+
+    border-color:#6b7280 !important;
+
+    border-width:1.5px 1.5px 0 0 !important;
+
+    width:5px !important;
+    height:5px !important;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before{
+    border-color:#4B479E !important;
+}
+
+.react-datepicker__day-names{
+    padding:3px 4px 0 !important;
+}
+
+.react-datepicker__day-name{
+
+    width:20px !important;
+    line-height:20px !important;
+
+    margin:1px !important;
+
+    font-size:9px !important;
+    font-weight:600 !important;
+
+    color:#8a8f98 !important;
+}
+
+.react-datepicker__month{
+    margin:3px 4px 4px !important;
+}
+
+.react-datepicker__week{
+    display:flex !important;
+}
+
+.react-datepicker__day{
+
+    width:20px !important;
+    line-height:20px !important;
+
+    margin:1px !important;
+
+    font-size:9.5px !important;
+
+    color:#333 !important;
+
+    border-radius:5px !important;
+
+    transition:background-color .12s ease, color .12s ease;
+}
+
+.react-datepicker__day:hover{
+    background:#f0f1fb !important;
+    border-radius:5px !important;
+}
+
+.react-datepicker__day--outside-month{
+    color:#c3c7d1 !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected{
+
+    background:#4B479E !important;
+
+    color:#ffffff !important;
+
+    font-weight:700 !important;
+}
+
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--keyboard-selected:hover{
+    background:#5A56B2 !important;
+}
+
+.react-datepicker__day--today{
+    font-weight:700 !important;
+}
+
+/* ---- right side: time list ---- */
+
+.react-datepicker__time-container{
+
+    width:70px !important;
+
+    height:100% !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+
+    background:#ffffff !important;
+
+    border-left:1px solid #edf0f5 !important;
+}
+
+.react-datepicker__time-container .react-datepicker__time{
+
+    flex:1 !important;
+
+    min-height:0 !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+
+    background:#ffffff !important;
+}
+
+.react-datepicker-time__header{
+
+    font-size:10px !important;
+    font-weight:700 !important;
+
+    color:#1f2430 !important;
+}
+
+.react-datepicker__time-box{
+
+    width:100% !important;
+
+    flex:1 !important;
+
+    min-height:0 !important;
+
+    display:flex !important;
+    flex-direction:column !important;
+
+    background:#ffffff !important;
+}
+
+.react-datepicker__time-list{
+
+    flex:1 !important;
+
+    min-height:0 !important;
+
+    height:auto !important;
+    max-height:none !important;
+
+    padding:0 !important;
+
+    overflow-y:auto !important;
+
+    background:#ffffff !important;
+}
+
+.react-datepicker__time-list-item{
+
+    height:auto !important;
+
+    padding:5px 6px !important;
+
+    font-size:9.5px !important;
+
+    color:#333 !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    transition:background-color .12s ease, color .12s ease;
+}
+
+.react-datepicker__time-list-item:hover{
+    background:#f0f1fb !important;
+}
+
+.react-datepicker__time-list-item--selected{
+
+    background:#4B479E !important;
+
+    color:#ffffff !important;
+
+    font-weight:700 !important;
+}
+
+.react-datepicker__time-list-item--selected:hover{
+    background:#5A56B2 !important;
+}
+
+/* Fix right panel pagination clipping */
+.panel-right .carousel-pagination {
+    width: calc(100% - 24px) !important;
+    margin-left: 2px !important;
+    margin-right: 22px !important;
+
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+
+    justify-content: space-between !important;
+
+    overflow: visible !important;
+}
+

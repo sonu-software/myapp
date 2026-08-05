@@ -629,6 +629,7 @@
 .ai-panel,
 .basic-panel,
 .detail-panel,
+.summary-panel,
 .interactive-panel{
 
     flex:1;
@@ -652,7 +653,6 @@
 
     box-sizing:border-box;
 }
-
 
 
 
@@ -1301,6 +1301,169 @@
 .basic-save-btn:hover:not(:disabled){ background:#1e40af; }
 .basic-save-btn:disabled{ opacity:0.5; cursor:not-allowed; }
 
+
+
+
+
+/* ==========================================================
+   Summary Panel
+========================================================== */
+
+.summary-card{
+    display:flex;
+    flex-direction:column;
+
+    width:100%;
+    height:100%;
+
+    min-height:0;
+
+    background:#ffffff;
+    overflow:hidden;
+
+    box-sizing:border-box;
+}
+
+.summary-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:8px 12px;
+
+    border-bottom:1px solid #edf0f4;
+    background:#fafbfc;
+
+    flex-shrink:0;
+}
+
+.summary-header h3{
+    margin:0;
+    font-size:13px;
+    font-weight:600;
+    color:#1a2744;
+}
+
+.summary-body{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+
+    padding:10px;
+
+    overflow-y:auto;
+
+    scrollbar-width:thin;
+    scrollbar-color:#5d6b82 #d7dde8;
+}
+
+.summary-body::-webkit-scrollbar{
+    width:3px;
+}
+
+.summary-body::-webkit-scrollbar-track{
+    background:#d7dde8;
+    border-radius:3px;
+}
+
+.summary-body::-webkit-scrollbar-thumb{
+    background:#5d6b82;
+    border-radius:3px;
+}
+
+.summary-field{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+
+    flex:1;
+    min-height:0;
+}
+
+.summary-field label{
+    font-size:9px;
+    font-weight:600;
+    color:#5b6474;
+}
+
+.summary-field textarea{
+    width:100%;
+    flex:1;
+    min-height:120px;
+
+    padding:5px;
+    box-sizing:border-box;
+
+    border:1px solid #d7dee8;
+    border-radius:5px;
+
+    background:#ffffff;
+    color:#1a2744;
+
+    font-size:10px;
+    font-family:inherit;
+    line-height:1.5;
+
+    outline:none;
+    resize:none;
+
+    overflow-y:auto;
+    overflow-x:hidden;
+
+    scrollbar-width:thin;
+    scrollbar-color:#5d6b82 #d7dde8;
+
+    transition:border-color 0.15s ease;
+}
+
+.summary-field textarea:focus{
+    border-color:#4A90E2;
+}
+
+.summary-field textarea:disabled{
+    background:#f8fafc;
+    color:#9ca3af;
+    cursor:not-allowed;
+}
+
+.summary-footer{
+    padding:8px 12px;
+
+    border-top:1px solid #edf0f4;
+    background:#ffffff;
+
+    flex-shrink:0;
+}
+
+.summary-save-btn{
+    width:100%;
+    height:28px;
+
+    border:none;
+    border-radius:6px;
+
+    background:#1a2744;
+    color:#ffffff;
+
+    font-size:10px;
+    font-weight:600;
+    font-family:inherit;
+
+    cursor:pointer;
+
+    transition:background 0.15s ease;
+}
+
+.summary-save-btn:hover:not(:disabled){
+    background:#1e40af;
+}
+
+.summary-save-btn:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+}
 
 /* ==========================================================
    Detail Panel
@@ -2098,17 +2261,17 @@
 
 
 .generate-btn{
-    flex: 0 0 34px;
+    flex: 0 0 28px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
 }
 
 .generate-control-btn{
     position: relative;
     flex: 1;
-    height: 34px;
-    padding: 0 14px;
+    height: 28px;
+    padding: 0 10px;
     margin: 0;
 
     border: none;
@@ -2119,10 +2282,10 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    gap: 6px;
+    gap:4px;
 
     color:#fff;
-    font-size:10px;
+    font-size:9px;
     font-weight:600;
     line-height:1;
     white-space:nowrap;
@@ -2155,21 +2318,22 @@
 .Bottom-control-btn{
     flex:1;
     width:100%;
-    height:34px;
-    padding:0 12px;
+
+    height:28px;
+    padding:0 10px;
     margin:0;
 
     display:flex;
     align-items:center;
     justify-content:center;
-    gap:6px;
+    gap:5px;
 
     background:#f2f1fd;
     border:1px solid #dcdce6;
-    border-radius:10px;
+    border-radius:8px;
 
     color:#17182b;
-    font-size:10px;
+    font-size:9px;
     font-weight:500;
     line-height:1;
     white-space:nowrap;

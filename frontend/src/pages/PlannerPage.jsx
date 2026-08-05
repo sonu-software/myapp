@@ -683,7 +683,7 @@ useEffect(() => {
       if (data.success) {
         resetCreateExecuteForm();
         setShowModal(false);
-        navigate(`/docket-media/${data.docket_id}`);
+        navigate(`/design/${data.docket_id}`);
       } else {
         alert(data.message || "Failed to save docket");
       }
@@ -935,7 +935,7 @@ useEffect(() => {
                             className="occasion-chip docket-chip"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/docket-media/${item.docket_id}`);
+                              navigate(`/design/${item.docket_id}`);
                             }}
                           >
                             {item.title}
@@ -1048,7 +1048,7 @@ useEffect(() => {
                     className="overflow-popup-item"
                     onClick={() => {
                       setOverflowPopup(prev => ({ ...prev, visible: false }));
-                      navigate(`/docket-media/${item.docket_id}`);
+                      navigate(`/design/${item.docket_id}`);
                     }}
                   >
                     <span className="overflow-popup-dot" style={{ backgroundColor: '#4B479E' }} />

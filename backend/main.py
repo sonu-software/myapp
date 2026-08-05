@@ -2688,11 +2688,19 @@ def get_carousel_dockets(
 
             WHERE
 
+            (
                 d.business_id = %s
-                AND d.tab = 'media'
+                OR ea.assigned_to = %s
+            )
+
+            AND d.tab = 'media'
         """
 
-        params = [business_id]
+        params = [
+            business_id,
+            user_id
+        ]
+
         base_query = query
 
         # ---------------- Occasion ----------------
@@ -2799,8 +2807,8 @@ def get_carousel_dockets(
 
         query += """
             ORDER BY
-                d.uploaded_date_time ASC,
-                d.docket_id ASC
+                d.uploaded_date_time DESC,
+                d.docket_id DESC
 
             LIMIT %s OFFSET %s
         """
@@ -3739,9 +3747,131 @@ def get_assignment_history(docket_id: int, user_id: int = Depends(get_current_us
         db.close()
 
 
+
+
+# =============================================================================
+#  Pro Button Working
+# =============================================================================
+import random
+
+
+@app.post("/execute/assign-pro/{docket_id}")
+def assign_pro_user(
+    docket_id: int,
+    user_id: int = Depends(get_current_user),
+):
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+
+        # ---------------------------------------------------------
+        # 1. Find all active users whose type_of_user = 1
+        # ---------------------------------------------------------
+        cursor.execute(
+            """
+            SELECT
+                user_id,
+                email
+            FROM users
+            WHERE type_of_user = 1
+              AND is_active = 1
+            """
+        )
+
+        pro_users = cursor.fetchall()
+
+        # ---------------------------------------------------------
+        # 2. Make sure at least one Pro user exists
+        # ---------------------------------------------------------
+        if not pro_users:
+            raise HTTPException(
+                status_code=404,
+                detail="No active Pro users available"
+            )
+
+        # ---------------------------------------------------------
+        # 3. Randomly select one Pro user
+        # ---------------------------------------------------------
+        selected_user = random.choice(pro_users)
+
+        selected_user_id = selected_user["user_id"]
+        selected_user_email = selected_user["email"]
+
+        # ---------------------------------------------------------
+        # 4. Insert assignment
+        #
+        # Same logic as your existing /execute/assign endpoint.
+        #
+        # execute_id  = current docket
+        # assigned_to = randomly selected Pro user
+        # assigned_by = currently logged-in user
+        # stage       = "pro"
+        # ---------------------------------------------------------
+        cursor.execute(
+            """
+            INSERT INTO execute_assignments
+            (
+                execute_id,
+                assigned_to,
+                assigned_by,
+                stage
+            )
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                docket_id,
+                selected_user_id,
+                user_id,
+                "pro"
+            )
+        )
+
+        # ---------------------------------------------------------
+        # 5. Commit
+        # ---------------------------------------------------------
+        db.commit()
+
+        # ---------------------------------------------------------
+        # 6. Return selected Pro user
+        # ---------------------------------------------------------
+        return {
+            "success": True,
+            "message": "Execute assigned to Pro user successfully",
+            "docket_id": docket_id,
+            "assigned_user_id": selected_user_id,
+            "assigned_user_email": selected_user_email,
+            "stage": "pro"
+        }
+
+    except HTTPException:
+        db.rollback()
+        raise
+
+    except Exception as e:
+
+        db.rollback()
+
+        print(
+            "ASSIGN PRO ERROR:",
+            e
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+    finally:
+
+        cursor.close()
+        db.close()
+
+
 # =============================================================================
 #  OCCASIONS
 # =============================================================================
+
 
 @app.post("/planner/occasion")
 def create_occasion(

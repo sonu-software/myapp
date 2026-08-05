@@ -91,7 +91,10 @@ const ValueContainer = (props) => {
 
 function getVisiblePages(currentPage, totalPages) {
 
-    if (totalPages <= 7) {
+    // Compact, fixed set — 1, 2, 3, ..., last page. Keeps the pagination
+    // row short enough to always fit the right panel's width with no
+    // horizontal scrolling, regardless of how large totalPages gets.
+    if (totalPages <= 4) {
 
         return Array.from(
             { length: totalPages },
@@ -100,50 +103,12 @@ function getVisiblePages(currentPage, totalPages) {
 
     }
 
-    if (currentPage <= 4) {
-
-        return [
-            1,
-            2,
-            3,
-            4,
-            5,
-            "...",
-            totalPages
-        ];
-
-    }
-
-    if (currentPage >= totalPages - 3) {
-
-        return [
-            1,
-            "...",
-            totalPages - 4,
-            totalPages - 3,
-            totalPages - 2,
-            totalPages - 1,
-            totalPages
-        ];
-
-    }
-
     return [
-
         1,
-
+        2,
+        3,
         "...",
-
-        currentPage - 1,
-
-        currentPage,
-
-        currentPage + 1,
-
-        "...",
-
         totalPages
-
     ];
 
 }
@@ -159,151 +124,124 @@ function ExecutePanel({
     setCurrentPage,
     onPreviousExecute,
     onNextExecute,
-    loadCarouselDockets
+    loadCarouselDockets,
+    canGoPreviousExecute,
+    canGoNextExecute
 }) {
     const visiblePages = getVisiblePages(
           currentPage,
           totalPages);
 
     return (
-      
-      
+
+
 
         <aside className="app-right-panel">
-                
-                <div className="carousel-panel-new scrollbar">
-                  {executeCards}
 
-                </div>
+    {/* LEFT SIDE */}
+    <div className="execute-navigation">
 
-                <div className="carousel-control-card">
-                  <button
-                      className="left-arrow"
-                      title="Previous Page"
-                      disabled={currentPage === 1}
-                      onClick={() => loadCarouselDockets(currentPage - 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_page.svg"
-                      alt="Previous Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
+        <div className="carousel-control-card">
 
-                  <button
-                      className="right-arrow"
-                      title="Next Page"
-                      disabled={currentPage === totalPages}
-                      onClick={() => loadCarouselDockets(currentPage + 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_right_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
+            <button
+                className="change-left-arrow"
+                title="Previous Execute"
+                disabled={!canGoPreviousExecute}
+                onClick={onPreviousExecute}
+            >
+                <img
+                    src="/all_svg_icons/appframe_left_arrow.svg"
+                    alt="Previous Execute"
+                    className="button-svg-icon"
+                />
+            </button>
 
+            <span className="carousel-control-title">
+                All executes
+            </span>
 
-                  <button
-                    className="change-left-arrow"
-                    title="Previous Execute"
-                    onClick={onPreviousExecute}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_arrow.svg"
-                      alt="Previous Execute"
-                      className="button-svg-icon"
-                  />
-                  </button>
+            <button
+                className="change-right-arrow"
+                title="Next Execute"
+                disabled={!canGoNextExecute}
+                onClick={onNextExecute}
+            >
+                <img
+                    src="/all_svg_icons/appframe_right_arrow.svg"
+                    alt="Next Execute"
+                    className="button-svg-icon"
+                />
+            </button>
+
+        </div>
 
 
-                  <button
-                    className="change-right-arrow"
-                    title="Next Execute"
-                    onClick={onNextExecute}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_right_arrow.svg"
-                      alt="Next Execute"
-                      className="button-svg-icon"
-                  />
-                  </button>
+        {/* PAGINATION */}
+        <div className="carousel-pagination">
 
+            <button
+                className="arrow"
+                disabled={currentPage === 1}
+                onClick={() => loadCarouselDockets(currentPage - 1)}
+            >
+                <img
+                    src="/all_svg_icons/appframe_left_page.svg"
+                    alt="Previous Page"
+                    className="button-svg-icon"
+                />
+            </button>
 
-                  
+            {visiblePages.map((page, index) => {
 
-                </div>
-
-
-                <div className="carousel-pagination">
-
-                  
-                  <button
-                      className="arrow"
-                      disabled={currentPage === 1}
-                      onClick={() => loadCarouselDockets(currentPage - 1)}
-                  >
-                    <img
-                      src="/all_svg_icons/appframe_left_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                    
-                  </button>
-
-                  {visiblePages.map((page, index) => {
-
-                    if (page === "...") {
-
-                        return (
-
-                            <span
-                                key={`dots-${index}`}
-                                className="pagination-dots"
-                            >
-                                ...
-                            </span>
-
-                        );
-
-                    }
-
+                if (page === "...") {
                     return (
-
                         <span
-                            key={page}
-                            className={
-                                page === currentPage
-                                    ? "pagination-number active"
-                                    : "pagination-number"
-                            }
-                            onClick={() => loadCarouselDockets(page)}
+                            key={`dots-${index}`}
+                            className="pagination-dots"
                         >
-
-                            {page}
-
+                            ...
                         </span>
-
                     );
+                }
 
-                })}
+                return (
+                    <span
+                        key={page}
+                        className={
+                            page === currentPage
+                                ? "pagination-number active"
+                                : "pagination-number"
+                        }
+                        onClick={() => loadCarouselDockets(page)}
+                    >
+                        {page}
+                    </span>
+                );
+            })}
 
-                  <button
-                      className="arrow"
-                      disabled={currentPage === totalPages}
-                      onClick={() => loadCarouselDockets(currentPage + 1)}
-                  >
-                      <img
-                      src="/all_svg_icons/appframe_right_page.svg"
-                      alt="Next Page"
-                      className="button-svg-icon"
-                  />
-                  </button>
+            <button
+                className="arrow"
+                disabled={currentPage === totalPages}
+                onClick={() => loadCarouselDockets(currentPage + 1)}
+            >
+                <img
+                    src="/all_svg_icons/appframe_right_page.svg"
+                    alt="Next Page"
+                    className="button-svg-icon"
+                />
+            </button>
 
-              </div>
+        </div>
 
-                
-              </aside>
+    </div>
+
+
+    {/* RIGHT SIDE — EXECUTE CARDS */}
+    <div className="carousel-panel-new scrollbar">
+        {executeCards}
+    </div>
+
+</aside>
 
     );
 }
@@ -327,9 +265,10 @@ export default function AppFrame() {
 
   const [activePanel, setActivePanel] = useState({
       topic: false,
-      ai: false,
-      basic: false,
+      ai: true,
+      basic: true,
       detail: false,
+      summary: true,
       interactive: false,
       stage: false,
   });
@@ -366,7 +305,6 @@ export default function AppFrame() {
   
 
   const [searchText, setSearchText] = useState("");
-  const [viewMode, setViewMode] = useState("");
 
   const [panelPosition, setPanelPosition] = useState("right");
 
@@ -375,7 +313,7 @@ export default function AppFrame() {
 
   const filterBtnRef = useRef(null);
   // Ref for the whole filter panel (Topics/Products/Personas/Stages row) —
-  // used to close it on outside click, same pattern as the profile menu.
+  // kept for scoping the panel's DOM (no longer used for outside-click).
   const filterBarRef = useRef(null);
 
   // ── Create Execute modal state ────────────────────────────────────────
@@ -437,12 +375,34 @@ export default function AppFrame() {
   const activeDocketId = useMemo(() => {
 
     const match = location.pathname.match(
-        /^\/(docket-media|design)\/([^/]+)/
+        /^\/design\/([^/]+)/
     );
 
-    return match ? match[2] : null;
+    return match ? match[1] : null;
 
 }, [location.pathname]);
+
+
+  // Index of the active docket within the currently-loaded page of
+  // carouselDockets — used to work out whether the big prev/next-execute
+  // arrows in the title bar should be enabled.
+  const activeDocketIndex = useMemo(() => {
+
+    return carouselDockets.findIndex(
+        d => String(d.docket_id) === String(activeDocketId)
+    );
+
+}, [carouselDockets, activeDocketId]);
+
+
+  const canGoPreviousExecute = Boolean(activeDocketId) && (
+      activeDocketIndex > 0 || currentPage > 1
+  );
+
+  const canGoNextExecute = Boolean(activeDocketId) && (
+      (activeDocketIndex !== -1 && activeDocketIndex < carouselDockets.length - 1) ||
+      currentPage < totalPages
+  );
 
 
 
@@ -460,7 +420,7 @@ const goToPreviousExecute = async () => {
     if (index > 0) {
 
         navigate(
-            `/docket-media/${carouselDockets[index - 1].docket_id}`
+            `/design/${carouselDockets[index - 1].docket_id}`
         );
 
         return;
@@ -477,12 +437,12 @@ const goToPreviousExecute = async () => {
         return;
 
     navigate(
-        `/docket-media/${
-            previousDockets[
-                previousDockets.length - 1
-            ].docket_id
-        }`
-    );
+      `/design/${
+          previousDockets[
+              previousDockets.length - 1
+          ].docket_id
+      }`
+  );
 
 };
 
@@ -502,7 +462,7 @@ const goToNextExecute = async () => {
     if (index < carouselDockets.length - 1) {
 
         navigate(
-            `/docket-media/${carouselDockets[index + 1].docket_id}`
+            `/design/${carouselDockets[index + 1].docket_id}`
         );
 
         return;
@@ -519,7 +479,7 @@ const goToNextExecute = async () => {
         return;
 
     navigate(
-        `/docket-media/${nextDockets[0].docket_id}`
+        `/design/${nextDockets[0].docket_id}`
     );
 
 };
@@ -756,45 +716,13 @@ const goToNextExecute = async () => {
   }, [menuOpen]);
 
   // ── Filter panel outside-click ───────────────────────────────────────────
-  // Closes the whole Topics/Products/Personas/Stages filter row when the
-  // user clicks anywhere outside it (and outside the filter toggle button).
-  // The react-select menus below are portalled to document.body, so a click
-  // inside one of them no longer lands inside filterBarRef — we explicitly
-  // ignore clicks that land in a `.rf-select__menu-portal` (or an open
-  // react-datepicker popper) so picking a checkbox option doesn't slam the
-  // whole panel shut.
-  useEffect(() => {
-
-    function handleOutsideFilterClick(e) {
-
-        const clickedPortalledPopup = e.target.closest(
-            ".rf-select__menu-portal, .react-datepicker-popper"
-        );
-
-        if (clickedPortalledPopup) {
-            return;
-        }
-
-        if (
-            filterBarRef.current &&
-            !filterBarRef.current.contains(e.target) &&
-            filterBtnRef.current &&
-            !filterBtnRef.current.contains(e.target)
-        ) {
-            setShowFilterDropdown(false);
-        }
-
-    }
-
-    if (showFilterDropdown) {
-        document.addEventListener("mousedown", handleOutsideFilterClick);
-    }
-
-    return () => {
-        document.removeEventListener("mousedown", handleOutsideFilterClick);
-    };
-
-  }, [showFilterDropdown]);
+  // Intentionally no outside-click handler here. The Topics/Products/
+  // Personas/Stages filter row should stay open when the user clicks
+  // anywhere else on the page, and should only close when the filter
+  // toggle button (filterBtnRef) is clicked again — that's handled directly
+  // by its onClick (setShowFilterDropdown(prev => !prev)) below.
+  // filterBarRef is kept (still used to scope the panel's DOM) even though
+  // it's no longer read by an outside-click listener.
 
 
   // ── Reference lists (Products / Personas / Occasions) ────────────────────
@@ -1371,7 +1299,7 @@ const goToNextExecute = async () => {
 
         await fetchStageCounts();
 
-        navigate(`/docket-media/${data.docket_id}`);
+        navigate(`/design/${data.docket_id}`);
 
       } else {
         alert(data.message || "Failed to create execute");
@@ -1620,66 +1548,6 @@ const goToNextExecute = async () => {
       ]);
 
 
-  const headerDropdownConfig = useMemo(() => {
-
-    if (location.pathname === "/planner") {
-
-      return {
-        defaultValue: "Month",
-        options: [
-          "Month",
-          "Week",
-          "Day"
-        ]
-      };
-
-    }
-
-    if (
-      location.pathname.startsWith("/design") ||
-      location.pathname === "/design"
-    ) {
-
-      return {
-        defaultValue: "Vertical",
-        options: [
-          "Vertical",
-          "Horizontal"
-        ]
-      };
-
-    }
-
-    return {
-      defaultValue: "",
-      options: []
-    };
-
-  }, [location.pathname]);
-
-
-
-  const selectedViewMode = useMemo(() => {
-
-    if (
-      headerDropdownConfig.options.includes(viewMode)
-    ) {
-      return viewMode;
-    }
-
-    return headerDropdownConfig.defaultValue;
-
-  }, [
-    viewMode,
-    headerDropdownConfig
-  ]);
-
-
-
-
-
-
-
 
   const navItems = [
     { label: "Purpose",  route: "/setup-business", icon: (
@@ -1709,7 +1577,7 @@ const goToNextExecute = async () => {
     ) },
 
 
-    { label: "Planner2",  route: "/planner",         icon: (
+    { label: "Planner",  route: "/planner",         icon: (
         <img
             src="/all_svg_icons/appframe_planner.svg"
             alt="Planner"
@@ -1717,7 +1585,7 @@ const goToNextExecute = async () => {
         />
     )},
 
-
+/*
     { label: "Execute",  route: "execute",          icon: (
         <img
             src="/all_svg_icons/appframe_execute.svg"
@@ -1734,6 +1602,8 @@ const goToNextExecute = async () => {
             className="button-svg-icon"
         />
     ) },
+
+*/
 
 
     { label: "Design",  route: "/design",          icon: (
@@ -1786,16 +1656,7 @@ const goToNextExecute = async () => {
                     isActive ? ' dm-carousel-item--active' : ''
                 }`}
                 onDoubleClick={() => {
-                    if (location.pathname.startsWith("/design")) {
-
-    navigate(`/design/${item.docket_id}`);
-
-}
-else {
-
-    navigate(`/docket-media/${item.docket_id}`);
-
-} 
+                    navigate(`/design/${item.docket_id}`);
                 }}
             >
               <div className="dm-carousel-item-thumb">
@@ -1891,44 +1752,7 @@ else {
         return;
     }
 
-    // ===========================
-    // EXECUTE PAGE
-    // ===========================
-    if (item.route === "execute") {
-
-        // If an execute is already open,
-        // open the same execute in Execute page.
-        if (activeDocketId) {
-            navigate(`/docket-media/${activeDocketId}`);
-            return;
-        }
-
-        // Otherwise open the default execute.
-        try {
-
-            const res = await fetch(
-                `${API}/execute/default`,
-                { headers: AUTH() }
-            );
-
-            const data = await res.json();
-
-            if (data.success && data.docket_id) {
-                navigate(`/docket-media/${data.docket_id}`);
-            }
-            else {
-                alert(data.message || "No execute found");
-            }
-
-        } catch (err) {
-
-            console.error(err);
-            navigate("/planner");
-
-        }
-
-        return;
-    }
+  
 
     // ===========================
     // ALL OTHER PAGES
@@ -2102,33 +1926,6 @@ else {
 
           <div className="header-right">
 
-          
-            {headerDropdownConfig.options.length > 0 && (
-
-              <select
-                className="header-view-dropdown"
-                value={selectedViewMode}
-                onChange={(e) => setViewMode(e.target.value)}
-              >
-
-                {headerDropdownConfig.options.map(option => (
-
-                  <option
-                    key={option}
-                    value={option}
-                  >
-                    {option}
-                  </option>
-
-                ))}
-
-              </select>
-
-            )}
-
-
-
-
             <button
               className="header-add-btn"
               title="Create Execute"
@@ -2143,10 +1940,11 @@ else {
             <div className="panel-switch">
                     <button
                         className={panelPosition === "top" ? "active" : ""}
+                        title="Top View"
                         onClick={() => setPanelPosition("top")}
                     >
                       <img
-                      src="/all_svg_icons/appframe_top.svg"
+                      src="/all_svg_icons/align_vertical.svg"
                       alt="Top View"
                       className="button-svg-icon"
                   />
@@ -2154,10 +1952,11 @@ else {
 
                     <button
                         className={panelPosition === "right" ? "active" : ""}
+                        title="Right View"
                         onClick={() => setPanelPosition("right")}
                     >
                       <img
-                      src="/all_svg_icons/appframe_right.svg"
+                      src="/all_svg_icons/align_horizontal.svg"
                       alt="Right View"
                       className="button-svg-icon"
                   />
@@ -2179,12 +1978,13 @@ else {
 
                   <button
                   className="header-filter-refresh-btn"
+                      title="Refresh"
                       onClick={() => {
                           loadFilterLists();
                           get_selected_filters();
                       }}
                   >
-                      Refresh
+                      <RotateCcw size={13} strokeWidth={2.2} />
                   </button>
 
                   <div className="header-filter-field">
@@ -2202,6 +2002,7 @@ else {
                           timeCaption="Time"
                           popperPlacement="bottom-start"
                           popperProps={{ strategy: "fixed" }}
+                          portalId="datepicker-portal"
                           onKeyDown={(e) => e.preventDefault()}
                       />
 
@@ -2221,6 +2022,7 @@ else {
                           timeCaption="Time"
                           popperPlacement="bottom-start"
                           popperProps={{ strategy: "fixed" }}
+                          portalId="datepicker-portal"
                           onKeyDown={(e) => e.preventDefault()}
                       />
 
@@ -2360,6 +2162,8 @@ else {
                   onPreviousExecute={goToPreviousExecute}
                   onNextExecute={goToNextExecute}
                   loadCarouselDockets={loadCarouselDockets}
+                  canGoPreviousExecute={canGoPreviousExecute}
+                  canGoNextExecute={canGoNextExecute}
               />
 
           )}
@@ -2399,6 +2203,8 @@ else {
                   onPreviousExecute={goToPreviousExecute}
                   onNextExecute={goToNextExecute}
                   loadCarouselDockets={loadCarouselDockets}
+                  canGoPreviousExecute={canGoPreviousExecute}
+                  canGoNextExecute={canGoNextExecute}
               />
 
           )}
@@ -2503,7 +2309,6 @@ else {
                       timeIntervals={15}
                       className="ce-modal-date-input"
                       placeholderText="Select upload time"
-                      onKeyDown={(e) => e.preventDefault()}
                     />
                   </div>
 
