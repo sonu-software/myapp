@@ -1384,33 +1384,31 @@ const handleDeleteCustomField = (field) => handleFieldValue(field, null);
         activePanel.ai &&
         !activePanel.basic;
 
-    if(alreadyOpen){
+    if (alreadyOpen) {
 
         setActivePanel({
-            topic:false,
-            ai:false,
-            basic:false,
-            detail:false,
-            summary:false,
-            interactive:false,
-            stage:false,
+            topic: false,
+            ai: false,
+            basic: false,
+            detail: false,
+            summary: false,
+            interactive: false,
+            stage: false,
+        });
+
+    } else {
+
+        setActivePanel({
+            topic: true,
+            ai: true,
+            basic: false,
+            detail: false,
+            summary: false,
+            interactive: false,
+            stage: false,
         });
 
     }
-
-    else{
-
-        setActivePanel({
-            topic:true,
-            ai:true,
-            basic:false,
-            detail:false,
-            interactive:false,
-            stage:false,
-        });
-
-    }
-
 };
 
 const loadPlannerLayout = () => {
@@ -1420,34 +1418,32 @@ const loadPlannerLayout = () => {
         activePanel.ai &&
         activePanel.basic;
 
-    if(alreadyOpen){
+    if (alreadyOpen) {
 
         setActivePanel({
-            topic:false,
-            ai:false,
-            basic:false,
-            detail:false,
-            interactive:false,
-            stage:false,
+            topic: false,
+            ai: false,
+            basic: false,
+            detail: false,
+            summary: false,
+            interactive: false,
+            stage: false,
+        });
+
+    } else {
+
+        setActivePanel({
+            topic: true,
+            ai: true,
+            basic: true,
+            detail: false,
+            summary: false,
+            interactive: false,
+            stage: false,
         });
 
     }
-
-    else{
-
-        setActivePanel({
-            topic:true,
-            ai:true,
-            basic:true,
-            detail:false,
-            interactive:false,
-            stage:false,
-        });
-
-    }
-
 };
-
 
 useEffect(() => {
 
@@ -1611,87 +1607,100 @@ useEffect(() => {
 
             <div className="singular-btn">
 
-            <button
-                className="icon-btn singular-toggle-btn"
-                title="topic-toggle-btn"
-                onClick={() => showPanel("topic")}
-              >
-                <img
-                    src="/all_svg_icons/design_topic.svg"
-                    alt="Topic"
-                    className="button-svg-icon"
-                />
-              
-              </button>
+            {/* 1. Settings */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.basic ? "active" : ""
+    }`}
+    title="basic-toggle-btn"
+    onClick={() => showPanel("basic")}
+>
+    <img
+        src="/all_svg_icons/design_basic.svg"
+        alt="Basic"
+        className="button-svg-icon"
+    />
+</button>
 
 
-              <button
-                className="icon-btn singular-toggle-btn"
-                title="basic-toggle-btn"
-                onClick={() => showPanel("basic")}
-              >
-                <img
-                    src="/all_svg_icons/design_basic.svg"
-                    alt="Basic"
-                    className="button-svg-icon"
-                />
-              
-              </button>
+{/* 2. Information */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.topic ? "active" : ""
+    }`}
+    title="topic-toggle-btn"
+    onClick={() => showPanel("topic")}
+>
+    <img
+        src="/all_svg_icons/design_topic.svg"
+        alt="Topic"
+        className="button-svg-icon"
+    />
+</button>
 
 
-
-              <button
-                className="icon-btn singular-toggle-btn"
-                title="ai-toggle-btn"
-                onClick={() => showPanel("ai")}
-              >
-                <img
-                    src="/all_svg_icons/design_ai.svg"
-                    alt="AI"
-                    className="button-svg-icon"
-                />
-              
-              </button>
-
-              
-
-              <button
-                className="icon-btn singular-toggle-btn"
-                title="detail-toggle-btn"
-                onClick={() => showPanel("detail")}
-              >
-                <img
-                    src="/all_svg_icons/design_detail.svg"
-                    alt="Detail"
-                    className="button-svg-icon"
-                />
-              </button>
+{/* 3. AI */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.ai ? "active" : ""
+    }`}
+    title="ai-toggle-btn"
+    onClick={() => showPanel("ai")}
+>
+    <img
+        src="/all_svg_icons/design_ai.svg"
+        alt="AI"
+        className="button-svg-icon"
+    />
+</button>
 
 
-              <button
-                  className="icon-btn singular-toggle-btn"
-                  title="summary-toggle-btn"
-                  onClick={() => showPanel("summary")}
-              >
-                  <img
-                      src="/all_svg_icons/design_summary.svg"
-                      alt="Summary"
-                      className="button-svg-icon"
-                  />
-              </button>
+{/* 4. Advance */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.detail ? "active" : ""
+    }`}
+    title="detail-toggle-btn"
+    onClick={() => showPanel("detail")}
+>
+    <img
+        src="/all_svg_icons/design_detail.svg"
+        alt="Detail"
+        className="button-svg-icon"
+    />
+</button>
 
-              <button
-                className="icon-btn singular-toggle-btn"
-                title="interactive-toggle-btn"
-                onClick={() => showPanel("interactive")}
-              >
-                <img
-                    src="/all_svg_icons/design_interaction.svg"
-                    alt="Interacion"
-                    className="button-svg-icon"
-                />
-              </button>
 
+{/* 5. Summary */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.summary ? "active" : ""
+    }`}
+    title="summary-toggle-btn"
+    onClick={() => showPanel("summary")}
+>
+    <img
+        src="/all_svg_icons/design_summary.svg"
+        alt="Summary"
+        className="button-svg-icon"
+    />
+</button>
+
+
+{/* 6. Interaction */}
+<button
+    className={`icon-btn singular-toggle-btn ${
+        activePanel.interactive ? "active" : ""
+    }`}
+    title="interactive-toggle-btn"
+    onClick={() => showPanel("interactive")}
+>
+    <img
+        src="/all_svg_icons/design_interaction.svg"
+        alt="Interaction"
+        className="button-svg-icon"
+    />
+</button>
             </div>
 
 
@@ -1741,7 +1750,7 @@ useEffect(() => {
 
                   <div className="topic-card-header">
 
-                      <h3>Execute Information</h3>
+                      <h3>Settings</h3>
 
                   </div>
 
@@ -1894,54 +1903,6 @@ useEffect(() => {
 
                 </div>
 
-                <div className="ai-panel" style={panelStyle("ai")}>
-
-                  <div className="dm-chat-panel">
-                    <div className="dm-chat-label"><SparkleIcon/> Chat with AI</div>
-                    <div className="dm-chat-bubbles">
-                      {conversationBubbles.map(b => <Bubble key={b.id} bubble={b}/>)}
-                      <div ref={chatEndRef}/>
-                    </div>
-                    <div className="dm-chat-footer">
-                      <div className="dm-chat-input-row">
-
-                        <div className="dm-chat-input-wrap">
-
-                          <input
-                            className="dm-chat-input"
-                            placeholder="Type your message"
-                            disabled={!isCurrentOwner}
-                            value={userMessage}
-                            onChange={e => setUserMessage(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
-                                e.preventDefault();
-                                handleSendMessage();
-                              }
-                            }}
-                          />
-
-                          <button
-                            className="dm-chat-send"
-                            disabled={!isCurrentOwner}
-                            onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
-                          >
-                            <img
-                                src="/all_svg_icons/docket_send.svg"
-                                alt="Filter"
-                                className="button-svg-icon"
-                            />
-                          </button>
-
-                        </div>
-
-                        
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
                 <div
                     className="basic-panel"
                     style={panelStyle("basic")}
@@ -1950,7 +1911,7 @@ useEffect(() => {
                     <div className="basic-card">
 
                         <div className="basic-header">
-                            <h3>Basic Information</h3>
+                            <h3>Information</h3>
                         </div>
 
                         <div className="basic-body">
@@ -2022,92 +1983,178 @@ useEffect(() => {
                     </div>
 
                 </div>
+                    
+                <div className="ai-panel" style={panelStyle("ai")}>
 
 
 
+                  <div className="dm-chat-panel">
 
-                <div
-                    className="summary-panel"
-                    style={panelStyle("summary")}
-                >
-                    <div className="summary-card">
+                    <div className="dm-chat-label"><SparkleIcon/>AI</div>
 
-                        <div className="summary-header">
-                            <h3>Summary</h3>
-                        </div>
+                    <div className="dm-chat-bubbles">
 
-                        <div className="summary-body">
+                      {conversationBubbles.map(b => <Bubble key={b.id} bubble={b}/>)}
 
-                            <div className="summary-field">
-                                <label>Summary</label>
-
-                                <textarea
-                                    rows={10}
-                                    value={summary}
-                                    onChange={(e) => setSummary(e.target.value)}
-                                    disabled={!isCurrentOwner}
-                                    placeholder="Enter summary..."
-                                />
-                            </div>
-
-                        </div>
-
-                        <div className="summary-footer">
-
-                            <button
-                                className="summary-save-btn"
-                                onClick={handleFullSave}
-                                disabled={!isCurrentOwner}
-                            >
-                                Save
-                            </button>
-
-                        </div>
+                      <div ref={chatEndRef}/>
 
                     </div>
+
+                    <div className="dm-chat-footer">
+
+                      <div className="dm-chat-input-row">
+
+
+
+                        <div className="dm-chat-input-wrap">
+
+
+
+                          <input
+
+                            className="dm-chat-input"
+
+                            placeholder="Type your message"
+
+                            disabled={!isCurrentOwner}
+
+                            value={userMessage}
+
+                            onChange={e => setUserMessage(e.target.value)}
+
+                            onKeyDown={e => {
+
+                              if (e.key === 'Enter' && !e.shiftKey && userMessage.trim()) {
+
+                                e.preventDefault();
+
+                                handleSendMessage();
+
+                              }
+
+                            }}
+
+                          />
+
+
+
+                          <button
+
+                            className="dm-chat-send"
+
+                            disabled={!isCurrentOwner}
+
+                            onClick={isCurrentOwner && userMessage.trim() ? handleSendMessage : undefined}
+
+                          >
+
+                            <img
+
+                                src="/all_svg_icons/docket_send.svg"
+
+                                alt="Filter"
+
+                                className="button-svg-icon"
+
+                            />
+
+                          </button>
+
+
+
+                        </div>
+
+
+
+                        
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
                 </div>
+
+                  
+                <div
+
+                    className="detail-panel"
+
+                    style={panelStyle("detail")}
+
+                >
+
+
+
+                    <div className="detail-card">
+
+
+
+                        <div className="detail-header">
+
+                            <h3>Advance</h3>
+
+                        </div>
+
+
+
+                        <div className="detail-body">
+
+
+
+                            {/* LABELS WILL COME HERE */}
+
+                            <div className="dm-label-sidebar">
+
+
+
+                    {/* ===================== MANDATORY ===================== */}
+
+
+
+                    <section className="docket-mandatory-section">
+
+
+
+                        <div className="docket-optionals-header">
+
+
+
+                            <h3 className="docket-column-title">
+
+                                MANDATORY FIELDS
+
+                            </h3>
+
+
+
+                            <button
+
+                                className="docket-add-more-btn"
+
+                                onClick={() => {
+
+                                    setModalBoxType("mandatory");
+
+                                    setShowModal(true);
+
+                                }}
+
+                            >
+
+                                Add More +
+
+                            </button>
+
+
+
+                        </div>
 
                 
 
 
-                <div
-                    className="detail-panel"
-                    style={panelStyle("detail")}
-                >
-
-                    <div className="detail-card">
-
-                        <div className="detail-header">
-                            <h3>Labels</h3>
-                        </div>
-
-                        <div className="detail-body">
-
-                            {/* LABELS WILL COME HERE */}
-                            <div className="dm-label-sidebar">
-
-                    {/* ===================== MANDATORY ===================== */}
-
-                    <section className="docket-mandatory-section">
-
-                        <div className="docket-optionals-header">
-
-                            <h3 className="docket-column-title">
-                                MANDATORY FIELDS
-                            </h3>
-
-                            <button
-                                className="docket-add-more-btn"
-                                onClick={() => {
-                                    setModalBoxType("mandatory");
-                                    setShowModal(true);
-                                }}
-                            >
-                                Add More +
-                            </button>
-
-                        </div>
-
+                
                         <div className="docket-form-section">
 
                             {mandatoryFields.map((field) => (
@@ -2342,13 +2389,54 @@ useEffect(() => {
 
                 </div>
 
+                {/* ================= SUMMARY PANEL ================= */}
+
+                <div
+                    className="summary-panel"
+                    style={panelStyle("summary")}
+                >
+                    <div className="summary-card">
+
+                        <div className="summary-header">
+                            <h3>Summary</h3>
+                        </div>
+
+                        <div className="summary-body">
+
+                            <div className="summary-field">
+                                <label>Summary</label>
+
+                                <textarea
+                                    rows={10}
+                                    value={summary}
+                                    onChange={(e) => setSummary(e.target.value)}
+                                    disabled={!isCurrentOwner}
+                                    placeholder="Enter summary..."
+                                />
+                            </div>
+
+                        </div>
+
+                        <div className="summary-footer">
+                            <button
+                                className="summary-save-btn"
+                                onClick={handleFullSave}
+                                disabled={!isCurrentOwner}
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
                 <div className="interactive-panel" 
                 style={panelStyle("interactive")}>
       
             <div className="dm-chat-panel">
               <div className="dm-chat-label">
                 
-                 Designer Feedback
+                 Interaction
                  </div>
                  
               <div className="dm-chat-bubbles">

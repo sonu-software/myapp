@@ -477,6 +477,16 @@
     transition:.2s;
 }
 
+.singular-toggle-btn.active{
+    border:2px solid #4A90E2;
+    background:#eef6ff;
+}
+
+.singular-toggle-btn.active:hover{
+    border-color:#4A90E2;
+    background:#e5f1ff;
+}
+
 .singular-toggle-btn:hover{
 
     background:#f5f5f5;
@@ -1031,29 +1041,50 @@
 
 .dm-chat-send{
     position:absolute;
+
+    /* Perfect vertical alignment inside 38px input */
     top:50%;
-    right:12px;
-    transform:translateY(-50%);
+    right:10px;
+    transform: translateY(calc(-50% - 4px));
 
     display:flex;
     align-items:center;
     justify-content:center;
 
-    width:22px;
-    height:22px;
+    width:26px;
+    height:26px;
 
     padding:0;
     margin:0;
 
     border:none;
-    background:transparent;
+    outline:none;
 
-    color:#9ca3af;
+    background:transparent !important;
+
     cursor:pointer;
-
     z-index:5;
+
+    box-sizing:border-box;
 }
-.dm-chat-send:hover:not(:disabled){ color:#4A90E2; }
+
+.dm-chat-send .button-svg-icon{
+    width:18px;
+    height:18px;
+
+    display:block;
+
+    margin:0;
+    padding:0;
+
+    object-fit:contain;
+}
+
+.dm-chat-send:hover{
+    background: transparent !important;
+    color: inherit;
+    transform: translateY(-50%);
+}
 .dm-chat-send:disabled{ opacity:0.5; cursor:not-allowed; }
 
 /* ── Generate button — inline in the chat input row ── */
@@ -2116,28 +2147,28 @@
    MESSAGE PANEL
 ========================================================== */
 
-.message-panel{
-    flex:1;
-    min-height:0;
+.message-panel {
+    flex: 1;
+    min-height: 0;
 
-    display:flex;
-    flex-direction:column;
+    display: flex;
+    align-items: stretch;   /* CHANGE THIS */
+    flex-direction: row;
 
-    position:relative;
-    margin:2px;    
+    position: relative;
+    margin: 2px;
 
-    background:#ffffff;
+    background: #ffffff;
 
-    border:none;
-    border-radius:12px;
+    border: none;
+    border-radius: 12px;
 
     box-shadow:
         0 2px 6px rgba(0,0,0,0.08),
         0 8px 20px rgba(0,0,0,0.06);
 
-    overflow:hidden;
+    overflow: hidden;
 }
-
 
 /* ── Message text / inline editor ─────────────────────────── */
 .message-panel-content{
@@ -2145,16 +2176,20 @@
     min-height:0;
 
     overflow-y:auto;
-    padding:40px 12px 8px;
+
+    /* Align text with buttons at top: 8px */
+    padding:8px 80px 8px 12px;
     box-sizing:border-box;
 
-    font-size:13px;
-    line-height:1.6;
+    font-size:11px;
+    line-height:26px;
     color:#374151;
     white-space:pre-wrap;
 
     scrollbar-width:none;
 }
+
+
 .message-panel-content::-webkit-scrollbar{
     display:none;
     width:0;
@@ -3074,4 +3109,11 @@
         grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
         gap:12px;
     }
+}
+
+/* Remove purple hover background */
+/* White background + blue outline on hover */
+.icon-btn.singular-toggle-btn:hover {
+    background: #fff !important;
+    border: 2px solid #4A90E2;
 }
