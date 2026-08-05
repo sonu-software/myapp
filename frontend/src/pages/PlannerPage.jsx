@@ -340,6 +340,12 @@ export default function PlannerPage() {
           monthEnd
       );
 
+
+      // PlannerPage should load up to 1000 executes.
+      // AppFrame carousel remains paginated at 10.
+      params.append("page", "1");
+      params.append("page_size", "1000");
+
       if (filters.mediaType) {
           params.append(
               "media_type",

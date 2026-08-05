@@ -157,7 +157,7 @@ function ExecutePanel({
             </button>
 
             <span className="carousel-control-title">
-                All executes
+                Designs
             </span>
 
             <button
@@ -285,7 +285,11 @@ export default function AppFrame() {
   const [filterStageList, setFilterStageList] = useState([]);
 
   // ── Filter state List of selected dropdown──────────────────────────────────────────────────────
-  const [startDate, setStartDate] = useState(null);
+  const [startDate, setStartDate] = useState(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return today;
+    });
   const [endDate, setEndDate] = useState(null);
   const [selectedFilterOccasion, setSelectedFilterOccasion] = useState([]);
   const [selectedFilterProduct, setSelectedFilterProduct] = useState([]);
@@ -293,15 +297,20 @@ export default function AppFrame() {
   const [selectedFilterStage, setSelectedFilterStage] = useState([]);
 
   // ── Get selected ──────────────────────────────────────────────────────
-  const [appliedFilters, setAppliedFilters] = useState({
-      startDate: null,
-      endDate: null,
-      occasions: [],
-      products: [],
-      personas: [],
-      stages: [],
-      search: ""
-  });
+  const [appliedFilters, setAppliedFilters] = useState(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return {
+            startDate: today,
+            endDate: null,
+            occasions: [],
+            products: [],
+            personas: [],
+            stages: [],
+            search: ""
+        };
+    });
   
 
   const [searchText, setSearchText] = useState("");
@@ -798,21 +807,42 @@ const goToNextExecute = async () => {
 
   function applyPlannerDateFilter(start, end) {
 
-    setStartDate(start);
+    if (!start) return;
 
-    setEndDate(end);
+    // Selected calendar day's start time
+    const selectedStartDate = new Date(start);
+    selectedStartDate.setHours(0, 0, 0, 0);
+
+    // If PlannerPage sends an end date, use it.
+    // Otherwise use the end of the selected calendar day.
+    const selectedEndDate = end
+        ? new Date(end)
+        : new Date(start);
+
+    selectedEndDate.setHours(23, 59, 59, 999);
+
+
+    // Update Filter UI dates
+    setStartDate(selectedStartDate);
+    setEndDate(selectedEndDate);
+
+
+    // Reset carousel pagination
+    setCurrentPage(1);
+
+
+    // IMPORTANT:
+    // Immediately apply Planner calendar date
+    setAppliedFilters(prev => ({
+        ...prev,
+
+        startDate: selectedStartDate,
+        endDate: selectedEndDate
+
+    }));
 
 }
 
-
-  useEffect(() => {
-
-      get_selected_filters();
-
-  }, [
-      startDate,
-      endDate
-  ]);
 
 
 
@@ -1718,36 +1748,27 @@ const goToNextExecute = async () => {
     // ===========================
     if (item.route === "/design") {
 
-        // If an execute is already open,
-        // open the same execute in Design.
-        if (activeDocketId) {
-            navigate(`/design/${activeDocketId}`);
+        // Open the FIRST execute from the currently filtered carousel.
+        // carouselDockets already respects:
+        // - Start Date
+        // - End Date
+        // - Topic
+        // - Product
+        // - Persona
+        // - Stage
+        // - Search
+
+        if (carouselDockets.length > 0) {
+
+            const firstExecute = carouselDockets[0];
+
+            navigate(`/design/${firstExecute.docket_id}`);
+
             return;
         }
 
-        // Otherwise open the default execute.
-        try {
-
-            const res = await fetch(
-                `${API}/execute/default`,
-                { headers: AUTH() }
-            );
-
-            const data = await res.json();
-
-            if (data.success && data.docket_id) {
-                navigate(`/design/${data.docket_id}`);
-            }
-            else {
-                alert(data.message || "No execute found");
-            }
-
-        } catch (err) {
-
-            console.error(err);
-            navigate("/planner");
-
-        }
+        // No execute exists for the currently applied filters
+        alert("No execute found");
 
         return;
     }
@@ -1852,22 +1873,33 @@ const goToNextExecute = async () => {
 
             <div className="header-search-wrap">
 
-              <input
-                type="text"
-                className="header-search-input"
-                placeholder="Search"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
+  <input
+    type="text"
+    className="header-search-input"
+    placeholder="Search"
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        get_selected_filters();
+      }
+    }}
+  />
 
-              <Search
-                size={14}
-                color="#8a8f98"
-                strokeWidth={2}
-                className="header-search-icon"
-              />
+  <button
+    type="button"
+    className="header-search-btn"
+    title="Search"
+    onClick={get_selected_filters}
+  >
+    <img
+                    src="/all_svg_icons/appframe_search.svg"
+                    alt="Search"
+                    className="button-svg-icon"
+                />
+  </button>
 
-            </div>
+</div>
 
 
 

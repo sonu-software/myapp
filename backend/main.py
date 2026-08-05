@@ -2602,7 +2602,7 @@ def get_carousel_dockets(
     search: str | None = None,
 
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100),
+    page_size: int = Query(default=10, ge=1, le=10000),
 
     user_id: int = Depends(get_current_user)
 
@@ -2807,8 +2807,8 @@ def get_carousel_dockets(
 
         query += """
             ORDER BY
-                d.uploaded_date_time DESC,
-                d.docket_id DESC
+                d.uploaded_date_time ASC,
+                d.docket_id ASC
 
             LIMIT %s OFFSET %s
         """
